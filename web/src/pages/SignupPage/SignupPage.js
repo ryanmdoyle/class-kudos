@@ -6,6 +6,7 @@ import {
   Label,
   TextField,
   PasswordField,
+  SelectField,
   FieldError,
   Submit,
 } from '@redwoodjs/forms'
@@ -31,18 +32,27 @@ const SignupPage = () => {
   }, [])
 
   const onSubmit = async (data) => {
-    const response = await signUp({
-      username: data.email,
-      password: data.password,
-    })
+    if (
+      window.confirm(
+        `Please confirm you'd like to create a ${data.role.toUpperCase()} account.`
+      )
+    ) {
+      const response = await signUp({
+        username: data.email,
+        password: data.password,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: data.role,
+      })
 
-    if (response.message) {
-      toast(response.message)
-    } else if (response.error) {
-      toast.error(response.error)
-    } else {
-      // user is signed in automatically
-      toast.success('Welcome!')
+      if (response.message) {
+        toast(response.message)
+      } else if (response.error) {
+        toast.error(response.error)
+      } else {
+        // user is signed in automatically
+        toast.success('Welcome!')
+      }
     }
   }
 
@@ -61,6 +71,48 @@ const SignupPage = () => {
             <div className="rw-segment-main">
               <div className="rw-form-wrapper">
                 <Form onSubmit={onSubmit} className="rw-form-wrapper">
+                  <Label
+                    name="firstName"
+                    className="rw-label"
+                    errorClassName="rw-label rw-label-error"
+                  >
+                    First Name
+                  </Label>
+                  <TextField
+                    name="firstName"
+                    className="rw-input"
+                    errorClassName="rw-input rw-input-error"
+                    validation={{
+                      required: {
+                        value: true,
+                        message: 'First Name is required',
+                      },
+                    }}
+                  />
+
+                  <FieldError name="firstName" className="rw-field-error" />
+
+                  <Label
+                    name="lastName"
+                    className="rw-label"
+                    errorClassName="rw-label rw-label-error"
+                  >
+                    Last Name
+                  </Label>
+                  <TextField
+                    name="lastName"
+                    className="rw-input"
+                    errorClassName="rw-input rw-input-error"
+                    validation={{
+                      required: {
+                        value: true,
+                        message: 'Last Name is required',
+                      },
+                    }}
+                  />
+
+                  <FieldError name="lastName" className="rw-field-error" />
+                  {/*  */}
                   <Label
                     name="email"
                     className="rw-label"
@@ -104,6 +156,34 @@ const SignupPage = () => {
                   />
 
                   <FieldError name="password" className="rw-field-error" />
+
+                  <Label
+                    name="role"
+                    className="rw-label"
+                    errorClassName="rw-label rw-label-error"
+                  >
+                    You are a:
+                  </Label>
+                  <SelectField
+                    name="role"
+                    validation={{
+                      required: {
+                        value: true,
+                        message: 'You must select an account type to continue.',
+                      },
+                      validate: {
+                        matchesInitialValue: (value) => {
+                          return value !== 'Select an option'
+                        },
+                      },
+                    }}
+                  >
+                    <option>Select an option</option>
+                    <option>Student</option>
+                    <option>Teacher</option>
+                  </SelectField>
+
+                  <FieldError name="role" className="rw-field-error" />
 
                   <div className="rw-button-group">
                     <Submit className="rw-button rw-button-blue">

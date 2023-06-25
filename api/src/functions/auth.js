@@ -103,15 +103,28 @@ export const handler = async (event, context) => {
     // If this returns anything else, it will be returned by the
     // `signUp()` function in the form of: `{ message: 'String here' }`.
     // eslint-disable-next-line no-unused-vars
-    handler: ({ username, hashedPassword, salt, userAttributes }) => {
-      return db.user.create({
+    handler: async ({ username, hashedPassword, salt, userAttributes }) => {
+      const user = await db.user.create({
         data: {
           email: username,
           hashedPassword: hashedPassword,
           salt: salt,
-          // name: userAttributes.name
+          firstName: userAttributes.firstName,
+          lastName: userAttributes.lastName,
         },
       })
+      const role =
+        userAttributes.role == ('Teacher' || 'Student')
+          ? userAttributes.role.toUpperCase()
+          : 'STUDENT'
+      await db.userRole.create({
+        data: {
+          role: role,
+          userId: user.id,
+        },
+      })
+
+      return user
     },
 
     // Include any format checks for password here. Return `true` if the
