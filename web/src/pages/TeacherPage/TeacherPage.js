@@ -4,8 +4,8 @@ import { MetaTags } from '@redwoodjs/web'
 import { useAuth } from 'src/auth'
 
 const TeacherPage = () => {
-  const { isAuthenticated, currentUser, logOut } = useAuth()
-  console.log(isAuthenticated, currentUser)
+  const { currentUser } = useAuth()
+
   return (
     <>
       <MetaTags title="Teacher" description="Teacher page" />
