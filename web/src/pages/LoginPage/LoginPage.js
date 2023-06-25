@@ -16,11 +16,14 @@ import { toast, Toaster } from '@redwoodjs/web/toast'
 import { useAuth } from 'src/auth'
 
 const LoginPage = () => {
-  const { isAuthenticated, logIn } = useAuth()
+  const { isAuthenticated, logIn, currentUser } = useAuth()
 
   useEffect(() => {
+    console.log('CURRENT USER', currentUser)
     if (isAuthenticated) {
-      navigate(routes.home())
+      console.log(currentUser?.id)
+
+      navigate(routes.teacher())
     }
   }, [isAuthenticated])
 

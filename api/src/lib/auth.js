@@ -20,14 +20,25 @@ import { db } from './db'
  * seen if someone were to open the Web Inspector in their browser.
  */
 export const getCurrentUser = async (session) => {
-  if (!session || typeof session.id !== 'number') {
+  if (!session || typeof session.id !== 'string') {
     throw new Error('Invalid session')
   }
 
-  return await db.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id: session.id },
-    select: { id: true },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+    },
   })
+  const userRoles = await db.userRole.findMany({
+    where: { userId: user.id },
+    select: { role: true },
+  })
+  const roles = userRoles.map((userRole) => userRole.role)
+  return { ...user, roles }
 }
 
 /**
