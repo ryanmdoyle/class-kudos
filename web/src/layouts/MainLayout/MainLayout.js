@@ -2,7 +2,7 @@ import SiteHeader from 'src/components/SiteHeader'
 
 const MainLayout = ({ children }) => {
   return (
-    <main className="bg-color-red">
+    <main className="p-4">
       <SiteHeader />
       {children}
     </main>

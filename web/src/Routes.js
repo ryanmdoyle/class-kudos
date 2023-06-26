@@ -17,6 +17,16 @@ import MainLayout from './layouts/MainLayout/MainLayout'
 const Routes = () => {
   return (
     <Router useAuth={useAuth}>
+      <Set wrap={MainLayout}>
+        <Route path="/" page={HomePage} name="home" />
+        <Route path="/student" page={StudentPage} name="student" />
+        <Route path="/teacher" page={TeacherPage} name="teacher" />
+        <Route path="/login" page={LoginPage} name="login" />
+        <Route path="/signup" page={SignupPage} name="signup" />
+        <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
+        <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
+        <Route notfound page={NotFoundPage} />
+      </Set>
       <Set wrap={ScaffoldLayout} title="UserRoles" titleTo="userRoles" buttonLabel="New UserRole" buttonTo="newUserRole">
         <Route path="/user-roles/new" page={UserRoleNewUserRolePage} name="newUserRole" />
         <Route path="/user-roles/{id}/edit" page={UserRoleEditUserRolePage} name="editUserRole" />
@@ -28,15 +38,6 @@ const Routes = () => {
         <Route path="/users/{id}/edit" page={UserEditUserPage} name="editUser" />
         <Route path="/users/{id}" page={UserUserPage} name="user" />
         <Route path="/users" page={UserUsersPage} name="users" />
-      </Set>
-      <Set wrap={MainLayout}>
-        <Route path="/student" page={StudentPage} name="student" />
-        <Route path="/teacher" page={TeacherPage} name="teacher" />
-        <Route path="/login" page={LoginPage} name="login" />
-        <Route path="/signup" page={SignupPage} name="signup" />
-        <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
-        <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
-        <Route notfound page={NotFoundPage} />
       </Set>
     </Router>
   )
