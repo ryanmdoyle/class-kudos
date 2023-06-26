@@ -12,12 +12,11 @@ import { Set, Router, Route } from '@redwoodjs/router'
 import ScaffoldLayout from 'src/layouts/ScaffoldLayout'
 
 import { useAuth } from './auth'
+import MainLayout from './layouts/MainLayout/MainLayout'
 
 const Routes = () => {
   return (
     <Router useAuth={useAuth}>
-      <Route path="/student" page={StudentPage} name="student" />
-      <Route path="/teacher" page={TeacherPage} name="teacher" />
       <Set wrap={ScaffoldLayout} title="UserRoles" titleTo="userRoles" buttonLabel="New UserRole" buttonTo="newUserRole">
         <Route path="/user-roles/new" page={UserRoleNewUserRolePage} name="newUserRole" />
         <Route path="/user-roles/{id}/edit" page={UserRoleEditUserRolePage} name="editUserRole" />
@@ -30,11 +29,15 @@ const Routes = () => {
         <Route path="/users/{id}" page={UserUserPage} name="user" />
         <Route path="/users" page={UserUsersPage} name="users" />
       </Set>
-      <Route path="/login" page={LoginPage} name="login" />
-      <Route path="/signup" page={SignupPage} name="signup" />
-      <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
-      <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
-      <Route notfound page={NotFoundPage} />
+      <Set wrap={MainLayout}>
+        <Route path="/student" page={StudentPage} name="student" />
+        <Route path="/teacher" page={TeacherPage} name="teacher" />
+        <Route path="/login" page={LoginPage} name="login" />
+        <Route path="/signup" page={SignupPage} name="signup" />
+        <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
+        <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
+        <Route notfound page={NotFoundPage} />
+      </Set>
     </Router>
   )
 }
