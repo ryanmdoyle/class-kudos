@@ -26,6 +26,12 @@ const Routes = () => {
         <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
         <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
         <Route notfound page={NotFoundPage} />
+        <Route path="/groups/new" page={GroupNewGroupPage} name="newGroup" />
+      </Set>
+      <Set wrap={MainLayout} title="Groups" titleTo="groups" buttonLabel="New Group" buttonTo="newGroup">
+        <Route path="/groups/{id}/edit" page={GroupEditGroupPage} name="editGroup" />
+        <Route path="/groups/{id}" page={GroupGroupPage} name="group" />
+        <Route path="/groups" page={GroupGroupsPage} name="groups" />
       </Set>
       <Set wrap={ScaffoldLayout} title="UserRoles" titleTo="userRoles" buttonLabel="New UserRole" buttonTo="newUserRole">
         <Route path="/user-roles/new" page={UserRoleNewUserRolePage} name="newUserRole" />

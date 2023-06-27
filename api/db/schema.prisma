@@ -23,9 +23,9 @@ model User {
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @default(now())
   roles               UserRole[]
+  groupsOwned         Group[]
   // feedback            Feedback[]
   // redeemed            Redeemed[]
-  // groups              Group[]
   // enrollments         Enrollment[]
 }
 
@@ -36,6 +36,21 @@ model UserRole {
   role      String
   user      User     @relation(fields: [userId], references: [id])
   userId    String
+}
+
+model Group {
+  id          String  @id @default(uuid())
+  name        String
+  description String? @default("")
+  enrollId    String? @unique
+  owner       User    @relation(fields: [ownerId], references: [id])
+  ownerId     String
+  archived    Boolean @default(false)
+  // enrollments Enrollment[]
+  // behaviors   Behavior[]
+  // rewards     Reward[]
+  // feedback    Feedback[]
+  // redeemed    Redeemed[]
 }
 
 // model Feedback {
@@ -82,22 +97,6 @@ model UserRole {
 //   responsePrompt   String?
 //   group            Group?  @relation(fields: [groupId], references: [id])
 //   groupId          String?
-// }
-
-// model Group {
-//   id          String       @id @default(uuid())
-//   type        String       @default("class")
-//   name        String
-//   description String?      @default("")
-//   enrollId    String?      @unique
-//   owner       User         @relation(fields: [ownerId], references: [id])
-//   ownerId     String
-//   archived    Boolean      @default(false)
-//   enrollments Enrollment[]
-//   behaviors   Behavior[]
-//   rewards     Reward[]
-//   feedback    Feedback[]
-//   redeemed    Redeemed[]
 // }
 
 // model Enrollment {

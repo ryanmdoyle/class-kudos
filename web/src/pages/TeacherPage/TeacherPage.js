@@ -1,10 +1,12 @@
-import { Link, routes } from '@redwoodjs/router'
+import { Link, routes, navigate } from '@redwoodjs/router'
 import { MetaTags } from '@redwoodjs/web'
 
 import { useAuth } from 'src/auth'
 
 const TeacherPage = () => {
   const { currentUser } = useAuth()
+
+  const addGroup = () => navigate(routes.newGroup())
 
   return (
     <>
@@ -21,12 +23,18 @@ const TeacherPage = () => {
           </div>
           <div className="sm:w-1/2">
             <ul className="nes-list is-disc mb-6 pl-4">
+              <li className="mb-2">
+                <Link to={routes.newGroup()}>Group 1</Link>
+              </li>
               <li className="mb-2">Group 1</li>
               <li className="mb-2">Group 2</li>
               <li className="mb-2">Group 3</li>
               <li className="mb-2">Group 4</li>
             </ul>
-            <button className="nes-btn is-success place-self-end">
+            <button
+              className="nes-btn is-success place-self-end"
+              onClick={addGroup}
+            >
               Add Group
             </button>
           </div>

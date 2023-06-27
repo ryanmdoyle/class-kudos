@@ -29,16 +29,17 @@ export const getCurrentUser = async (session) => {
     select: {
       id: true,
       firstName: true,
-      lastName: true,
-      email: true,
     },
   })
+
   const userRoles = await db.userRole.findMany({
     where: { userId: user.id },
     select: { role: true },
   })
+
   const roles = userRoles.map((userRole) => userRole.role)
-  return { ...user, roles }
+
+  return { roles: roles, ...user }
 }
 
 /**
