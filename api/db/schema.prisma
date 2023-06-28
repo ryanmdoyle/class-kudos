@@ -12,21 +12,21 @@ generator client {
 // to create migrations for them and apply to your dev DB.
 
 model User {
-  id                  String     @id @default(uuid())
-  email               String     @unique
+  id                  String       @id @default(uuid())
+  email               String       @unique
   hashedPassword      String
   salt                String
   resetToken          String?
   resetTokenExpiresAt DateTime?
   firstName           String
   lastName            String
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @default(now())
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @default(now())
   roles               UserRole[]
   groupsOwned         Group[]
+  enrollments         Enrollment[]
   // feedback            Feedback[]
   // redeemed            Redeemed[]
-  // enrollments         Enrollment[]
 }
 
 model UserRole {
@@ -39,18 +39,27 @@ model UserRole {
 }
 
 model Group {
-  id          String  @id @default(uuid())
+  id          String       @id @default(uuid())
   name        String
-  description String? @default("")
-  enrollId    String? @unique
-  owner       User    @relation(fields: [ownerId], references: [id])
+  description String?      @default("")
+  enrollId    String?      @unique
+  owner       User         @relation(fields: [ownerId], references: [id])
   ownerId     String
-  archived    Boolean @default(false)
-  // enrollments Enrollment[]
+  archived    Boolean      @default(false)
+  enrollments Enrollment[]
   // behaviors   Behavior[]
   // rewards     Reward[]
   // feedback    Feedback[]
   // redeemed    Redeemed[]
+}
+
+model Enrollment {
+  id      String @id @default(uuid())
+  user    User   @relation(fields: [userId], references: [id])
+  userId  String
+  group   Group  @relation(fields: [groupId], references: [id])
+  groupId String
+  points  Int    @default(0)
 }
 
 // model Feedback {
@@ -97,13 +106,4 @@ model Group {
 //   responsePrompt   String?
 //   group            Group?  @relation(fields: [groupId], references: [id])
 //   groupId          String?
-// }
-
-// model Enrollment {
-//   id      String  @id @default(uuid())
-//   user    User    @relation(fields: [userId], references: [id])
-//   userId  String
-//   group   Group?  @relation(fields: [groupId], references: [id])
-//   groupId String?
-//   points  Int     @default(0)
 // }

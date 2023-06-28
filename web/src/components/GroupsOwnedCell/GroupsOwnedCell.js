@@ -30,7 +30,7 @@ export const Success = ({ groupsOwned }) => {
       <ul className="nes-list is-disc mb-6 pl-4">
         {groupsOwned.map((group) => (
           <li className="mb-2" key={group.id}>
-            <Link to={routes.teacher()}>{group.name}</Link>
+            <Link to={routes.teacherGroup({ id: group.id })}>{group.name}</Link>
           </li>
         ))}
       </ul>

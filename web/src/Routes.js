@@ -17,6 +17,12 @@ import MainLayout from './layouts/MainLayout/MainLayout'
 const Routes = () => {
   return (
     <Router useAuth={useAuth}>
+      <Set wrap={ScaffoldLayout} title="Enrollments" titleTo="enrollments" buttonLabel="New Enrollment" buttonTo="newEnrollment">
+        <Route path="/enrollments/new" page={EnrollmentNewEnrollmentPage} name="newEnrollment" />
+        <Route path="/enrollments/{id}/edit" page={EnrollmentEditEnrollmentPage} name="editEnrollment" />
+        <Route path="/enrollments/{id}" page={EnrollmentEnrollmentPage} name="enrollment" />
+        <Route path="/enrollments" page={EnrollmentEnrollmentsPage} name="enrollments" />
+      </Set>
       <Set wrap={MainLayout}>
         <Route path="/" page={HomePage} name="home" />
         <Route path="/student" page={StudentPage} name="student" />
