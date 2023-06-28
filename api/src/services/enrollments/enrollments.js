@@ -10,6 +10,12 @@ export const enrollment = ({ id }) => {
   })
 }
 
+export const enrolledStudents = ({ id }) => {
+  return db.enrollment.findMany({
+    where: { groupId: id },
+  })
+}
+
 export const createEnrollment = ({ input }) => {
   return db.enrollment.create({
     data: input,

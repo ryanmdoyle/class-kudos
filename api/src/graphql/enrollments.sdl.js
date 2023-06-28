@@ -11,6 +11,7 @@ export const schema = gql`
   type Query {
     enrollments: [Enrollment!]! @requireAuth
     enrollment(id: String!): Enrollment @requireAuth
+    enrolledStudents(id: String!): [Enrollment!]! @requireAuth
   }
 
   input CreateEnrollmentInput {

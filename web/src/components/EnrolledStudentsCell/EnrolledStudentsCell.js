@@ -1,6 +1,6 @@
 export const QUERY = gql`
   query EnrolledStudentsQuery($id: String!) {
-    enrollment(id: $id) {
+    enrolledStudents(id: $id) {
       id
       points
       user {
@@ -21,10 +21,18 @@ export const Failure = ({ error }) => (
 
 export const Success = ({ enrolledStudents }) => {
   return (
-    <ul>
-      {enrolledStudents.map((item) => {
-        return <li key={item.id}>{JSON.stringify(item)}</li>
-      })}
+    <ul className="w-1/3 h-[60%] nes-container with-title pb-3 px-4">
+      <span className="nes-text title relative -top-2">Students</span>
+      <div className="overflow-y-scroll">
+        {enrolledStudents.map((enrollment) => {
+          return (
+            <li key={enrollment.id} className="flex justify-between mb-3">
+              <p className="inline-block">{enrollment.user.firstName}</p>
+              <p className="inline-block mr-2">20</p>
+            </li>
+          )
+        })}
+      </div>
     </ul>
   )
 }

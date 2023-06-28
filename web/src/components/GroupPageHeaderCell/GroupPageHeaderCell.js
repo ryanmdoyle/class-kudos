@@ -19,7 +19,7 @@ export const Failure = ({ error }) => (
 
 export const Success = ({ groupPageHeader }) => {
   return (
-    <div className="nes-container flex justify-between">
+    <div className="nes-container flex justify-between mb-8">
       <div className="flex flex-col">
         <span className="text-2xl">{groupPageHeader.name}</span>
         <span className="text-xs nes-text text-gray-400 hover:text-gray-800">
