@@ -1,4 +1,4 @@
-import { Link, routes, navigate } from '@redwoodjs/router'
+import { Link, routes } from '@redwoodjs/router'
 
 export const QUERY = gql`
   query FindGroupsOwnedQuery($ownerId: String!) {
