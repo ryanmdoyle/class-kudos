@@ -6,6 +6,12 @@ export const groups = () => {
   return db.group.findMany()
 }
 
+export const groupsOwned = ({ ownerId, archived = false }) => {
+  return db.group.findMany({
+    where: { ownerId: ownerId, archived },
+  })
+}
+
 export const group = ({ id }) => {
   return db.group.findUnique({
     where: { id },

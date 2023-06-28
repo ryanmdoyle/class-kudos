@@ -11,6 +11,7 @@ export const schema = gql`
 
   type Query {
     groups: [Group!]! @requireAuth
+    groupsOwned(ownerId: String!, archived: Boolean): [Group!]! @requireAuth
     group(id: String!): Group @requireAuth
   }
 

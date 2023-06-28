@@ -4,7 +4,6 @@ import {
   FieldError,
   Label,
   TextField,
-  CheckboxField,
   Submit,
 } from '@redwoodjs/forms'
 

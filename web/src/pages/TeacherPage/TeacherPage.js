@@ -2,6 +2,7 @@ import { Link, routes, navigate } from '@redwoodjs/router'
 import { MetaTags } from '@redwoodjs/web'
 
 import { useAuth } from 'src/auth'
+import GroupsOwnedCell from 'src/components/GroupsOwnedCell'
 
 const TeacherPage = () => {
   const { currentUser } = useAuth()
@@ -18,19 +19,10 @@ const TeacherPage = () => {
             : 'Welcome!'}
         </h1>
         <div className="px-4 flex flex-col sm:flex-row justify-between">
-          <div className="mb-6 sm:w-1/2">
-            <p>Select a group to start awarding kudos!</p>
-          </div>
           <div className="sm:w-1/2">
-            <ul className="nes-list is-disc mb-6 pl-4">
-              <li className="mb-2">
-                <Link to={routes.newGroup()}>Group 1</Link>
-              </li>
-              <li className="mb-2">Group 1</li>
-              <li className="mb-2">Group 2</li>
-              <li className="mb-2">Group 3</li>
-              <li className="mb-2">Group 4</li>
-            </ul>
+            {currentUser?.id ? (
+              <GroupsOwnedCell ownerId={currentUser?.id} />
+            ) : null}
             <button
               className="nes-btn is-success place-self-end"
               onClick={addGroup}
