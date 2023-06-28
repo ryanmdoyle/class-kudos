@@ -7,6 +7,7 @@ export const schema = gql`
     owner: User!
     ownerId: String!
     archived: Boolean!
+    enrollments: [Enrollment!]
   }
 
   type Query {

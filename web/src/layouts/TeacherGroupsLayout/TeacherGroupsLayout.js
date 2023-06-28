@@ -1,9 +1,11 @@
-import { NavLink, routes } from '@redwoodjs/router'
+import { NavLink, routes, useLocation } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
 
 const TeacherGroupLayout = ({ children, groupId }) => {
   const { isAuthenticated, hasRole } = useAuth()
+  // const { pathname, search, hash } = useLocation()
+  // console.log(pathname)
 
   const HomeButton = () => {
     if (isAuthenticated && !hasRole('TEACHER')) {
@@ -49,6 +51,7 @@ const TeacherGroupLayout = ({ children, groupId }) => {
           <NavLink
             className="nes-btn is-primary"
             activeClassName="is-success"
+            matchSubPaths="true"
             to={routes.teacherGroup({ id: groupId })}
           >
             Feedback

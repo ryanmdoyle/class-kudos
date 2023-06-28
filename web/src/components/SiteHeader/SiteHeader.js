@@ -13,7 +13,6 @@ const SiteHeader = () => {
   const handleLogIn = () => {
     navigate(routes.login())
   }
-  console.log(isAuthenticated)
 
   return (
     <div className="flex justify-between mb-2">

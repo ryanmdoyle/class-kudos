@@ -34,6 +34,7 @@ const Routes = () => {
         <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
         <Route notfound page={NotFoundPage} />
         <Route path="/groups/new" page={GroupNewGroupPage} name="newGroup" />
+        <Route path="/teacher/group/{id}/student/{studentId}" page={TeacherGroupStudentPage} name="teacherGroupStudent" />
       </Set>
       <Set wrap={MainLayout} title="Groups" titleTo="groups" buttonLabel="New Group" buttonTo="newGroup">
         <Route path="/groups/{id}/edit" page={GroupEditGroupPage} name="editGroup" />
