@@ -17,6 +17,12 @@ import MainLayout from './layouts/MainLayout/MainLayout'
 const Routes = () => {
   return (
     <Router useAuth={useAuth}>
+      <Set wrap={ScaffoldLayout} title="Actions" titleTo="actions" buttonLabel="New Action" buttonTo="newAction">
+        <Route path="/actions/new" page={ActionNewActionPage} name="newAction" />
+        <Route path="/actions/{id}/edit" page={ActionEditActionPage} name="editAction" />
+        <Route path="/actions/{id}" page={ActionActionPage} name="action" />
+        <Route path="/actions" page={ActionActionsPage} name="actions" />
+      </Set>
       <Set wrap={ScaffoldLayout} title="Enrollments" titleTo="enrollments" buttonLabel="New Enrollment" buttonTo="newEnrollment">
         <Route path="/enrollments/new" page={EnrollmentNewEnrollmentPage} name="newEnrollment" />
         <Route path="/enrollments/{id}/edit" page={EnrollmentEditEnrollmentPage} name="editEnrollment" />
@@ -28,6 +34,7 @@ const Routes = () => {
         <Route path="/student" page={StudentPage} name="student" />
         <Route path="/teacher" page={TeacherPage} name="teacher" />
         <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
+        <Route path="/teacher/group/{id}/options" page={GroupOptionsPage} name="groupOptions" />
         <Route path="/login" page={LoginPage} name="login" />
         <Route path="/signup" page={SignupPage} name="signup" />
         <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
