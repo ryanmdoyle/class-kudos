@@ -1,6 +1,6 @@
 import { render } from '@redwoodjs/testing/web'
-import { Loading, Empty, Failure, Success } from './GroupPageHeaderCell'
-import { standard } from './GroupPageHeaderCell.mock'
+import { Loading, Empty, Failure, Success } from './TeacherGroupHeaderCell'
+import { standard } from './TeacherGroupHeaderCell.mock'
 
 // Generated boilerplate tests do not account for all circumstances
 // and can fail without adjustments, e.g. Float and DateTime types.
@@ -8,7 +8,7 @@ import { standard } from './GroupPageHeaderCell.mock'
 //        https://redwoodjs.com/docs/testing#testing-cells
 // https://redwoodjs.com/docs/testing#jest-expect-type-considerations
 
-describe('GroupPageHeaderCell', () => {
+describe('TeacherGroupHeaderCell', () => {
   it('renders Loading successfully', () => {
     expect(() => {
       render(<Loading />)
@@ -35,7 +35,7 @@ describe('GroupPageHeaderCell', () => {
 
   it('renders Success successfully', async () => {
     expect(() => {
-      render(<Success groupPageHeader={standard().groupPageHeader} />)
+      render(<Success TeacherGroupHeader={standard().TeacherGroupHeader} />)
     }).not.toThrow()
   })
 })

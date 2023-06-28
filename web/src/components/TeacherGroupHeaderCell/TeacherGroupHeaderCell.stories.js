@@ -1,5 +1,5 @@
-import { Loading, Empty, Failure, Success } from './GroupPageHeaderCell'
-import { standard } from './GroupPageHeaderCell.mock'
+import { Loading, Empty, Failure, Success } from './TeacherGroupHeaderCell'
+import { standard } from './TeacherGroupHeaderCell.mock'
 
 export const loading = () => {
   return Loading ? <Loading /> : <></>
@@ -17,4 +17,4 @@ export const success = (args) => {
   return Success ? <Success {...standard()} {...args} /> : <></>
 }
 
-export default { title: 'Cells/GroupPageHeaderCell' }
+export default { title: 'Cells/TeacherGroupHeaderCell' }

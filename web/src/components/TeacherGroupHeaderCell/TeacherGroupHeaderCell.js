@@ -1,6 +1,6 @@
 export const QUERY = gql`
-  query GroupPageHeaderQuery($id: String!) {
-    groupPageHeader: group(id: $id) {
+  query TeacherGroupHeaderQuery($id: String!) {
+    TeacherGroupHeader: group(id: $id) {
       id
       name
       description
@@ -36,14 +36,14 @@ export const Failure = ({ error }) => (
   <div style={{ color: 'red' }}>Error: {error?.message}</div>
 )
 
-export const Success = ({ groupPageHeader }) => {
-  console.log(groupPageHeader.enrollments)
+export const Success = ({ TeacherGroupHeader }) => {
+  console.log(TeacherGroupHeader.enrollments)
   return (
     <div className="nes-container flex justify-between mb-8">
       <div className="flex flex-col">
-        <span className="text-2xl">{groupPageHeader.name}</span>
+        <span className="text-2xl">{TeacherGroupHeader.name}</span>
         <span className="text-xs nes-text text-gray-400 hover:text-gray-800">
-          Enroll ID: {groupPageHeader.enrollId}
+          Enroll ID: {TeacherGroupHeader.enrollId}
         </span>
       </div>
       <div className="flex">
