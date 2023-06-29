@@ -38,7 +38,7 @@ export const Failure = ({ error }) => (
   <div style={{ color: 'red' }}>Error: {error?.message}</div>
 )
 
-export const Success = ({ actionsOfGroup }) => {
+export const Success = ({ id, actionsOfGroup }) => {
   const [deleteAction] = useMutation(DELETE_ACTION_MUTATION, {
     onCompleted: () => {
       toast.success('Action deleted')
@@ -69,7 +69,7 @@ export const Success = ({ actionsOfGroup }) => {
             <th>Value</th>
             <th className="flex w-full flex-row-reverse">
               <Link
-                to={routes.newAction()}
+                to={routes.teacherGroupNewAction({ id })}
                 className="rw-button rw-button-green nes-button w-[200px]"
               >
                 <div className="rw-button-icon">+</div> Add Action

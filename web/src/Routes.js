@@ -18,34 +18,23 @@ import TeacherLayout from './layouts/TeacherLayout/TeacherLayout'
 const Routes = () => {
   return (
     <Router useAuth={useAuth}>
-      <Set wrap={ScaffoldLayout} title="Actions" titleTo="actions" buttonLabel="New Action" buttonTo="newAction">
-        <Route path="/actions/new" page={ActionNewActionPage} name="newAction" />
-        <Route path="/actions/{id}/edit" page={ActionEditActionPage} name="editAction" />
-        <Route path="/actions/{id}" page={ActionActionPage} name="action" />
-        <Route path="/actions" page={ActionActionsPage} name="actions" />
-      </Set>
-      <Set wrap={ScaffoldLayout} title="Enrollments" titleTo="enrollments" buttonLabel="New Enrollment" buttonTo="newEnrollment">
-        <Route path="/enrollments/new" page={EnrollmentNewEnrollmentPage} name="newEnrollment" />
-        <Route path="/enrollments/{id}/edit" page={EnrollmentEditEnrollmentPage} name="editEnrollment" />
-        <Route path="/enrollments/{id}" page={EnrollmentEnrollmentPage} name="enrollment" />
-        <Route path="/enrollments" page={EnrollmentEnrollmentsPage} name="enrollments" />
-      </Set>
       <Set wrap={MainLayout}>
-        <Route path="/" page={HomePage} name="home" />
-        <Route path="/student" page={StudentPage} name="student" />
         <Route path="/teacher" page={TeacherPage} name="teacher" />
+        <Route path="/student" page={StudentPage} name="student" />
+        <Route path="/" page={HomePage} name="home" />
         <Route path="/login" page={LoginPage} name="login" />
         <Route path="/signup" page={SignupPage} name="signup" />
         <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
         <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
-        <Route notfound page={NotFoundPage} />
         <Route path="/groups/new" page={GroupNewGroupPage} name="newGroup" />
         <Route path="/teacher/group/{id}/student/{studentId}" page={TeacherGroupStudentPage} name="teacherGroupStudent" />
         <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
         <Route path="/teacher/group/{id}/options" page={GroupOptionsPage} name="groupOptions" />
+        <Route path="/teacher/group/{id}/newAction" page={TeacherGroupNewActionPage} name="teacherGroupNewAction" />
         <Route path="/teacher/group/{id}/store" page={GroupStorePage} name="groupStore" />
+        <Route notfound page={NotFoundPage} />
       </Set>
-      <Set wrap={TeacherLayout}></Set>
+      {/* the group models use the scaffolds for frontend.  Make copies, so the scaffolds are only used for admin. */}
       <Set wrap={MainLayout} title="Groups" titleTo="groups" buttonLabel="New Group" buttonTo="newGroup">
         <Route path="/groups/{id}/edit" page={GroupEditGroupPage} name="editGroup" />
         <Route path="/groups/{id}" page={GroupGroupPage} name="group" />
@@ -62,6 +51,18 @@ const Routes = () => {
         <Route path="/users/{id}/edit" page={UserEditUserPage} name="editUser" />
         <Route path="/users/{id}" page={UserUserPage} name="user" />
         <Route path="/users" page={UserUsersPage} name="users" />
+      </Set>
+      <Set wrap={ScaffoldLayout} title="Actions" titleTo="actions" buttonLabel="New Action" buttonTo="newAction">
+        <Route path="/actions/new" page={ActionNewActionPage} name="newAction" />
+        <Route path="/actions/{id}/edit" page={ActionEditActionPage} name="editAction" />
+        <Route path="/actions/{id}" page={ActionActionPage} name="action" />
+        <Route path="/actions" page={ActionActionsPage} name="actions" />
+      </Set>
+      <Set wrap={ScaffoldLayout} title="Enrollments" titleTo="enrollments" buttonLabel="New Enrollment" buttonTo="newEnrollment">
+        <Route path="/enrollments/new" page={EnrollmentNewEnrollmentPage} name="newEnrollment" />
+        <Route path="/enrollments/{id}/edit" page={EnrollmentEditEnrollmentPage} name="editEnrollment" />
+        <Route path="/enrollments/{id}" page={EnrollmentEnrollmentPage} name="enrollment" />
+        <Route path="/enrollments" page={EnrollmentEnrollmentsPage} name="enrollments" />
       </Set>
     </Router>
   )
