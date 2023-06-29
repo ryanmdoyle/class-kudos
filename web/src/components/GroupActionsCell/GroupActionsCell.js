@@ -1,7 +1,9 @@
 export const QUERY = gql`
-  query GroupActionsQuery {
-    groupActions {
+  query GroupActionsQuery($id: String!) {
+    actionsOfGroup(id: $id) {
       id
+      name
+      value
     }
   }
 `
@@ -14,12 +16,14 @@ export const Failure = ({ error }) => (
   <div style={{ color: 'red' }}>Error: {error?.message}</div>
 )
 
-export const Success = ({ groupActions }) => {
+export const Success = ({ actionsOfGroup }) => {
   return (
     <ul>
-      {groupActions.map((item) => {
-        return <li key={item.id}>{JSON.stringify(item)}</li>
-      })}
+      {actionsOfGroup.map((group) => (
+        <li key={group.id}>
+          {group.name} {group.value}
+        </li>
+      ))}
     </ul>
   )
 }
