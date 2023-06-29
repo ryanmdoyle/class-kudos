@@ -3,7 +3,7 @@ import { MetaTags } from '@redwoodjs/web'
 
 import TeacherLayout from 'src/layouts/TeacherLayout/TeacherLayout'
 
-const GroupStorePage = ({ id }) => {
+const TeacherGroupStorePage = ({ id }) => {
   return (
     <>
       <MetaTags title="GroupStore" description="GroupStore page" />
@@ -14,4 +14,4 @@ const GroupStorePage = ({ id }) => {
   )
 }
 
-export default GroupStorePage
+export default TeacherGroupStorePage

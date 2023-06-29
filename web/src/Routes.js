@@ -31,7 +31,7 @@ const Routes = () => {
         <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
         <Route path="/teacher/group/{id}/options" page={TeacherGroupOptionsPage} name="groupOptions" />
         <Route path="/teacher/group/{id}/newAction" page={TeacherGroupNewActionPage} name="teacherGroupNewAction" />
-        <Route path="/teacher/group/{id}/store" page={GroupStorePage} name="groupStore" />
+        <Route path="/teacher/group/{id}/store" page={TeacherGroupStorePage} name="groupStore" />
         <Route notfound page={NotFoundPage} />
       </Set>
       {/* the group models use the scaffolds for frontend.  Make copies, so the scaffolds are only used for admin. */}

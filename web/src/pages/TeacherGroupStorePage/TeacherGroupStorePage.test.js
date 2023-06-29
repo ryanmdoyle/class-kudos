@@ -1,14 +1,14 @@
 import { render } from '@redwoodjs/testing/web'
 
-import GroupStorePage from './GroupStorePage'
+import TeacherGroupStorePage from './TeacherGroupStorePage'
 
 //   Improve this test with help from the Redwood Testing Doc:
 //   https://redwoodjs.com/docs/testing#testing-pages-layouts
 
-describe('GroupStorePage', () => {
+describe('TeacherGroupStorePage', () => {
   it('renders successfully', () => {
     expect(() => {
-      render(<GroupStorePage />)
+      render(<TeacherGroupStorePage />)
     }).not.toThrow()
   })
 })
