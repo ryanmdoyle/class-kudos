@@ -3,7 +3,7 @@ import { MetaTags } from '@redwoodjs/web'
 
 import EnrolledStudentsCell from 'src/components/EnrolledStudentsCell/EnrolledStudentsCell'
 import TeacherGroupHeaderCell from 'src/components/TeacherGroupHeaderCell/TeacherGroupHeaderCell'
-import TeacherGroupLayout from 'src/layouts/TeacherGroupsLayout/TeacherGroupsLayout'
+import TeacherLayout from 'src/layouts/TeacherLayout/TeacherLayout'
 
 const TeacherGroupStudentPage = ({ id, studentId }) => {
   return (
@@ -13,7 +13,7 @@ const TeacherGroupStudentPage = ({ id, studentId }) => {
         description="TeacherGroupStudent page"
       />
 
-      <TeacherGroupLayout groupId={id}>
+      <TeacherLayout groupId={id}>
         <TeacherGroupHeaderCell id={id} />
         <div className="flex gap-4 w-[100%] h-[60%]">
           <div className="w-1/3">
@@ -32,7 +32,7 @@ const TeacherGroupStudentPage = ({ id, studentId }) => {
             </div>
           </div>
         </div>
-      </TeacherGroupLayout>
+      </TeacherLayout>
     </>
   )
 }

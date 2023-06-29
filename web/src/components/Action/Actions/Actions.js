@@ -39,10 +39,10 @@ const ActionsList = ({ actions }) => {
       <table className="rw-table">
         <thead>
           <tr>
-            <th>Id</th>
+            {/* <th>Id</th> */}
             <th>Name</th>
             <th>Value</th>
-            <th>Group id</th>
+            {/* <th>Group id</th> */}
             <th>&nbsp;</th>
           </tr>
         </thead>
@@ -58,21 +58,21 @@ const ActionsList = ({ actions }) => {
                   <Link
                     to={routes.action({ id: action.id })}
                     title={'Show action ' + action.id + ' detail'}
-                    className="rw-button rw-button-small"
+                    className="ml-3 rw-button rw-button-small"
                   >
                     Show
                   </Link>
                   <Link
                     to={routes.editAction({ id: action.id })}
                     title={'Edit action ' + action.id}
-                    className="rw-button rw-button-small rw-button-blue"
+                    className="ml-3 rw-button rw-button-small rw-button-blue"
                   >
                     Edit
                   </Link>
                   <button
                     type="button"
                     title={'Delete action ' + action.id}
-                    className="rw-button rw-button-small rw-button-red"
+                    className="ml-3 rw-button rw-button-small rw-button-red"
                     onClick={() => onDeleteClick(action.id)}
                   >
                     Delete

@@ -4,6 +4,12 @@ export const actions = () => {
   return db.action.findMany()
 }
 
+export const actionsOfGroup = ({ id }) => {
+  return db.action.findMany({
+    where: { groupId: id },
+  })
+}
+
 export const action = ({ id }) => {
   return db.action.findUnique({
     where: { id },

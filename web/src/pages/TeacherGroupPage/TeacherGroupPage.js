@@ -3,14 +3,14 @@ import { MetaTags } from '@redwoodjs/web'
 import EnrolledStudentsCell from 'src/components/EnrolledStudentsCell/EnrolledStudentsCell'
 import TeacherGroupHeaderCell from 'src/components/TeacherGroupHeaderCell/TeacherGroupHeaderCell'
 // import EnrolledStudentActivityLayout from 'src/layouts/EnrolledStudentActivityLayout/EnrolledStudentActivityLayout'
-import TeacherGroupLayout from 'src/layouts/TeacherGroupsLayout/TeacherGroupsLayout'
+import TeacherLayout from 'src/layouts/TeacherLayout/TeacherLayout'
 
 const TeacherGroupPage = ({ id }) => {
   return (
     <>
       <MetaTags title="TeacherGroup" description="TeacherGroup page" />
 
-      <TeacherGroupLayout groupId={id}>
+      <TeacherLayout groupId={id}>
         <TeacherGroupHeaderCell id={id} />
         <div className="flex gap-4 w-[100%] h-[60%]">
           <div className="w-1/3">
@@ -20,7 +20,7 @@ const TeacherGroupPage = ({ id }) => {
             {`<- Select a student to get started.`}
           </div>
         </div>
-      </TeacherGroupLayout>
+      </TeacherLayout>
     </>
   )
 }

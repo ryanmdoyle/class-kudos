@@ -2,7 +2,7 @@ import { NavLink, routes, useLocation } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
 
-const TeacherGroupLayout = ({ children, groupId }) => {
+const TeacherLayout = ({ children, groupId }) => {
   const { isAuthenticated, hasRole } = useAuth()
   // const { pathname, search, hash } = useLocation()
   // console.log(pathname)
@@ -70,7 +70,7 @@ const TeacherGroupLayout = ({ children, groupId }) => {
           <NavLink
             className="nes-btn is-primary"
             activeClassName="is-success"
-            to={routes.home()}
+            to={routes.groupOptions({ id: groupId })}
           >
             Options
           </NavLink>
@@ -81,4 +81,4 @@ const TeacherGroupLayout = ({ children, groupId }) => {
   )
 }
 
-export default TeacherGroupLayout
+export default TeacherLayout
