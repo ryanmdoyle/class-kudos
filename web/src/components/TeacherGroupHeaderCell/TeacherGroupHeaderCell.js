@@ -37,7 +37,6 @@ export const Failure = ({ error }) => (
 )
 
 export const Success = ({ TeacherGroupHeader }) => {
-  console.log(TeacherGroupHeader.enrollments)
   return (
     <div className="nes-container flex justify-between mb-8">
       <div className="flex flex-col">

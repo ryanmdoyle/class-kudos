@@ -13,6 +13,7 @@ import ScaffoldLayout from 'src/layouts/ScaffoldLayout'
 
 import { useAuth } from './auth'
 import MainLayout from './layouts/MainLayout/MainLayout'
+import TeacherLayout from './layouts/TeacherLayout/TeacherLayout'
 
 const Routes = () => {
   return (
@@ -33,8 +34,6 @@ const Routes = () => {
         <Route path="/" page={HomePage} name="home" />
         <Route path="/student" page={StudentPage} name="student" />
         <Route path="/teacher" page={TeacherPage} name="teacher" />
-        <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
-        <Route path="/teacher/group/{id}/options" page={GroupOptionsPage} name="groupOptions" />
         <Route path="/login" page={LoginPage} name="login" />
         <Route path="/signup" page={SignupPage} name="signup" />
         <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
@@ -42,7 +41,11 @@ const Routes = () => {
         <Route notfound page={NotFoundPage} />
         <Route path="/groups/new" page={GroupNewGroupPage} name="newGroup" />
         <Route path="/teacher/group/{id}/student/{studentId}" page={TeacherGroupStudentPage} name="teacherGroupStudent" />
+        <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
+        <Route path="/teacher/group/{id}/options" page={GroupOptionsPage} name="groupOptions" />
+        <Route path="/teacher/group/{id}/store" page={GroupStorePage} name="groupStore" />
       </Set>
+      <Set wrap={TeacherLayout}></Set>
       <Set wrap={MainLayout} title="Groups" titleTo="groups" buttonLabel="New Group" buttonTo="newGroup">
         <Route path="/groups/{id}/edit" page={GroupEditGroupPage} name="editGroup" />
         <Route path="/groups/{id}" page={GroupGroupPage} name="group" />

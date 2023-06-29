@@ -5,7 +5,7 @@ import { toast } from '@redwoodjs/web/toast'
 import { QUERY } from 'src/components/Action/ActionsCell'
 import { truncate } from 'src/lib/formatters'
 
-const DELETE_ACTION_MUTATION = gql`
+export const DELETE_ACTION_MUTATION = gql`
   mutation DeleteActionMutation($id: String!) {
     deleteAction(id: $id) {
       id
@@ -39,10 +39,10 @@ const ActionsList = ({ actions }) => {
       <table className="rw-table">
         <thead>
           <tr>
-            {/* <th>Id</th> */}
+            <th>Id</th>
             <th>Name</th>
             <th>Value</th>
-            {/* <th>Group id</th> */}
+            <th>Group id</th>
             <th>&nbsp;</th>
           </tr>
         </thead>

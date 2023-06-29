@@ -1,6 +1,7 @@
 import { NavLink, routes, useLocation } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
+import TeacherGroupHeaderCell from 'src/components/TeacherGroupHeaderCell/TeacherGroupHeaderCell'
 
 const TeacherLayout = ({ children, groupId }) => {
   const { isAuthenticated, hasRole } = useAuth()
@@ -61,7 +62,7 @@ const TeacherLayout = ({ children, groupId }) => {
           <NavLink
             className="nes-btn is-primary"
             activeClassName="is-success"
-            to={routes.home()}
+            to={routes.groupStore({ id: groupId })}
           >
             Store
           </NavLink>
@@ -76,6 +77,7 @@ const TeacherLayout = ({ children, groupId }) => {
           </NavLink>
         </button>
       </div>
+      <TeacherGroupHeaderCell id={groupId} />
       {children}
     </>
   )
