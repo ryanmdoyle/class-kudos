@@ -1,8 +1,7 @@
-import { navigate, routes } from '@redwoodjs/router'
+import { Link, navigate, routes } from '@redwoodjs/router'
 import { useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
 
-import GroupForm from 'src/components/Group/GroupForm'
 import TeacherNewGroupForm from 'src/components/TeacherNewGroupForm/TeacherNewGroupForm'
 
 const CREATE_GROUP_MUTATION = gql`
@@ -35,8 +34,8 @@ const TeacherNewGroup = () => {
       <header className="rw-segment-header">
         <h2 className="rw-heading rw-heading-secondary">New Group</h2>
       </header>
+      <Link to={routes.teacher()} className="nes-btn">{`<- Back Home`}</Link>
       <div className="rw-segment-main">
-        {/* <GroupForm onSave={onSave} loading={loading} error={error} /> */}
         <TeacherNewGroupForm onSave={onSave} loading={loading} error={error} />
       </div>
     </div>

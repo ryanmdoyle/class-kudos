@@ -100,7 +100,10 @@ const TeacherNewGroupForm = (props) => {
         <FieldError name="archived" className="rw-field-error" /> */}
 
         <div className="rw-button-group">
-          <Submit disabled={props.loading} className="rw-button rw-button-blue">
+          <Submit
+            disabled={props.loading}
+            className="nes-btn is-success h-[40px]"
+          >
             Save
           </Submit>
         </div>
