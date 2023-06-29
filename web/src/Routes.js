@@ -18,6 +18,12 @@ import TeacherLayout from './layouts/TeacherLayout/TeacherLayout'
 const Routes = () => {
   return (
     <Router useAuth={useAuth}>
+      <Set wrap={ScaffoldLayout} title="Feedbacks" titleTo="feedbacks" buttonLabel="New Feedback" buttonTo="newFeedback">
+        <Route path="/feedbacks/new" page={FeedbackNewFeedbackPage} name="newFeedback" />
+        <Route path="/feedbacks/{id}/edit" page={FeedbackEditFeedbackPage} name="editFeedback" />
+        <Route path="/feedbacks/{id}" page={FeedbackFeedbackPage} name="feedback" />
+        <Route path="/feedbacks" page={FeedbackFeedbacksPage} name="feedbacks" />
+      </Set>
       <Set wrap={MainLayout}>
         <Route path="/teacher" page={TeacherPage} name="teacher" />
         <Route path="/student" page={StudentPage} name="student" />

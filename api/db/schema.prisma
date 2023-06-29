@@ -25,7 +25,7 @@ model User {
   roles               UserRole[]
   groupsOwned         Group[]
   enrollments         Enrollment[]
-  // feedback            Feedback[]
+  feedback            Feedback[]
   // redeemed            Redeemed[]
 }
 
@@ -48,8 +48,8 @@ model Group {
   archived    Boolean      @default(false)
   enrollments Enrollment[]
   actions     Action[]
+  feedback    Feedback[]
   // rewards     Reward[]
-  // feedback    Feedback[]
   // redeemed    Redeemed[]
 }
 
@@ -68,21 +68,18 @@ model Action {
   value   Int
   group   Group  @relation(fields: [groupId], references: [id])
   groupId String
-  // feedback Feedback[]
 }
 
-// model Feedback {
-//   id         String    @id @default(uuid())
-//   createdAt  DateTime  @default(now())
-//   name       String    @default("Feedback")
-//   value      Int       @default(1)
-//   user       User      @relation(fields: [userId], references: [id])
-//   userId     String
-//   Action   Action? @relation(fields: [ActionId], references: [id])
-//   ActionId String?
-//   group      Group?    @relation(fields: [groupId], references: [id])
-//   groupId    String?
-// }
+model Feedback {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  name      String   @default("Feedback")
+  value     Int      @default(1)
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  group     Group?   @relation(fields: [groupId], references: [id])
+  groupId   String?
+}
 
 // model Redeemed {
 //   id         String    @id @default(uuid())
