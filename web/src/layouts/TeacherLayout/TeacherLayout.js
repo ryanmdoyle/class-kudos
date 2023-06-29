@@ -62,7 +62,7 @@ const TeacherLayout = ({ children, groupId }) => {
           <NavLink
             className="nes-btn is-primary"
             activeClassName="is-success"
-            to={routes.groupStore({ id: groupId })}
+            to={routes.teacherGroupStore({ id: groupId })}
           >
             Store
           </NavLink>
@@ -71,7 +71,7 @@ const TeacherLayout = ({ children, groupId }) => {
           <NavLink
             className="nes-btn is-primary"
             activeClassName="is-success"
-            to={routes.groupOptions({ id: groupId })}
+            to={routes.teacherGroupOptions({ id: groupId })}
           >
             Options
           </NavLink>
