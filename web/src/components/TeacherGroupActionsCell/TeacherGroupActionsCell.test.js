@@ -1,6 +1,7 @@
 import { render } from '@redwoodjs/testing/web'
-import { Loading, Empty, Failure, Success } from './TeadcherGroupActionsCell'
-import { standard } from './TeadcherGroupActionsCell.mock'
+
+import { Loading, Empty, Failure, Success } from './TeacherGroupActionsCell'
+import { standard } from './TeacherGroupActionsCell.mock'
 
 // Generated boilerplate tests do not account for all circumstances
 // and can fail without adjustments, e.g. Float and DateTime types.
@@ -8,7 +9,7 @@ import { standard } from './TeadcherGroupActionsCell.mock'
 //        https://redwoodjs.com/docs/testing#testing-cells
 // https://redwoodjs.com/docs/testing#jest-expect-type-considerations
 
-describe('TeadcherGroupActionsCell', () => {
+describe('TeacherGroupActionsCell', () => {
   it('renders Loading successfully', () => {
     expect(() => {
       render(<Loading />)

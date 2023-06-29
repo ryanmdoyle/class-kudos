@@ -1,7 +1,7 @@
 import { Link, routes } from '@redwoodjs/router'
 import { MetaTags } from '@redwoodjs/web'
 
-import TeadcherGroupActionsCell from 'src/components/TeadcherGroupActionsCell/TeadcherGroupActionsCell'
+import TeacherGroupActionsCell from 'src/components/TeacherGroupActionsCell/TeacherGroupActionsCell'
 import TeacherLayout from 'src/layouts/TeacherLayout/TeacherLayout'
 
 const GroupOptionsPage = ({ id }) => {
@@ -9,7 +9,7 @@ const GroupOptionsPage = ({ id }) => {
     <>
       <MetaTags title="GroupOptions" description="GroupOptions page" />
       <TeacherLayout groupId={id}></TeacherLayout>
-      <TeadcherGroupActionsCell id={id} />
+      <TeacherGroupActionsCell id={id} />
     </>
   )
 }
