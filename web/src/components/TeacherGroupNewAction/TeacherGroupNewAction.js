@@ -17,7 +17,7 @@ const TeacherGroupNewAction = ({ groupId }) => {
     CREATE_ACTION_MUTATION,
     {
       onCompleted: () => {
-        navigate(routes.groupOptions({ id: groupId }))
+        navigate(routes.teacherGroupOptions({ id: groupId }))
         toast.success('Action created')
       },
       onError: (error) => {
