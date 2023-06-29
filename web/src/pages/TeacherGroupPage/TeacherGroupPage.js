@@ -1,6 +1,6 @@
 import { MetaTags } from '@redwoodjs/web'
 
-import EnrolledStudentsCell from 'src/components/EnrolledStudentsCell/EnrolledStudentsCell'
+import TeacherGroupEnrolledCell from 'src/components/TeacherGroupEnrolledCell/TeacherGroupEnrolledCell'
 import TeacherLayout from 'src/layouts/TeacherLayout/TeacherLayout'
 
 const TeacherGroupPage = ({ id }) => {
@@ -11,7 +11,7 @@ const TeacherGroupPage = ({ id }) => {
       <TeacherLayout groupId={id}>
         <div className="flex gap-4 w-[100%] h-[60%]">
           <div className="w-1/3">
-            <EnrolledStudentsCell id={id} />
+            <TeacherGroupEnrolledCell id={id} />
           </div>
           <div className="w-2/3 nes-container">
             {`<- Select a student to get started.`}

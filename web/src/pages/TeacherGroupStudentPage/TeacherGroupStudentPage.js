@@ -1,7 +1,7 @@
 import { Link, routes } from '@redwoodjs/router'
 import { MetaTags } from '@redwoodjs/web'
 
-import EnrolledStudentsCell from 'src/components/EnrolledStudentsCell/EnrolledStudentsCell'
+import TeacherGroupEnrolledCell from 'src/components/TeacherGroupEnrolledCell/TeacherGroupEnrolledCell'
 import TeacherLayout from 'src/layouts/TeacherLayout/TeacherLayout'
 
 const TeacherGroupStudentPage = ({ id, studentId }) => {
@@ -15,7 +15,7 @@ const TeacherGroupStudentPage = ({ id, studentId }) => {
       <TeacherLayout groupId={id}>
         <div className="flex gap-4 w-[100%] h-[60%]">
           <div className="w-1/3">
-            <EnrolledStudentsCell id={id} />
+            <TeacherGroupEnrolledCell id={id} />
           </div>
           <div className="flex flex-col gap-4 w-2/3">
             <div className="nes-container with-title h-1/2">
