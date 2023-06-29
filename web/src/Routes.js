@@ -29,7 +29,7 @@ const Routes = () => {
         <Route path="/groups/new" page={GroupNewGroupPage} name="newGroup" />
         <Route path="/teacher/group/{id}/student/{studentId}" page={TeacherGroupStudentPage} name="teacherGroupStudent" />
         <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
-        <Route path="/teacher/group/{id}/options" page={GroupOptionsPage} name="groupOptions" />
+        <Route path="/teacher/group/{id}/options" page={TeacherGroupOptionsPage} name="groupOptions" />
         <Route path="/teacher/group/{id}/newAction" page={TeacherGroupNewActionPage} name="teacherGroupNewAction" />
         <Route path="/teacher/group/{id}/store" page={GroupStorePage} name="groupStore" />
         <Route notfound page={NotFoundPage} />

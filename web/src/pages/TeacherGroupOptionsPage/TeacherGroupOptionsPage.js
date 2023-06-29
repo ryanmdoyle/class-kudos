@@ -3,7 +3,7 @@ import { MetaTags } from '@redwoodjs/web'
 import TeacherGroupActionsCell from 'src/components/TeacherGroupActionsCell/TeacherGroupActionsCell'
 import TeacherLayout from 'src/layouts/TeacherLayout/TeacherLayout'
 
-const GroupOptionsPage = ({ id }) => {
+const TeacherGroupOptionsPage = ({ id }) => {
   return (
     <>
       <MetaTags title="GroupOptions" description="GroupOptions page" />
@@ -13,4 +13,4 @@ const GroupOptionsPage = ({ id }) => {
   )
 }
 
-export default GroupOptionsPage
+export default TeacherGroupOptionsPage
