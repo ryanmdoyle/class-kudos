@@ -1,8 +1,5 @@
-import { navigate, routes } from '@redwoodjs/router'
 import { useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
-
-import FeedbackForm from 'src/components/Feedback/FeedbackForm'
 
 const CREATE_FEEDBACK_MUTATION = gql`
   mutation CreateFeedbackMutation($input: CreateFeedbackInput!) {

@@ -26,9 +26,17 @@ export const schema = gql`
     points: Int
   }
 
+  input UpdateEnrollmentPointsInput {
+    userId: String
+    groupId: String
+    updateValue: Int
+  }
+
   type Mutation {
     createEnrollment(input: CreateEnrollmentInput!): Enrollment! @requireAuth
     updateEnrollment(id: String!, input: UpdateEnrollmentInput!): Enrollment!
+      @requireAuth
+    updateEnrollmentPoints(input: UpdateEnrollmentPointsInput!): Enrollment!
       @requireAuth
     deleteEnrollment(id: String!): Enrollment! @requireAuth
   }

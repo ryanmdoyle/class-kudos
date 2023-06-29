@@ -19,7 +19,7 @@ export const schema = gql`
     name: String!
     value: Int!
     userId: String!
-    groupId: String
+    groupId: String!
   }
 
   input UpdateFeedbackInput {

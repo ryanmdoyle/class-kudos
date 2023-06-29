@@ -29,6 +29,39 @@ export const updateEnrollment = ({ id, input }) => {
   })
 }
 
+export const updateEnrollmentPoints = async ({
+  userId,
+  groupId,
+  updateValue,
+}) => {
+  const groupEnrollment = await db.enrollment.findFirst({
+    where: {
+      AND: [
+        {
+          userId: {
+            equals: userId,
+          },
+        },
+        {
+          groupId: {
+            equals: groupId,
+          },
+        },
+      ],
+    },
+  })
+  return db.enrollment.update({
+    where: {
+      id: groupEnrollment.id,
+    },
+    data: {
+      points: {
+        increment: updateValue,
+      },
+    },
+  })
+}
+
 export const deleteEnrollment = ({ id }) => {
   return db.enrollment.delete({
     where: { id },
