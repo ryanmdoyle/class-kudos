@@ -4,10 +4,13 @@ export const schema = gql`
     name: String!
     description: String
     enrollId: String
+    awardedPoints: Int!
     owner: User!
     ownerId: String!
     archived: Boolean!
-    enrollments: [Enrollment!]
+    enrollments: [Enrollment]!
+    actions: [Action]!
+    feedback: [Feedback]!
   }
 
   type Query {
@@ -20,6 +23,7 @@ export const schema = gql`
     name: String!
     description: String
     enrollId: String
+    awardedPoints: Int!
     ownerId: String!
     archived: Boolean!
   }
@@ -28,6 +32,7 @@ export const schema = gql`
     name: String
     description: String
     enrollId: String
+    awardedPoints: Int
     ownerId: String
     archived: Boolean
   }

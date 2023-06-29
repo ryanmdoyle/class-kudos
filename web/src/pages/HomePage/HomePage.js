@@ -1,7 +1,14 @@
-import { Link, routes } from '@redwoodjs/router'
+import { Link, routes, navigate } from '@redwoodjs/router'
 import { MetaTags } from '@redwoodjs/web'
 
+import { useAuth } from 'src/auth'
+
 const HomePage = () => {
+  const { isAuthenticated, hasRole } = useAuth()
+
+  if (isAuthenticated) {
+    hasRole('TEACHER') ? navigate(routes.teacher()) : navigate(routes.teacher())
+  }
   return (
     <>
       <MetaTags title="Home" description="Home page" />

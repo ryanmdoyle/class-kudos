@@ -45,4 +45,13 @@ export const Group = {
   owner: (_obj, { root }) => {
     return db.group.findUnique({ where: { id: root?.id } }).owner()
   },
+  enrollments: (_obj, { root }) => {
+    return db.group.findUnique({ where: { id: root?.id } }).enrollments()
+  },
+  actions: (_obj, { root }) => {
+    return db.group.findUnique({ where: { id: root?.id } }).actions()
+  },
+  feedback: (_obj, { root }) => {
+    return db.group.findUnique({ where: { id: root?.id } }).feedback()
+  },
 }

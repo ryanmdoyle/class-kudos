@@ -43,6 +43,7 @@ const GroupsList = ({ groups }) => {
             <th>Name</th>
             <th>Description</th>
             <th>Enroll id</th>
+            <th>Awarded points</th>
             <th>Owner id</th>
             <th>Archived</th>
             <th>&nbsp;</th>
@@ -55,6 +56,7 @@ const GroupsList = ({ groups }) => {
               <td>{truncate(group.name)}</td>
               <td>{truncate(group.description)}</td>
               <td>{truncate(group.enrollId)}</td>
+              <td>{truncate(group.awardedPoints)}</td>
               <td>{truncate(group.ownerId)}</td>
               <td>{checkboxInputTag(group.archived)}</td>
               <td>

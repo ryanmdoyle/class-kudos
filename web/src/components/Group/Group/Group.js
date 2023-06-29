@@ -56,6 +56,10 @@ const Group = ({ group }) => {
               <td>{group.enrollId}</td>
             </tr>
             <tr>
+              <th>Awarded points</th>
+              <td>{group.awardedPoints}</td>
+            </tr>
+            <tr>
               <th>Owner id</th>
               <td>{group.ownerId}</td>
             </tr>

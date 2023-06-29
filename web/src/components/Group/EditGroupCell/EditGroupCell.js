@@ -12,6 +12,7 @@ export const QUERY = gql`
       name
       description
       enrollId
+      awardedPoints
       ownerId
       archived
     }
@@ -24,6 +25,7 @@ const UPDATE_GROUP_MUTATION = gql`
       name
       description
       enrollId
+      awardedPoints
       ownerId
       archived
     }

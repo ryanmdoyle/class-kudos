@@ -39,16 +39,17 @@ model UserRole {
 }
 
 model Group {
-  id          String       @id @default(uuid())
-  name        String
-  description String?      @default("")
-  enrollId    String?      @unique
-  owner       User         @relation(fields: [ownerId], references: [id])
-  ownerId     String
-  archived    Boolean      @default(false)
-  enrollments Enrollment[]
-  actions     Action[]
-  feedback    Feedback[]
+  id            String       @id @default(uuid())
+  name          String
+  description   String?      @default("")
+  enrollId      String?      @unique
+  awardedPoints Int          @default(0)
+  owner         User         @relation(fields: [ownerId], references: [id])
+  ownerId       String
+  archived      Boolean      @default(false)
+  enrollments   Enrollment[]
+  actions       Action[]
+  feedback      Feedback[]
   // rewards     Reward[]
   // redeemed    Redeemed[]
 }

@@ -7,7 +7,7 @@ import GroupsOwnedCell from 'src/components/GroupsOwnedCell'
 const TeacherPage = () => {
   const { currentUser } = useAuth()
 
-  const addGroup = () => navigate(routes.newGroup())
+  const addGroup = () => navigate(routes.teacherNewGroup())
 
   return (
     <>

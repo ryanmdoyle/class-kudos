@@ -12,18 +12,20 @@ const CREATE_GROUP_MUTATION = gql`
   }
 `
 
-const NewGroup = () => {
+const TeacherNewGroup = () => {
   const [createGroup, { loading, error }] = useMutation(CREATE_GROUP_MUTATION, {
     onCompleted: () => {
-      toast.success('Group created')
-      navigate(routes.groups())
+      navigate(routes.teacher())
+      toast.success('Group created!')
     },
     onError: (error) => {
+      navigate(routes.teacher())
       toast.error(error.message)
     },
   })
 
   const onSave = (input) => {
+    input.awardedPoints = 0
     createGroup({ variables: { input } })
   }
 
@@ -39,4 +41,4 @@ const NewGroup = () => {
   )
 }
 
-export default NewGroup
+export default TeacherNewGroup

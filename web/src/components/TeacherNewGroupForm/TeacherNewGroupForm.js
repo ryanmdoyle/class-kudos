@@ -4,18 +4,23 @@ import {
   FieldError,
   Label,
   TextField,
-  NumberField,
-  CheckboxField,
   Submit,
 } from '@redwoodjs/forms'
 
-const GroupForm = (props) => {
+import { useAuth } from 'src/auth'
+
+const TeacherNewGroupForm = (props) => {
+  const { currentUser, isAuthenticated } = useAuth()
+
   const onSubmit = (data) => {
+    data.archived = false
+    data.ownerId = currentUser.id
     props.onSave(data, props?.group?.id)
   }
 
   return (
     <div className="rw-form-wrapper">
+      {isAuthenticated ? <p>{currentUser?.email}</p> : <p>logged out</p>}
       <Form onSubmit={onSubmit} error={props.error}>
         <FormError
           error={props.error}
@@ -59,42 +64,7 @@ const GroupForm = (props) => {
 
         <FieldError name="description" className="rw-field-error" />
 
-        <Label
-          name="enrollId"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Enroll id
-        </Label>
-
-        <TextField
-          name="enrollId"
-          defaultValue={props.group?.enrollId}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-        />
-
-        <FieldError name="enrollId" className="rw-field-error" />
-
-        <Label
-          name="awardedPoints"
-          className="rw-label"
-          errorClassName="rw-label rw-label-error"
-        >
-          Awarded points
-        </Label>
-
-        <NumberField
-          name="awardedPoints"
-          defaultValue={props.group?.awardedPoints}
-          className="rw-input"
-          errorClassName="rw-input rw-input-error"
-          validation={{ required: true }}
-        />
-
-        <FieldError name="awardedPoints" className="rw-field-error" />
-
-        <Label
+        {/* <Label
           name="ownerId"
           className="rw-label"
           errorClassName="rw-label rw-label-error"
@@ -110,9 +80,9 @@ const GroupForm = (props) => {
           validation={{ required: true }}
         />
 
-        <FieldError name="ownerId" className="rw-field-error" />
+        <FieldError name="ownerId" className="rw-field-error" /> */}
 
-        <Label
+        {/* <Label
           name="archived"
           className="rw-label"
           errorClassName="rw-label rw-label-error"
@@ -127,7 +97,7 @@ const GroupForm = (props) => {
           errorClassName="rw-input rw-input-error"
         />
 
-        <FieldError name="archived" className="rw-field-error" />
+        <FieldError name="archived" className="rw-field-error" /> */}
 
         <div className="rw-button-group">
           <Submit disabled={props.loading} className="rw-button rw-button-blue">
@@ -139,4 +109,4 @@ const GroupForm = (props) => {
   )
 }
 
-export default GroupForm
+export default TeacherNewGroupForm
