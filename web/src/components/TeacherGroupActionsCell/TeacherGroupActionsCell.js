@@ -2,7 +2,7 @@ import { Link, routes } from '@redwoodjs/router'
 import { useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
 
-import { DELETE_ACTION_MUTATION } from 'src/components/Action/Actions'
+// import { DELETE_ACTION_MUTATION } from 'src/components/Action/Actions'
 import { truncate } from 'src/lib/formatters'
 
 export const QUERY = gql`
@@ -15,13 +15,13 @@ export const QUERY = gql`
   }
 `
 
-// const DELETE_ACTION_MUTATION = gql`
-//   mutation DeleteActionMutation($id: String!) {
-//     deleteAction(id: $id) {
-//       id
-//     }
-//   }
-// `
+const DELETE_ACTION_MUTATION = gql`
+  mutation DeleteActionMutation($id: String!) {
+    deleteAction(id: $id) {
+      id
+    }
+  }
+`
 
 export const Loading = () => <div>Loading...</div>
 
@@ -49,12 +49,12 @@ export const Success = ({ id, actionsOfGroup }) => {
     // This refetches the query on the list page. Read more about other ways to
     // update the cache over here:
     // https://www.apollographql.com/docs/react/data/mutations/#making-all-other-cache-updates
-    refetchQueries: [{ query: QUERY }],
+    refetchQueries: [{ query: QUERY, variables: { id } }],
     awaitRefetchQueries: true,
   })
 
   const onDeleteClick = (id) => {
-    if (confirm('Are you sure you want to delete action ' + id + '?')) {
+    if (confirm('Are you sure you want to delete action?')) {
       deleteAction({ variables: { id } })
     }
   }

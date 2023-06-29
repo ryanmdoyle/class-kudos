@@ -30,6 +30,7 @@ export const updateAction = ({ id, input }) => {
 }
 
 export const deleteAction = ({ id }) => {
+  console.log('\n\n\n\n\n\n\n\nDB DELETE HEEEEEERRRRREEEEE', id)
   return db.action.delete({
     where: { id },
   })
