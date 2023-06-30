@@ -1,4 +1,4 @@
-import { Link, routes } from '@redwoodjs/router'
+import { NavLink, routes } from '@redwoodjs/router'
 
 export const QUERY = gql`
   query EnrolledStudentsQuery($id: String!) {
@@ -48,7 +48,9 @@ export const Success = ({ enrolledStudents }) => {
       <div className="overflow-y-scroll">
         {enrolledStudents.map((enrollment) => {
           return (
-            <Link
+            <NavLink
+              className="nes-text"
+              activeClassName="nes-text is-primary"
               key={enrollment.id}
               to={routes.teacherGroupStudent({
                 id: enrollment.groupId,
@@ -56,10 +58,13 @@ export const Success = ({ enrolledStudents }) => {
               })}
             >
               <li className="flex justify-between mb-3">
-                <p className="inline-block">{enrollment.user.firstName}</p>
+                <p className="inline-block">
+                  {enrollment.user.firstName} {enrollment.user.lastName}
+                  {/* {enrollment.user.lastName.slice(0, 1)}. */}
+                </p>
                 <p className="inline-block mr-2">{enrollment.points}</p>
               </li>
-            </Link>
+            </NavLink>
           )
         })}
       </div>

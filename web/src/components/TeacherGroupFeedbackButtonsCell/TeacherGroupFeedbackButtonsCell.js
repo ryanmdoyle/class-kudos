@@ -2,6 +2,7 @@ import { useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
 
 import { QUERY as ENROLLED_STUDENTS_LIST_QUERY } from 'src/components/TeacherGroupEnrolledCell'
+import { QUERY as TEACHER_GROUP_HEADER_QUERY } from 'src/components/TeacherGroupHeaderCell'
 
 const CREATE_FEEDBACK_MUTATION = gql`
   mutation CreateFeedbackMutation($input: CreateFeedbackInput!) {
@@ -40,6 +41,7 @@ export const Success = ({ actionsOfGroup, id, studentId }) => {
       },
       refetchQueries: [
         { query: ENROLLED_STUDENTS_LIST_QUERY, variables: { id } },
+        { query: TEACHER_GROUP_HEADER_QUERY, variables: { id } },
       ],
       awaitRefetchQueries: true,
     }

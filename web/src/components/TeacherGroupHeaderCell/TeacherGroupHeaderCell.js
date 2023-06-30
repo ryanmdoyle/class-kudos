@@ -5,6 +5,7 @@ export const QUERY = gql`
       name
       description
       enrollId
+      awardedPoints
       enrollments {
         id
       }
@@ -23,8 +24,10 @@ export const Loading = () => (
     <div className="flex">
       <i className="nes-icon coin is-medium"></i>
       <div className="flex flex-col ml-4">
-        <span className="text-3xl">567</span>
-        <span className="text-xs">total kudos</span>
+        <span className="text-3xl">...</span>
+        <span className="text-xs">
+          <i>total kudos</i>
+        </span>
       </div>
     </div>
   </div>
@@ -48,10 +51,10 @@ export const Success = ({ TeacherGroupHeader }) => {
       <div className="flex">
         <i className="nes-icon coin is-medium"></i>
         <div className="flex flex-col ml-4">
-          <span className="text-3xl">
-            <i>total</i>
+          <span className="text-3xl">{TeacherGroupHeader.awardedPoints}</span>
+          <span className="text-xs">
+            <i>total kudos</i>
           </span>
-          <span className="text-xs">total kudos</span>
         </div>
       </div>
     </div>

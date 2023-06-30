@@ -19,16 +19,16 @@ export const createFeedback = async ({ input }) => {
   // Feedback is used to track why points were awarded, but not used to calculate balances for enrollments or groups.
 
   //add points on group
-  updateGroupRewarded({
+  await updateGroupRewarded({
     groupId: input.groupId,
     updateValue: input.value,
-  }).then()
+  })
   // add points on enrollment
-  updateEnrollmentPoints({
+  await updateEnrollmentPoints({
     userId: input.userId,
     groupId: input.groupId,
     updateValue: input.value,
-  }).then()
+  })
   // finally create feedback
   return db.feedback.create({
     data: input,
