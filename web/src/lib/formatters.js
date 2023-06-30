@@ -41,11 +41,18 @@ export const jsonTruncate = (obj) => {
 
 export const timeTag = (dateTime) => {
   let output = ''
+  const options = {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+  }
 
   if (dateTime) {
     output = (
       <time dateTime={dateTime} title={dateTime}>
-        {new Date(dateTime).toUTCString()}
+        {new Date(dateTime).toLocaleDateString('en-us', options)}
       </time>
     )
   }

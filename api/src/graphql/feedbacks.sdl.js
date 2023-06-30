@@ -13,6 +13,8 @@ export const schema = gql`
   type Query {
     feedbacks: [Feedback!]! @requireAuth
     feedback(id: String!): Feedback @requireAuth
+    feedbackOfUser(userId: String!, groupId: String, take: Int): [Feedback!]!
+      @requireAuth
   }
 
   input CreateFeedbackInput {

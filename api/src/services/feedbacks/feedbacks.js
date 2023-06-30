@@ -13,6 +13,16 @@ export const feedback = ({ id }) => {
   })
 }
 
+export const feedbackOfUser = ({ userId, groupId, take = 10 }) => {
+  return db.feedback.findMany({
+    where: {
+      userId: { equals: userId },
+      groupId: { equals: groupId },
+    },
+    take: take,
+  })
+}
+
 export const createFeedback = async ({ input }) => {
   // For each feedback given, the value should be added to awardedPoints on Group, and to points on the Enrollments
   // awardedPoints on the group is to track totals, the points on enrollments are used as group totals.
