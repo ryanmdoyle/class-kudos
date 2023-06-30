@@ -50,7 +50,7 @@ model Group {
   enrollments   Enrollment[]
   actions       Action[]
   feedback      Feedback[]
-  // rewards     Reward[]
+  rewards       Reward[]
   // redeemed    Redeemed[]
 }
 
@@ -82,6 +82,16 @@ model Feedback {
   groupId   String?
 }
 
+model Reward {
+  id               String  @id @default(uuid())
+  name             String
+  cost             Int
+  responseRequired Boolean @default(false)
+  responsePrompt   String?
+  group            Group?  @relation(fields: [groupId], references: [id])
+  groupId          String?
+}
+
 // model Redeemed {
 //   id         String    @id @default(uuid())
 //   user       User      @relation(fields: [userId], references: [id])
@@ -94,14 +104,4 @@ model Feedback {
 //   group      Group     @relation(fields: [groupId], references: [id])
 //   groupId    String
 //   createdAt  DateTime  @default(now())
-// }
-
-// model Reward {
-//   id               String  @id @default(uuid())
-//   name             String
-//   cost             Int
-//   responseRequired Boolean @default(false)
-//   responsePrompt   String?
-//   group            Group?  @relation(fields: [groupId], references: [id])
-//   groupId          String?
 // }
