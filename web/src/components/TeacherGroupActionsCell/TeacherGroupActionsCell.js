@@ -22,14 +22,55 @@ const DELETE_ACTION_MUTATION = gql`
   }
 `
 
-export const Loading = () => <div>Loading...</div>
+export const Loading = ({ id }) => (
+  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible mb-6">
+    <span className="nes-text title relative -top-2">Group Actions</span>
+    <table className="rw-table text-xs">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Value</th>
+          <th className="flex w-full flex-row-reverse">
+            <Link
+              to={routes.teacherGroupNewAction({ id })}
+              className="rw-button rw-button-green nes-button w-[200px]"
+            >
+              Add Action
+            </Link>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="flex justify-around pt-4">Loading actions...</tr>
+      </tbody>
+    </table>
+  </div>
+)
 
-export const Empty = () => (
-  <div className="rw-text-center">
-    {'No actions yet. '}
-    <Link to={routes.newAction()} className="rw-link">
-      {'Create one?'}
-    </Link>
+export const Empty = ({ id }) => (
+  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible mb-6">
+    <span className="nes-text title relative -top-2">Group Actions</span>
+    <table className="rw-table text-xs">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Value</th>
+          <th className="flex w-full flex-row-reverse">
+            <Link
+              to={routes.teacherGroupNewAction({ id })}
+              className="rw-button rw-button-green nes-button w-[200px]"
+            >
+              Add Action
+            </Link>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="flex justify-around pt-4">
+          No acttons created yet, add some to get started!
+        </tr>
+      </tbody>
+    </table>
   </div>
 )
 
@@ -61,7 +102,7 @@ export const Success = ({ id, actionsOfGroup }) => {
   return (
     <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible mb-6">
       <span className="nes-text title relative -top-2">Group Actions</span>
-      <table className="rw-table text-sm">
+      <table className="rw-table text-xs">
         <thead>
           <tr>
             <th>Name</th>
@@ -83,13 +124,6 @@ export const Success = ({ id, actionsOfGroup }) => {
               <td>{truncate(action.value)}</td>
               <td>
                 <nav className="rw-table-actions">
-                  {/* <Link
-                    to={routes.editAction({ id: action.id })}
-                    title={'Edit action ' + action.id}
-                    className="ml-3 rw-button rw-button-small rw-button-blue"
-                  >
-                    Edit
-                  </Link> */}
                   <button
                     type="button"
                     title={'Delete action ' + action.id}

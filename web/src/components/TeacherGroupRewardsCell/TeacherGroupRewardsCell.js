@@ -22,12 +22,35 @@ const DELETE_REWARD_MUTATION = gql`
   }
 `
 
-export const Loading = () => <div>Loading...</div>
+export const Loading = ({ id }) => (
+  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible">
+    <span className="nes-text title relative -top-2">Group Rewards</span>
+    <table className="rw-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Cost</th>
+          <th className="flex w-full flex-row-reverse">
+            <Link
+              to={routes.teacherGroupNewReward({ id })}
+              className="rw-button rw-button-green nes-button w-[200px]"
+            >
+              Add Reward
+            </Link>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="flex justify-around pt-4">Loading rewards...</tr>
+      </tbody>
+    </table>
+  </div>
+)
 
 export const Empty = ({ id }) => (
   <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible">
     <span className="nes-text title relative -top-2">Group Rewards</span>
-    <table className="rw-table text-sm">
+    <table className="rw-table">
       <thead>
         <tr>
           <th>Name</th>
@@ -101,13 +124,6 @@ export const Success = ({ id, rewardsOfGroup }) => {
               <td>{truncate(reward.cost)}</td>
               <td>
                 <nav className="rw-table-actions">
-                  {/* <Link
-                    to={routes.editReward({ id: reward.id })}
-                    title={'Edit action ' + reward.id}
-                    className="ml-3 rw-button rw-button-small rw-button-blue"
-                  >
-                    Edit
-                  </Link> */}
                   <button
                     type="button"
                     title={'Delete reward ' + reward.id}

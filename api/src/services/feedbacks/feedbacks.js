@@ -19,6 +19,9 @@ export const feedbackOfUser = ({ userId, groupId, take = 10 }) => {
       userId: { equals: userId },
       groupId: { equals: groupId },
     },
+    orderBy: {
+      createdAt: 'desc',
+    },
     take: take,
   })
 }

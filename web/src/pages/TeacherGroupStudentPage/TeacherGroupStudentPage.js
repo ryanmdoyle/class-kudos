@@ -21,11 +21,11 @@ const TeacherGroupStudentPage = ({ id, studentId }) => {
           </div>
           <div className="flex flex-col gap-4 w-2/3">
             <TeacherGroupFeedbackButtonsCell id={id} studentId={studentId} />
-            {/* <TeacherGroupStudentRecentFeedbackCell
+            <TeacherGroupStudentRecentFeedbackCell
               groupId={id}
               userId={studentId}
               take={10}
-            /> */}
+            />
           </div>
         </div>
       </TeacherLayout>

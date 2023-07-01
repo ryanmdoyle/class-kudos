@@ -12,6 +12,9 @@ import {
 const RewardForm = (props) => {
   const onSubmit = (data) => {
     data.groupId = props.groupId
+    if (!data.responseRequired) {
+      data.responseRequired = false
+    }
     props.onSave(data, props?.reward?.id)
   }
 
@@ -60,7 +63,7 @@ const RewardForm = (props) => {
         />
 
         <FieldError name="cost" className="rw-field-error" />
-
+        {/*
         <Label
           name="responseRequired"
           className="rw-label"
@@ -93,7 +96,7 @@ const RewardForm = (props) => {
           errorClassName="rw-input rw-input-error"
         />
 
-        <FieldError name="responsePrompt" className="rw-field-error" />
+        <FieldError name="responsePrompt" className="rw-field-error" /> */}
 
         <div className="rw-button-group">
           <Submit disabled={props.loading} className="rw-button rw-button-blue">
