@@ -10,6 +10,12 @@ export const reward = ({ id }) => {
   })
 }
 
+export const rewardsOfGroup = ({ id }) => {
+  return db.reward.findMany({
+    where: { groupId: id },
+  })
+}
+
 export const createReward = ({ input }) => {
   return db.reward.create({
     data: input,

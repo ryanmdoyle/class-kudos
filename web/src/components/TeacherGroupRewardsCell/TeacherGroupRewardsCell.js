@@ -5,18 +5,18 @@ import { toast } from '@redwoodjs/web/toast'
 import { truncate } from 'src/lib/formatters'
 
 export const QUERY = gql`
-  query GroupActionsQuery($id: String!) {
-    actionsOfGroup(id: $id) {
+  query rewardsOfGroup($id: String!) {
+    rewardsOfGroup(id: $id) {
       id
       name
-      value
+      cost
     }
   }
 `
 
-const DELETE_ACTION_MUTATION = gql`
-  mutation DeleteActionMutation($id: String!) {
-    deleteAction(id: $id) {
+const DELETE_REWARD_MUTATION = gql`
+  mutation DeleteRewardMutation($id: String!) {
+    deleteReward(id: $id) {
       id
     }
   }
@@ -24,12 +24,30 @@ const DELETE_ACTION_MUTATION = gql`
 
 export const Loading = () => <div>Loading...</div>
 
-export const Empty = () => (
-  <div className="rw-text-center">
-    {'No actions yet. '}
-    <Link to={routes.newAction()} className="rw-link">
-      {'Create one?'}
-    </Link>
+export const Empty = ({ id }) => (
+  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible">
+    <span className="nes-text title relative -top-2">Group Rewards</span>
+    <table className="rw-table text-sm">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Cost</th>
+          <th className="flex w-full flex-row-reverse">
+            <Link
+              to={routes.teacherGroupNewReward({ id })}
+              className="rw-button rw-button-green nes-button w-[200px]"
+            >
+              Add Reward
+            </Link>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="flex justify-around pt-4">
+          No rewards created yet, add some to get started!
+        </tr>
+      </tbody>
+    </table>
   </div>
 )
 
@@ -37,10 +55,10 @@ export const Failure = ({ error }) => (
   <div style={{ color: 'red' }}>Error: {error?.message}</div>
 )
 
-export const Success = ({ id, actionsOfGroup }) => {
-  const [deleteAction] = useMutation(DELETE_ACTION_MUTATION, {
+export const Success = ({ id, rewardsOfGroup }) => {
+  const [deleteAction] = useMutation(DELETE_REWARD_MUTATION, {
     onCompleted: () => {
-      toast.success('Action deleted')
+      toast.success('Reward deleted')
     },
     onError: (error) => {
       toast.error(error.message)
@@ -59,42 +77,42 @@ export const Success = ({ id, actionsOfGroup }) => {
   }
 
   return (
-    <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible mb-6">
-      <span className="nes-text title relative -top-2">Group Actions</span>
+    <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible">
+      <span className="nes-text title relative -top-2">Group Rewards</span>
       <table className="rw-table text-sm">
         <thead>
           <tr>
             <th>Name</th>
-            <th>Value</th>
+            <th>Cost</th>
             <th className="flex w-full flex-row-reverse">
               <Link
-                to={routes.teacherGroupNewAction({ id })}
+                to={routes.teacherGroupNewReward({ id })}
                 className="rw-button rw-button-green nes-button w-[200px]"
               >
-                Add Action
+                Add Reward
               </Link>
             </th>
           </tr>
         </thead>
         <tbody>
-          {actionsOfGroup.map((action) => (
-            <tr key={action.id}>
-              <td>{truncate(action.name)}</td>
-              <td>{truncate(action.value)}</td>
+          {rewardsOfGroup.map((reward) => (
+            <tr key={reward.id}>
+              <td>{truncate(reward.name)}</td>
+              <td>{truncate(reward.cost)}</td>
               <td>
                 <nav className="rw-table-actions">
                   {/* <Link
-                    to={routes.editAction({ id: action.id })}
-                    title={'Edit action ' + action.id}
+                    to={routes.editReward({ id: reward.id })}
+                    title={'Edit action ' + reward.id}
                     className="ml-3 rw-button rw-button-small rw-button-blue"
                   >
                     Edit
                   </Link> */}
                   <button
                     type="button"
-                    title={'Delete action ' + action.id}
+                    title={'Delete reward ' + reward.id}
                     className="ml-3 rw-button rw-button-small rw-button-red"
-                    onClick={() => onDeleteClick(action.id)}
+                    onClick={() => onDeleteClick(reward.id)}
                   >
                     Delete
                   </button>

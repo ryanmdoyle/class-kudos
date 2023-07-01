@@ -44,6 +44,7 @@ const Routes = () => {
         <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
         <Route path="/teacher/group/{id}/options" page={TeacherGroupOptionsPage} name="teacherGroupOptions" />
         <Route path="/teacher/group/{id}/action/new" page={TeacherGroupNewActionPage} name="teacherGroupNewAction" />
+        <Route path="/teacher/group/{id}/reward/new" page={TeacherGroupNewRewardPage} name="teacherGroupNewReward" />
         <Route path="/teacher/group/{id}/store" page={TeacherGroupStorePage} name="teacherGroupStore" />
         <Route notfound page={NotFoundPage} />
       </Set>
