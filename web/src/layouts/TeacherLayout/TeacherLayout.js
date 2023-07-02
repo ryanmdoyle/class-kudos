@@ -44,7 +44,7 @@ const TeacherLayout = ({ children, groupId }) => {
 
   return (
     <>
-      <div className="flex w-full justify-center gap-x-8 mb-8">
+      <div className="flex w-full justify-center gap-x-8 mb-6">
         <button>
           <HomeButton />
         </button>
