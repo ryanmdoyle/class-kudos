@@ -15,7 +15,7 @@ const TeacherGroupStudentPage = ({ id, studentId }) => {
       />
 
       <TeacherLayout groupId={id}>
-        <div className="flex gap-4 w-[100%] h-[60%]">
+        <div className="flex gap-4 w-[100%] h-full">
           <div className="w-1/3">
             <TeacherGroupEnrolledCell id={id} />
           </div>

@@ -48,7 +48,7 @@ export const Success = ({ actionsOfGroup, id, studentId }) => {
   )
 
   return (
-    <div className="nes-container with-title">
+    <div className="nes-container with-title h-1/2">
       <span className="title relative -top-2">Give Feedback</span>
       <div className="flex flex-wrap justify-around gap-2 max-h-full overflow-y-scroll">
         {actionsOfGroup.map((action) => {

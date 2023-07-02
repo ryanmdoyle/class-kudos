@@ -11,3 +11,7 @@
 /**
  * END --- SETUP TAILWINDCSS EDIT
  */
+
+.teacher-content {
+  height: calc(100vh - 280px);
+}

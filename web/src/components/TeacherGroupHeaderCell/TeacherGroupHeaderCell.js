@@ -14,7 +14,7 @@ export const QUERY = gql`
 `
 
 export const Loading = () => (
-  <div className="nes-container flex justify-between mb-6">
+  <div className="nes-container flex justify-between mb-4">
     <div className="flex flex-col">
       <span className="text-2xl">Loading Group...</span>
       <span className="text-xs nes-text text-gray-400 hover:text-gray-800">
@@ -41,7 +41,7 @@ export const Failure = ({ error }) => (
 
 export const Success = ({ TeacherGroupHeader }) => {
   return (
-    <div className="nes-container flex justify-between mb-6">
+    <div className="nes-container flex justify-between mb-4">
       <div className="flex flex-col">
         <span className="text-2xl">{TeacherGroupHeader.name}</span>
         <span className="text-xs nes-text text-gray-400 hover:text-gray-800">
