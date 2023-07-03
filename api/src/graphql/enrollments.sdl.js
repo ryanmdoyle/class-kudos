@@ -11,13 +11,13 @@ export const schema = gql`
   type Query {
     enrollments: [Enrollment!]! @requireAuth
     enrollment(id: String!): Enrollment @requireAuth
-    enrolledStudents(id: String!): [Enrollment!]! @requireAuth
+    enrolledStudents(id: String!): [Enrollment!] @requireAuth
+    enrolledGroups: [Enrollment!] @requireAuth
   }
 
   input CreateEnrollmentInput {
     userId: String!
-    groupId: String!
-    points: Int!
+    groupEnrollId: String!
   }
 
   input UpdateEnrollmentInput {

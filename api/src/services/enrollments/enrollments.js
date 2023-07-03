@@ -68,6 +68,14 @@ export const deleteEnrollment = ({ id }) => {
   })
 }
 
+export const enrolledGroups = () => {
+  return db.enrollment.findMany({
+    where: {
+      userId: context.userID,
+    },
+  })
+}
+
 export const Enrollment = {
   user: (_obj, { root }) => {
     return db.enrollment.findUnique({ where: { id: root?.id } }).user()
