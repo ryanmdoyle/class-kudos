@@ -5,8 +5,6 @@ import TeacherGroupHeaderCell from 'src/components/TeacherGroupHeaderCell/Teache
 
 const TeacherLayout = ({ children, groupId }) => {
   const { isAuthenticated, hasRole } = useAuth()
-  // const { pathname, search, hash } = useLocation()
-  // console.log(pathname)
 
   const HomeButton = () => {
     if (isAuthenticated && !hasRole('TEACHER')) {

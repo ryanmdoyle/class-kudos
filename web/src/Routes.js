@@ -13,7 +13,6 @@ import ScaffoldLayout from 'src/layouts/ScaffoldLayout'
 
 import { useAuth } from './auth'
 import MainLayout from './layouts/MainLayout/MainLayout'
-import TeacherLayout from './layouts/TeacherLayout/TeacherLayout'
 
 const Routes = () => {
   return (
@@ -40,12 +39,12 @@ const Routes = () => {
         <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
         <Route path="/groups/new" page={GroupNewGroupPage} name="newGroup" />
         <Route path="/teacher/group/new" page={TeacherNewGroupPage} name="teacherNewGroup" />
-        <Route path="/teacher/group/{id}/student/{studentId}" page={TeacherGroupStudentPage} name="teacherGroupStudent" />
         <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
-        <Route path="/teacher/group/{id}/options" page={TeacherGroupOptionsPage} name="teacherGroupOptions" />
+        <Route path="/teacher/group/{id}/student/{studentId}" page={TeacherGroupStudentPage} name="teacherGroupStudent" />
         <Route path="/teacher/group/{id}/action/new" page={TeacherGroupNewActionPage} name="teacherGroupNewAction" />
         <Route path="/teacher/group/{id}/reward/new" page={TeacherGroupNewRewardPage} name="teacherGroupNewReward" />
-        <Route path="/teacher/group/{id}/store" page={TeacherGroupStorePage} name="teacherGroupStore" />
+        <Route path="/teacher/store/{id}" page={TeacherGroupStorePage} name="teacherGroupStore" />
+        <Route path="/teacher/options/{id}" page={TeacherGroupOptionsPage} name="teacherGroupOptions" />
         <Route notfound page={NotFoundPage} />
       </Set>
       {/* the group models use the scaffolds for frontend.  Make copies, so the scaffolds are only used for admin. */}
