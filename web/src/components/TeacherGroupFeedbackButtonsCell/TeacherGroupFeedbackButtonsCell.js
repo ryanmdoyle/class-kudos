@@ -3,6 +3,7 @@ import { toast } from '@redwoodjs/web/toast'
 
 import { QUERY as ENROLLED_STUDENTS_LIST_QUERY } from 'src/components/TeacherGroupEnrolledCell'
 import { QUERY as TEACHER_GROUP_HEADER_QUERY } from 'src/components/TeacherGroupHeaderCell'
+import { QUERY as TEACHER_GROUP_STUDENT_RECENT_FEEDBACK_QUERY } from 'src/components/TeacherGroupStudentRecentFeedbackCell'
 
 const CREATE_FEEDBACK_MUTATION = gql`
   mutation CreateFeedbackMutation($input: CreateFeedbackInput!) {
@@ -21,9 +22,25 @@ export const QUERY = gql`
   }
 `
 
-export const Loading = () => <div>Loading...</div>
+export const Loading = () => (
+  <div className="nes-container with-title h-1/2">
+    <span className="title relative -top-2">Give Feedback</span>
+    <div className="flex flex-wrap justify-around gap-2 max-h-full overflow-y-scroll">
+      Loading...
+    </div>
+  </div>
+)
 
-export const Empty = () => <div>Empty</div>
+export const Empty = () => (
+  <div className="nes-container with-title h-1/2">
+    <span className="title relative -top-2">Give Feedback</span>
+    <div className="flex flex-wrap justify-around gap-2 max-h-full overflow-y-scroll">
+      No actions have been created yet! Actions are different types of tasks,
+      behaviors, or consequences that you can give students feedback for. Head
+      over to the Options page to get started making actions for your group.
+    </div>
+  </div>
+)
 
 export const Failure = ({ error }) => (
   <div style={{ color: 'red' }}>Error: {error?.message}</div>
@@ -42,6 +59,10 @@ export const Success = ({ actionsOfGroup, id, studentId }) => {
       refetchQueries: [
         { query: ENROLLED_STUDENTS_LIST_QUERY, variables: { id } },
         { query: TEACHER_GROUP_HEADER_QUERY, variables: { id } },
+        {
+          query: TEACHER_GROUP_STUDENT_RECENT_FEEDBACK_QUERY,
+          variables: { userId: studentId, groupId: id, take: 10 },
+        },
       ],
       awaitRefetchQueries: true,
     }

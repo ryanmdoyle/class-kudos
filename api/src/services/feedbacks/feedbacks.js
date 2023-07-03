@@ -55,7 +55,21 @@ export const updateFeedback = ({ id, input }) => {
   })
 }
 
-export const deleteFeedback = ({ id }) => {
+export const deleteFeedback = async ({ id }) => {
+  //remove points on group
+  const feedback = await db.feedback.findUnique({
+    where: { id },
+  })
+  await updateGroupRewarded({
+    groupId: feedback.groupId,
+    updateValue: -feedback.value,
+  })
+  // remove points on enrollment
+  await updateEnrollmentPoints({
+    userId: feedback.userId,
+    groupId: feedback.groupId,
+    updateValue: -feedback.value,
+  })
   return db.feedback.delete({
     where: { id },
   })
