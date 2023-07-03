@@ -8,9 +8,12 @@ const TeacherGroupOptionsPage = ({ id }) => {
   return (
     <>
       <MetaTags title="GroupOptions" description="GroupOptions page" />
-      <TeacherLayout groupId={id}></TeacherLayout>
-      <TeacherGroupActionsCell id={id} />
-      <TeacherGroupRewardsCell id={id} />
+      <TeacherLayout groupId={id}>
+        <div className="w-full h-full overflow-y-scroll py-4">
+          <TeacherGroupActionsCell id={id} />
+          <TeacherGroupRewardsCell id={id} />
+        </div>
+      </TeacherLayout>
     </>
   )
 }
