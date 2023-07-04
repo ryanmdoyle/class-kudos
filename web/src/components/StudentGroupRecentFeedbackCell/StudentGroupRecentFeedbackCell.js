@@ -78,7 +78,7 @@ export const Success = ({ studentGroupRecentFeedback }) => {
   }
 
   return (
-    <div className="nes-container with-title h-1/2">
+    <div className="nes-container with-title">
       <p className="title relative bg-white">Recent Feedback</p>
       <div className="h-full overflow-y-scroll">
         <table className="rw-table">
@@ -100,16 +100,7 @@ export const Success = ({ studentGroupRecentFeedback }) => {
                 <td>{timeTag(feedback.createdAt)}</td>
 
                 <td>
-                  <nav className="rw-table-actions">
-                    {/* <button
-                      type="button"
-                      title={'Delete feedback ' + feedback.id}
-                      className="rw-button rw-button-small rw-button-red ml-2"
-                      onClick={() => onDeleteClick(feedback.id)}
-                    >
-                      Delete
-                    </button> */}
-                  </nav>
+                  <nav className="rw-table-actions"></nav>
                 </td>
               </tr>
             ))}
