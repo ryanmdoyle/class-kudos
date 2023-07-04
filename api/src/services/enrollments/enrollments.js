@@ -68,10 +68,19 @@ export const deleteEnrollment = ({ id }) => {
   })
 }
 
+export const enrolledGroup = ({ groupId }) => {
+  return db.enrollment.findFirstOrThrow({
+    where: {
+      userId: context.userId,
+      groupId: groupId,
+    },
+  })
+}
+
 export const enrolledGroups = () => {
   return db.enrollment.findMany({
     where: {
-      userId: context.userID,
+      userId: context.userId,
     },
   })
 }
