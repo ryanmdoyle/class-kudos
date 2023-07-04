@@ -25,7 +25,7 @@ export const QUERY = gql`
 `
 
 export const Loading = () => (
-  <div className="nes-container with-title h-1/2">
+  <div className="nes-container with-title">
     <p className="title relative bg-white">Recent Feedback</p>
     <div className="h-full overflow-y-scroll">
       <table className="rw-table">
@@ -38,7 +38,9 @@ export const Loading = () => (
           </tr>
         </thead>
         <tbody className="nes-text text-xs">
-          <td>Loading...</td>
+          <tr>
+            <td>Loading...</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -46,7 +48,7 @@ export const Loading = () => (
 )
 
 export const Empty = () => (
-  <div className="nes-container with-title h-1/2">
+  <div className="nes-container with-title">
     <p className="title relative bg-white">Recent Feedback</p>
     <div className="h-full overflow-y-scroll">
       <table className="rw-table">
@@ -59,7 +61,9 @@ export const Empty = () => (
           </tr>
         </thead>
         <tbody className="nes-text text-xs">
-          <td>No Feedback for student</td>
+          <tr>
+            <td>No Feedback for student</td>
+          </tr>
         </tbody>
       </table>
     </div>
