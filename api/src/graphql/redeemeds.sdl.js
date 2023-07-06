@@ -17,6 +17,8 @@ export const schema = gql`
     redeemeds: [Redeemed!]! @requireAuth
     redeemed(id: String!): Redeemed @requireAuth
     redeemedOfStudent(input: RedeemedOfStudentInput!): [Redeemed!]! @requireAuth
+    redeemedOfGroupRequested(groupId: String!): [Redeemed!] @requireAuth
+    redeemedOfGroupApproved(groupId: String!): [Redeemed!] @requireAuth
   }
 
   input CreateRedeemedInput {
@@ -49,5 +51,6 @@ export const schema = gql`
     updateRedeemed(id: String!, input: UpdateRedeemedInput!): Redeemed!
       @requireAuth
     deleteRedeemed(id: String!): Redeemed! @requireAuth
+    approveRedeemed(id: String!): Redeemed! @requireAuth
   }
 `

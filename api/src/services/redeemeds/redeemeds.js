@@ -29,11 +29,39 @@ export const deleteRedeemed = ({ id }) => {
   })
 }
 
+export const approveRedeemed = ({ id }) => {
+  return db.redeemed.update({
+    where: { id },
+    data: {
+      reviewed: true,
+      reviewedAt: new Date(),
+    },
+  })
+}
+
 export const redeemedOfStudent = ({ input }) => {
   return db.redeemed.findMany({
     where: {
       userId: input.userId,
       groupId: input.groupId,
+    },
+  })
+}
+
+export const redeemedOfGroupRequested = ({ groupId }) => {
+  return db.redeemed.findMany({
+    where: {
+      groupId: groupId,
+      reviewed: false,
+    },
+  })
+}
+
+export const redeemedOfGroupApproved = ({ groupId }) => {
+  return db.redeemed.findMany({
+    where: {
+      groupId: groupId,
+      reviewed: true,
     },
   })
 }
