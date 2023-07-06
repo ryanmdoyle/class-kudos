@@ -1,3 +1,8 @@
+import { useMutation } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
+
+import { QUERY as STUDENT_GROUP_RECENT_REDEEMED_QUERY } from 'src/components/StudentGroupRecentRedeemedCell/StudentGroupRecentRedeemedCell'
+
 export const QUERY = gql`
   query StudentGroupRewardsQuery($groupId: String!) {
     rewardsOfGroup(id: $groupId) {
@@ -29,9 +34,36 @@ export const Failure = ({ error }) => (
   <div style={{ color: 'red' }}>Error: {error?.message}</div>
 )
 
-export const Success = ({ rewardsOfGroup, enrolledGroup }) => {
-  console.log(rewardsOfGroup, enrolledGroup)
+export const Success = ({ rewardsOfGroup, enrolledGroup, userId, groupId }) => {
   const balance = enrolledGroup.points
+
+  const CREATE_REDEEMED_MUTATION = gql`
+    mutation CreateRedeemedMutation($input: CreateRedeemedInput!) {
+      createRedeemed(input: $input) {
+        id
+      }
+    }
+  `
+
+  const [createRedeemed, { loading, error }] = useMutation(
+    CREATE_REDEEMED_MUTATION,
+    {
+      onCompleted: () => {
+        toast.success('Redeemed created')
+      },
+      onError: (error) => {
+        toast.error(error.message)
+      },
+      refetchQueries: [
+        {
+          query: STUDENT_GROUP_RECENT_REDEEMED_QUERY,
+          variables: { input: { userId, groupId } },
+        },
+      ],
+      awaitRefetchQueries: true,
+    }
+  )
+
   return (
     <div className="nes-container with-title col-span-1">
       <p className="title relative bg-white">Rewards</p>
@@ -39,19 +71,17 @@ export const Success = ({ rewardsOfGroup, enrolledGroup }) => {
         {rewardsOfGroup.map((reward) => {
           const handleClick = () => {
             window.confirm(`You'd like to buy ${reward.name}?`)
-            // create Redeemed here ////////////////
-            {
-              /* createFeedback({
+            createRedeemed({
               variables: {
                 input: {
-                  name: action.name,
-                  value: parseInt(action.value),
-                  userId: studentId,
-                  groupId: id,
+                  name: reward.name,
+                  cost: parseInt(reward.cost),
+                  userId: userId,
+                  groupId: groupId,
+                  reviewed: false,
                 },
               },
-            }) */
-            }
+            })
           }
 
           if (balance >= reward.cost) {
