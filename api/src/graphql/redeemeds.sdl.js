@@ -16,6 +16,7 @@ export const schema = gql`
   type Query {
     redeemeds: [Redeemed!]! @requireAuth
     redeemed(id: String!): Redeemed @requireAuth
+    redeemedOfStudent(input: RedeemedOfStudentInput!): [Redeemed!]! @requireAuth
   }
 
   input CreateRedeemedInput {
@@ -35,6 +36,11 @@ export const schema = gql`
     response: String
     reviewed: Boolean
     reviewedAt: DateTime
+    groupId: String
+  }
+
+  input RedeemedOfStudentInput {
+    userId: String!
     groupId: String
   }
 

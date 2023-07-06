@@ -12,14 +12,14 @@ export const QUERY = gql`
 `
 
 export const Loading = () => (
-  <div className="nes-container with-title">
+  <div className="nes-container with-title col-span-1">
     <p className="title relative bg-white">Recent Feedback</p>
     <p>Loading...</p>
   </div>
 )
 
 export const Empty = () => (
-  <div className="nes-container with-title">
+  <div className="nes-container with-title col-span-1">
     <p className="title relative bg-white">Recent Feedback</p>
     <p>No feedback yet!</p>
   </div>
@@ -33,7 +33,7 @@ export const Success = ({ rewardsOfGroup, enrolledGroup }) => {
   console.log(rewardsOfGroup, enrolledGroup)
   const balance = enrolledGroup.points
   return (
-    <div className="nes-container with-title w-full">
+    <div className="nes-container with-title col-span-1">
       <p className="title relative bg-white">Rewards</p>
       <div className="flex flex-wrap justify-around gap-2 max-h-full overflow-y-scroll">
         {rewardsOfGroup.map((reward) => {

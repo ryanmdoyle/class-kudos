@@ -25,6 +25,16 @@ const StudentLayout = ({ children, groupId }) => {
             Feedback
           </NavLink>
         </button>
+        <button>
+          <NavLink
+            className="nes-btn is-primary"
+            activeClassName="is-success"
+            matchSubPaths="true"
+            to={routes.studentGroupRewards({ id: groupId })}
+          >
+            Store
+          </NavLink>
+        </button>
       </div>
       <StudentGroupHeaderCell groupId={groupId} />
       <div className="teacher-content">{children}</div>

@@ -29,6 +29,15 @@ export const deleteRedeemed = ({ id }) => {
   })
 }
 
+export const redeemedOfStudent = ({ input }) => {
+  return db.redeemed.findMany({
+    where: {
+      userId: input.userId,
+      groupId: input.groupId,
+    },
+  })
+}
+
 export const Redeemed = {
   user: (_obj, { root }) => {
     return db.redeemed.findUnique({ where: { id: root?.id } }).user()

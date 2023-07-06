@@ -82,7 +82,7 @@ export const Success = ({ studentGroupRecentFeedback }) => {
   }
 
   return (
-    <div className="nes-container with-title">
+    <div className="nes-container with-title  h-full">
       <p className="title relative bg-white">Recent Feedback</p>
       <div className="h-full overflow-y-scroll">
         <table className="rw-table">
