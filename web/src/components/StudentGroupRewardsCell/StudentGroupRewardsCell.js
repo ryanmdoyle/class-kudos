@@ -1,6 +1,7 @@
 import { useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
 
+import { QUERY as STUDENT_GROUP_HEADER_QUERY } from 'src/components/StudentGroupHeaderCell/StudentGroupHeaderCell'
 import { QUERY as STUDENT_GROUP_RECENT_REDEEMED_QUERY } from 'src/components/StudentGroupRecentRedeemedCell/StudentGroupRecentRedeemedCell'
 
 export const QUERY = gql`
@@ -49,7 +50,7 @@ export const Success = ({ rewardsOfGroup, enrolledGroup, userId, groupId }) => {
     CREATE_REDEEMED_MUTATION,
     {
       onCompleted: () => {
-        toast.success('Redeemed created')
+        toast.success('Reward Requested')
       },
       onError: (error) => {
         toast.error(error.message)
@@ -58,6 +59,10 @@ export const Success = ({ rewardsOfGroup, enrolledGroup, userId, groupId }) => {
         {
           query: STUDENT_GROUP_RECENT_REDEEMED_QUERY,
           variables: { input: { userId, groupId } },
+        },
+        {
+          query: STUDENT_GROUP_HEADER_QUERY,
+          variables: { groupId },
         },
       ],
       awaitRefetchQueries: true,

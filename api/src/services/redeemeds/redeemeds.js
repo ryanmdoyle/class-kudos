@@ -1,5 +1,7 @@
 import { db } from 'src/lib/db'
 
+import { updateEnrollmentPoints } from '../enrollments/enrollments'
+
 export const redeemeds = () => {
   return db.redeemed.findMany()
 }
@@ -10,7 +12,12 @@ export const redeemed = ({ id }) => {
   })
 }
 
-export const createRedeemed = ({ input }) => {
+export const createRedeemed = async ({ input }) => {
+  await updateEnrollmentPoints({
+    userId: input.userId,
+    groupId: input.groupId,
+    updateValue: -input.cost,
+  })
   return db.redeemed.create({
     data: input,
   })
