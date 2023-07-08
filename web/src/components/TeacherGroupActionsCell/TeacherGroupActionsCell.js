@@ -28,8 +28,6 @@ export const Loading = ({ id }) => (
     <table className="rw-table text-xs">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Value</th>
           <th className="flex w-full flex-row-reverse">
             <Link
               to={routes.teacherGroupNewAction({ id })}
@@ -41,7 +39,7 @@ export const Loading = ({ id }) => (
         </tr>
       </thead>
       <tbody>
-        <tr className="flex justify-around pt-4">
+        <tr className="bg-gray-50">
           <td>Loading actions...</td>
         </tr>
       </tbody>
@@ -55,8 +53,6 @@ export const Empty = ({ id }) => (
     <table className="rw-table text-xs">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Value</th>
           <th className="flex w-full flex-row-reverse">
             <Link
               to={routes.teacherGroupNewAction({ id })}
@@ -68,8 +64,8 @@ export const Empty = ({ id }) => (
         </tr>
       </thead>
       <tbody>
-        <tr className="flex justify-around pt-4">
-          <td>No acttons created yet, add some to get started!</td>
+        <tr className="bg-gray-50">
+          <td>No actions created yet, add some to get started!</td>
         </tr>
       </tbody>
     </table>

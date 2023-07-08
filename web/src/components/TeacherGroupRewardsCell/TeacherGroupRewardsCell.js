@@ -25,11 +25,9 @@ const DELETE_REWARD_MUTATION = gql`
 export const Loading = ({ id }) => (
   <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible">
     <span className="nes-text title relative -top-2">Group Rewards</span>
-    <table className="rw-table">
+    <table className="rw-table text-xs">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Cost</th>
           <th className="flex w-full flex-row-reverse">
             <Link
               to={routes.teacherGroupNewReward({ id })}
@@ -41,7 +39,7 @@ export const Loading = ({ id }) => (
         </tr>
       </thead>
       <tbody>
-        <tr className="flex justify-around pt-4">
+        <tr className="bg-gray-50">
           <td>Loading...</td>
         </tr>
       </tbody>
@@ -52,11 +50,9 @@ export const Loading = ({ id }) => (
 export const Empty = ({ id }) => (
   <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible">
     <span className="nes-text title relative -top-2">Group Rewards</span>
-    <table className="rw-table">
+    <table className="rw-table text-xs">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Cost</th>
           <th className="flex w-full flex-row-reverse">
             <Link
               to={routes.teacherGroupNewReward({ id })}
@@ -68,7 +64,7 @@ export const Empty = ({ id }) => (
         </tr>
       </thead>
       <tbody>
-        <tr className="flex justify-around pt-4">
+        <tr className="bg-gray-50">
           <td>No rewards created yet, add some to get started!</td>
         </tr>
       </tbody>
@@ -104,7 +100,7 @@ export const Success = ({ id, rewardsOfGroup }) => {
   return (
     <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible">
       <span className="nes-text title relative -top-2">Group Rewards</span>
-      <table className="rw-table text-sm">
+      <table className="rw-table text-xs">
         <thead>
           <tr>
             <th>Name</th>
