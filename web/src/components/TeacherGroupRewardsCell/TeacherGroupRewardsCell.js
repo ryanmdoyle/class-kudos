@@ -41,7 +41,9 @@ export const Loading = ({ id }) => (
         </tr>
       </thead>
       <tbody>
-        <tr className="flex justify-around pt-4">Loading rewards...</tr>
+        <tr className="flex justify-around pt-4">
+          <td>Loading...</td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -67,7 +69,7 @@ export const Empty = ({ id }) => (
       </thead>
       <tbody>
         <tr className="flex justify-around pt-4">
-          No rewards created yet, add some to get started!
+          <td>No rewards created yet, add some to get started!</td>
         </tr>
       </tbody>
     </table>

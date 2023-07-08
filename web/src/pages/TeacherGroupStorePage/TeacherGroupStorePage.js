@@ -15,7 +15,7 @@ const TeacherGroupStorePage = ({ id }) => {
             <TeacherGroupStoreRequestedCell groupId={id} />
           </div>
           <div className="nes-container with-title col-span-1 row-span-1">
-            <p className="title relative -top-2">[Approved]</p>
+            <p className="title relative -top-2">Approved</p>
             <TeacherGroupStoreApprovedCell groupId={id} />
           </div>
         </div>
