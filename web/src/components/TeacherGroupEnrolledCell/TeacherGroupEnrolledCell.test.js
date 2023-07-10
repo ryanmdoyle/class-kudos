@@ -35,7 +35,7 @@ describe('TeacherGroupEnrolledCell', () => {
 
   it('renders Success successfully', async () => {
     expect(() => {
-      render(<Success enrolledStudents={standard().enrolledStudents} />)
+      render(<Success enolledUsers={standard().enolledUsers} />)
     }).not.toThrow()
   })
 })
