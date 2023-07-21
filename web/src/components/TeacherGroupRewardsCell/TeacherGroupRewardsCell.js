@@ -23,7 +23,7 @@ const DELETE_REWARD_MUTATION = gql`
 `
 
 export const Loading = ({ id }) => (
-  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible">
+  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible mb-4">
     <span className="nes-text title relative -top-2">Group Rewards</span>
     <table className="rw-table text-xs">
       <thead>
@@ -48,7 +48,7 @@ export const Loading = ({ id }) => (
 )
 
 export const Empty = ({ id }) => (
-  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible">
+  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible mb-4">
     <span className="nes-text title relative -top-2">Group Rewards</span>
     <table className="rw-table text-xs">
       <thead>
@@ -98,7 +98,7 @@ export const Success = ({ id, rewardsOfGroup }) => {
   }
 
   return (
-    <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible">
+    <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible mb-4">
       <span className="nes-text title relative -top-2">Group Rewards</span>
       <table className="rw-table text-xs">
         <thead>

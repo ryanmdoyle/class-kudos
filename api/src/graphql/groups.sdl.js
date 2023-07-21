@@ -17,6 +17,7 @@ export const schema = gql`
     groups: [Group!]! @requireAuth
     groupsOwned(ownerId: String!, archived: Boolean): [Group!]! @requireAuth
     group(id: String!): Group @requireAuth
+    findGroupOwnerEmail(groupId: String!): User! @requireAuth
   }
 
   input CreateGroupInput {

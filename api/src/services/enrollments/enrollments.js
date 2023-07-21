@@ -85,6 +85,14 @@ export const enrolledGroups = () => {
   })
 }
 
+export const findEnrolledGroups = ({ userId }) => {
+  return db.enrollment.findMany({
+    where: {
+      userId: userId,
+    },
+  })
+}
+
 export const Enrollment = {
   user: (_obj, { root }) => {
     return db.enrollment.findUnique({ where: { id: root?.id } }).user()

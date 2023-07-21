@@ -1,6 +1,10 @@
 import { DbAuthHandler } from '@redwoodjs/auth-dbauth-api'
 
 import { db } from 'src/lib/db'
+import { sendEmail } from 'src/lib/email'
+import { findEnrolledGroups } from 'src/services/enrollments'
+import { findGroupOwnerEmail } from 'src/services/groups'
+import { findUserRole } from 'src/services/userRoles'
 
 export const handler = async (event, context) => {
   const forgotPasswordOptions = {
@@ -16,8 +20,54 @@ export const handler = async (event, context) => {
     // You could use this return value to, for example, show the email
     // address in a toast message so the user will know it worked and where
     // to look for the email.
-    handler: (user) => {
-      return user
+    handler: async (user) => {
+      //       ryandoyle87+s@gmail.com
+      // Check for user type (student or teacher)
+      const userRole = await findUserRole({ userId: user.id })
+
+      // if student, get a list of their enrollments, then email those teachers.
+      if (userRole.role == 'STUDENT') {
+        const enrollments = await findEnrolledGroups({ userId: user.id })
+        if (enrollments.length > 0) {
+          let sentTo = []
+          enrollments.forEach(async (enrollment) => {
+            const resetToken = user.resetToken
+            const groupOwner = await findGroupOwnerEmail({
+              groupId: enrollment.groupId,
+            })
+            sendEmail({
+              to: groupOwner.email,
+              subject: `Password Reset Request from ${user.email}`,
+              text: `${user.email} has requested a password reset. Use this link to reset their password: https://claskudos.com/reset-password?resetToken=${resetToken}`,
+              html: `${user.email} has requested a password reset. Use this link to reset their password: https://claskudos.com/reset-password?resetToken=${resetToken}</p>`,
+            })
+            sentTo.push(groupOwner.email)
+          })
+          return {
+            emailRecipients: sentTo,
+            userRole: 'STUDENT',
+          }
+        } else {
+          return {
+            emailRecipients: null,
+            userRole: 'STUDENT',
+          }
+        }
+      }
+
+      // if teacher, send email to teacher
+      if (userRole.role == 'TEACHER') {
+        sendEmail({
+          to: user.email,
+          subject: 'Password Reset Request',
+          text: `Head to this link to reset your password: https://claskudos.com/reset-password?resetToken=${user.resetToken}`,
+          html: `<p>Head to this link to reset your password: https://claskudos.com/reset-password?resetToken=${user.resetToken}</p>`,
+        })
+      }
+      return {
+        emailRecipients: user.email,
+        userRole: 'TEACHER',
+      }
     },
 
     // How long the resetToken is valid for, in seconds (default is 24 hours)

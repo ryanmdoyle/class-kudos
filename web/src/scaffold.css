@@ -314,10 +314,10 @@ line-height: 1rem; /* 16px */
   background-color: #ffffff;
   color: #1a202c;
 }
-.rw-table tr:nth-child(odd) td,
-.rw-table tr:nth-child(odd) th {
-  background-color: #f7fafc;
-}
+/*.rw-table tr:nth-child(odd) td, */
+/*.rw-table tr:nth-child(odd) th { */
+/*  background-color: #f7fafc; */
+/*} */
 .rw-table thead tr {
   color: #4a5568;
 }
@@ -326,7 +326,7 @@ line-height: 1rem; /* 16px */
   text-align: left;
 }
 .rw-table thead th {
-  background-color: #e2e8f0;
+  /* background-color: #e2e8f0; */
   text-align: left;
 }
 .rw-table tbody th {

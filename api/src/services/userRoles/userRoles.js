@@ -10,6 +10,12 @@ export const userRole = ({ id }) => {
   })
 }
 
+export const findUserRole = ({ userId }) => {
+  return db.userRole.findFirstOrThrow({
+    where: { userId: userId },
+  })
+}
+
 export const createUserRole = ({ input }) => {
   return db.userRole.create({
     data: input,

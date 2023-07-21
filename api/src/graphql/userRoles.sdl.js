@@ -11,6 +11,7 @@ export const schema = gql`
   type Query {
     userRoles: [UserRole!]! @requireAuth
     userRole(id: String!): UserRole @requireAuth
+    findUserRole(userId: String!): UserRole @requireAuth
   }
 
   input CreateUserRoleInput {

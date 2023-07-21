@@ -18,6 +18,16 @@ export const group = ({ id }) => {
   })
 }
 
+export const findGroupOwnerEmail = async ({ groupId }) => {
+  const group = await db.group.findUnique({
+    where: { id: groupId },
+  })
+  const user = await db.user.findUnique({
+    where: { id: group.ownerId },
+  })
+  return { email: user.email }
+}
+
 export const createGroup = async ({ input }) => {
   const uid = new ShortUniqueId({ length: 8 })
   return db.group.create({
