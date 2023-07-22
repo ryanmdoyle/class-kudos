@@ -20,8 +20,7 @@ const ResetPasswordPage = ({ resetToken }) => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      // navigate(routes.home())
-      console.log('Already auth, remove when live')
+      navigate(routes.home())
     }
   }, [isAuthenticated])
 

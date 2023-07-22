@@ -8,8 +8,6 @@ interface Options {
 }
 
 export async function sendEmail({ to, subject, text, html }: Options) {
-  console.log('Sending email to:', to)
-
   // create reusable transporter object using SendInBlue for SMTP
   const transporter = nodemailer.createTransport({
     host: 'smtp-relay.sendinblue.com',

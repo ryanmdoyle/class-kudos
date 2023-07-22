@@ -46,7 +46,7 @@ const ForgotPasswordPage = () => {
           )
         }
       }
-      // navigate(routes.login())
+      navigate(routes.login())
     }
   }
 
