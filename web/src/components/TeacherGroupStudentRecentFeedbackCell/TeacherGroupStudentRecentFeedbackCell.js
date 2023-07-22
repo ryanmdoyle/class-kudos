@@ -46,7 +46,9 @@ export const Loading = () => (
           </tr>
         </thead>
         <tbody className="nes-text text-xs">
-          <td>Loading...</td>
+          <tr>
+            <td>Loading...</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -67,7 +69,9 @@ export const Empty = () => (
           </tr>
         </thead>
         <tbody className="nes-text text-xs">
-          <td>No Feedback for student</td>
+          <tr>
+            <td>No Feedback for student</td>
+          </tr>
         </tbody>
       </table>
     </div>
