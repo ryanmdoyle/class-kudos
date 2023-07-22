@@ -30,10 +30,23 @@ const ForgotPasswordPage = () => {
       // The function `forgotPassword.handler` in api/src/functions/auth.js has
       // been invoked, let the user know how to get the link to reset their
       // password (sent in email, perhaps?)
-      toast.success(
-        'A link to reset your password was sent to ' + response.email
-      )
-      navigate(routes.login())
+      if (response.userRole === 'TEACHER') {
+        toast.success(
+          'A link to reset your password was sent to ' +
+            response.emailRecipients
+        )
+      } else {
+        if (response.emailRecipients > 0) {
+          toast.success(
+            'A link to reset your password has been sent to your teachers.'
+          )
+        } else {
+          toast.success(
+            'Please have a teacher add you to a group, then request a password reset again.'
+          )
+        }
+      }
+      // navigate(routes.login())
     }
   }
 

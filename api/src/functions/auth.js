@@ -25,17 +25,17 @@ export const handler = async (event, context) => {
       // Check for user type (student or teacher)
       const userRole = await findUserRole({ userId: user.id })
 
+      let sentTo = []
       // if student, get a list of their enrollments, then email those teachers.
       if (userRole.role == 'STUDENT') {
         const enrollments = await findEnrolledGroups({ userId: user.id })
         if (enrollments.length > 0) {
-          let sentTo = []
           enrollments.forEach(async (enrollment) => {
             const resetToken = user.resetToken
             const groupOwner = await findGroupOwnerEmail({
               groupId: enrollment.groupId,
             })
-            sendEmail({
+            await sendEmail({
               to: groupOwner.email,
               subject: `Password Reset Request from ${user.email}`,
               text: `${user.email} has requested a password reset. Use this link to reset their password: https://claskudos.com/reset-password?resetToken=${resetToken}`,
@@ -43,15 +43,15 @@ export const handler = async (event, context) => {
             })
             sentTo.push(groupOwner.email)
           })
-          return {
-            emailRecipients: sentTo,
-            userRole: 'STUDENT',
-          }
         } else {
           return {
-            emailRecipients: null,
+            emailRecipients: enrollments.length,
             userRole: 'STUDENT',
           }
+        }
+        return {
+          emailRecipients: enrollments.length,
+          userRole: 'STUDENT',
         }
       }
 
