@@ -20,6 +20,14 @@ export const QUERY = gql`
   }
 `
 
+// const DELETE_REWARD_MUTATION = gql`
+//   mutation DeleteRewardMutation($id: String!) {
+//     deleteReward(id: $id) {
+//       id
+//     }
+//   }
+// `
+
 export const Loading = () => <div>Loading...</div>
 
 export const Empty = () => <div>Empty</div>
@@ -32,35 +40,22 @@ export const Success = ({ enolledUsers }) => {
   const now = Date.now()
   return (
     <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative mb-4 overflow-visible">
-      <span className="nes-text title relative -top-2">Enrolled Users</span>
+      <span className="nes-text title relative -top-2">Enrolled Students</span>
       <table className="rw-table text-xs">
         <thead>
           <tr>
             <th>Name</th>
             <th>Email</th>
-            <th>Password Reset Requests</th>
             <th>&nbsp;</th>
           </tr>
         </thead>
         <tbody>
           {enolledUsers.map((enrollment) => {
-            const expires = Date.parse(enrollment.user.resetTokenExpiresAt)
             return (
               <tr key={enrollment.id}>
                 <td>{truncate(enrollment.user.firstName)}</td>
                 <td>{truncate(enrollment.user.email)}</td>
-                <td>
-                  {now < expires ? (
-                    <Link
-                      to={routes.resetPassword({
-                        resetToken: enrollment.user.resetToken,
-                      })}
-                      className="rw-button rw-button-green nes-button w-[250px]"
-                    >
-                      Reset
-                    </Link>
-                  ) : null}
-                </td>
+
                 <td>
                   <nav className="rw-table-actions">
                     <button
