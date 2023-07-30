@@ -1,29 +1,49 @@
-import { Link, routes } from '@redwoodjs/router'
-import { MetaTags } from '@redwoodjs/web'
+import { Link, navigate, routes } from '@redwoodjs/router'
+import { MetaTags, useMutation } from '@redwoodjs/web'
+import { toast } from '@redwoodjs/web/toast'
 
-const TeacherGroupNewEnrollmentPage = () => {
+import TeacherGroupNewEnrollmentForm from 'src/components/TeacherGroupNewEnrollmentForm'
+
+const CREATE_ENROLLMENT_FROM_EMAIL = gql`
+  mutation CreateEnrollmentFromEmailMutation(
+    $input: CreateEnrollmentFromEmailInput!
+  ) {
+    createEnrollmentFromEmail(input: $input) {
+      id
+    }
+  }
+`
+
+const TeacherGroupNewEnrollmentPage = ({ id }) => {
+  const [createEnrollmentFromEmail, { loading, error }] = useMutation(
+    CREATE_ENROLLMENT_FROM_EMAIL,
+    {
+      onCompleted: () => {
+        navigate(routes.teacherGroupOptions({ id }))
+        toast.success('Student Added!')
+      },
+      onError: (error) => {
+        navigate(routes.student())
+        toast.error(error.message)
+      },
+    }
+  )
+
+  const onSave = (input) => {
+    input.groupId = id
+    createEnrollmentFromEmail({ variables: { input } })
+  }
+
   return (
     <>
       <MetaTags
-        title="TeacherGroupNewEnrollment"
-        description="TeacherGroupNewEnrollment page"
+        title="StudentNewEnrollment"
+        description="StudentNewEnrollment page"
       />
-
-      <h1>TeacherGroupNewEnrollmentPage</h1>
-      <p>
-        Find me in{' '}
-        <code>
-          ./web/src/pages/TeacherGroupNewEnrollmentPage/TeacherGroupNewEnrollmentPage.js
-        </code>
-      </p>
-      <p>
-        My default route is named <code>teacherGroupNewEnrollment</code>, link
-        to me with `
-        <Link to={routes.teacherGroupNewEnrollment()}>
-          TeacherGroupNewEnrollment
-        </Link>
-        `
-      </p>
+      <div className="max-w-m nes-text container block py-4  text-sm">
+        Enter the enrollment code from your instructor to add the group!
+      </div>
+      <TeacherGroupNewEnrollmentForm onSave={onSave} />
     </>
   )
 }

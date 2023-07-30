@@ -1,3 +1,6 @@
+import { validate, validateUniqueness } from '@redwoodjs/api'
+import { UserInputError } from '@redwoodjs/graphql-server'
+
 import { db } from 'src/lib/db'
 
 export const enrollments = () => {
@@ -20,6 +23,29 @@ export const createEnrollment = ({ input }) => {
   return db.enrollment.create({
     data: input,
   })
+}
+
+export const createEnrollmentFromEmail = async ({ input }) => {
+  const user = await db.user.findFirst({
+    where: {
+      email: input.email,
+    },
+  })
+  if (user === null) throw new UserInputError('User not found!')
+
+  return validateUniqueness(
+    'enrollment',
+    { userId: user.id, groupId: input.groupId },
+    { message: 'User is already enrolled!' },
+    () => {
+      return db.enrollment.create({
+        data: {
+          userId: user.id,
+          groupId: input.groupId,
+        },
+      })
+    }
+  )
 }
 
 export const updateEnrollment = ({ id, input }) => {

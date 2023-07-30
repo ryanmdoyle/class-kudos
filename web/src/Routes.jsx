@@ -17,7 +17,6 @@ import MainLayout from './layouts/MainLayout/MainLayout'
 const Routes = () => {
   return (
     <Router useAuth={useAuth}>
-      <Route path="/teacher-group-new-enrollment" page={TeacherGroupNewEnrollmentPage} name="teacherGroupNewEnrollment" />
       <Set wrap={ScaffoldLayout} title="Redeemeds" titleTo="redeemeds" buttonLabel="New Redeemed" buttonTo="newRedeemed">
         <Route path="/redeemeds/new" page={RedeemedNewRedeemedPage} name="newRedeemed" />
         <Route path="/redeemeds/{id}/edit" page={RedeemedEditRedeemedPage} name="editRedeemed" />
@@ -51,6 +50,7 @@ const Routes = () => {
         <Route path="/teacher/group/new" page={TeacherNewGroupPage} name="teacherNewGroup" />
         <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
         <Route path="/teacher/group/{id}/student/{studentId}" page={TeacherGroupStudentPage} name="teacherGroupStudent" />
+        <Route path="/teacher/group/{id}/enrollment/new" page={TeacherGroupNewEnrollmentPage} name="teacherGroupNewEnrollment" />
         <Route path="/teacher/group/{id}/action/new" page={TeacherGroupNewActionPage} name="teacherGroupNewAction" />
         <Route path="/teacher/group/{id}/reward/new" page={TeacherGroupNewRewardPage} name="teacherGroupNewReward" />
         <Route path="/teacher/store/{id}" page={TeacherGroupStorePage} name="teacherGroupStore" />
