@@ -26,9 +26,59 @@ const DELETE_ENROLLMENT_MUTATION = gql`
   }
 `
 
-export const Loading = () => <div>Loading...</div>
+export const Loading = ({ id }) => (
+  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative mb-4 overflow-visible">
+    <span className="nes-text title relative -top-2">Enrolled Students</span>
+    <table className="rw-table text-xs">
+      <thead>
+        <tr>
+          <th className="flex w-full flex-row-reverse">
+            <Link
+              to={routes.teacherGroupNewEnrollment({ id })}
+              className="rw-button rw-button-green nes-button w-[200px]"
+            >
+              Add Student
+            </Link>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="bg-gray-50">
+          <td>Loading enrollments...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+)
 
-export const Empty = () => <div>Empty</div>
+export const Empty = ({ id }) => (
+  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative mb-4 overflow-visible">
+    <span className="nes-text title relative -top-2">Enrolled Students</span>
+    <table className="rw-table text-xs">
+      <thead>
+        <tr>
+          <th className="flex w-full flex-row-reverse">
+            <Link
+              to={routes.teacherGroupNewEnrollment({ id })}
+              className="rw-button rw-button-green nes-button w-[200px]"
+            >
+              Add Student
+            </Link>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="bg-gray-50">
+          <td>
+            No enrollments yet, add some students by their email once they have
+            created an account, or have them join with the enrollment ID (it's
+            under the group name at the top of the page) to get started!
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+)
 
 export const Failure = ({ error }) => (
   <div style={{ color: 'red' }}>Error: {error?.message}</div>
