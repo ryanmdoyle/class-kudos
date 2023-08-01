@@ -14,11 +14,18 @@ const SiteHeader = () => {
     navigate(routes.login())
   }
 
+  const handleHomeClick = () => {
+    navigate(routes.home())
+  }
+
   return (
-    <div className="flex justify-between mb-4 h-[48px]">
-      <div className="flex justify-center align-text-bottom h-full">
-        <i className="nes-icon coin h-[36px] mt-2"></i>
-        <h1 className="pl-4 text-2xl h-[36px] mt-2">Class Kudos</h1>
+    <div className="mb-4 flex h-[48px] justify-between">
+      <div
+        className="nes-pointer flex h-full justify-center align-text-bottom"
+        onClick={handleHomeClick}
+      >
+        <i className="nes-icon coin mt-2 h-[36px]"></i>
+        <h1 className="mt-2 h-[36px] pl-4 text-2xl">Class Kudos</h1>
       </div>
       {isAuthenticated ? (
         <button className="nes-btn" onClick={handleLogOut}>
