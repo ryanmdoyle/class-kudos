@@ -7,8 +7,8 @@ const TeacherGroupNewActionPage = ({ id }) => {
   return (
     <>
       <MetaTags
-        title="TeacherGroupNewAction"
-        description="TeacherGroupNewAction page"
+        title="New Action - Class Kudos"
+        description="New Action page"
       />
       <TeacherLayout groupId={id}>
         <TeacherGroupNewAction groupId={id} />

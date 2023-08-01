@@ -9,7 +9,10 @@ import TeacherLayout from 'src/layouts/TeacherLayout/TeacherLayout'
 const TeacherGroupOptionsPage = ({ id }) => {
   return (
     <>
-      <MetaTags title="GroupOptions" description="GroupOptions page" />
+      <MetaTags
+        title="Group Options - Class Kudos"
+        description="Group Options page"
+      />
       <TeacherLayout groupId={id}>
         <div className="h-full w-full overflow-y-scroll py-4">
           <TeacherGroupActionsCell id={id} />

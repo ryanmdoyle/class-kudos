@@ -1,4 +1,5 @@
 import { Link, navigate, routes } from '@redwoodjs/router'
+import { MetaTags } from '@redwoodjs/web'
 import { useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
 
@@ -31,6 +32,7 @@ const TeacherNewGroup = () => {
 
   return (
     <div className="rw-segment">
+      <MetaTags title="New Group - Class Kudos" description="New Group page" />
       <header className="rw-segment-header">
         <h2 className="rw-heading rw-heading-secondary">New Group</h2>
       </header>

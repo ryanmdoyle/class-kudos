@@ -9,7 +9,7 @@ const StudentGroupPage = ({ id }) => {
 
   return (
     <>
-      <MetaTags title="StudentGroup" description="StudentGroup page" />
+      <MetaTags title="Class Kudos" description="Group page" />
       <StudentLayout groupId={id}>
         {currentUser?.id && (
           <div className="h-full w-full">

@@ -11,13 +11,13 @@ const StudentGroupRewardsPage = ({ id }) => {
   return (
     <>
       <MetaTags
-        title="StudentGroupRewards"
-        description="StudentGroupRewards page"
+        title="Group Rewards - Class Kudos"
+        description="Group Rewards page"
       />
 
       <StudentLayout groupId={id}>
         {currentUser?.id && (
-          <div className="h-full w-full overflow-y-scroll grid grid-cols-3 grid-rows-1 gap-2">
+          <div className="grid h-full w-full grid-cols-3 grid-rows-1 gap-2 overflow-y-scroll">
             <StudentGroupRewardsCell userId={currentUser?.id} groupId={id} />
             <StudentGroupRecentRedeemedCell
               input={{ userId: currentUser?.id, groupId: id }}

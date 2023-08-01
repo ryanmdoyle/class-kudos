@@ -37,8 +37,8 @@ const TeacherGroupNewEnrollmentPage = ({ id }) => {
   return (
     <>
       <MetaTags
-        title="StudentNewEnrollment"
-        description="StudentNewEnrollment page"
+        title="New Enrollment - Class Kudos"
+        description="New Enrollment page"
       />
       <div className="max-w-m nes-text container block py-4  text-sm">
         Enter the enrollment code from your instructor to add the group!
