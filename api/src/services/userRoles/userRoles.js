@@ -1,3 +1,5 @@
+import { UserInputError } from '@redwoodjs/graphql-server'
+
 import { db } from 'src/lib/db'
 
 export const userRoles = () => {
@@ -17,6 +19,8 @@ export const findUserRole = ({ userId }) => {
 }
 
 export const createUserRole = ({ input }) => {
+  if (input.role !== 'TEACHER' || input.role !== 'STUDENT')
+    throw new UserInputError('Unacceptable user type')
   return db.userRole.create({
     data: input,
   })
