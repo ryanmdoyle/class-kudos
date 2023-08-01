@@ -7,7 +7,7 @@ const HomePage = () => {
   const { isAuthenticated, hasRole } = useAuth()
 
   if (isAuthenticated) {
-    hasRole('TEACHER') ? navigate(routes.teacher()) : navigate(routes.teacher())
+    hasRole('TEACHER') ? navigate(routes.teacher()) : navigate(routes.student())
   }
   return (
     <div className="mx-auto max-w-[95%]">

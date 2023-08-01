@@ -18,7 +18,7 @@ const Routes = () => {
   return (
     <Router useAuth={useAuth}>
       <Set wrap={MainLayout}>
-        <Private unauthenticated="home" roles="teacher">
+        <Private unauthenticated="home" roles={['TEACHER', 'ADMIN']}>
           <Route path="/teacher" page={TeacherPage} name="teacher" />
           <Route path="/teacher/group/new" page={TeacherNewGroupPage} name="teacherNewGroup" />
           <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
@@ -29,7 +29,7 @@ const Routes = () => {
           <Route path="/teacher/store/{id}" page={TeacherGroupStorePage} name="teacherGroupStore" />
           <Route path="/teacher/options/{id}" page={TeacherGroupOptionsPage} name="teacherGroupOptions" />
         </Private>
-        <Private unauthenticated="home" roles="student">
+        <Private unauthenticated="home" roles={['STUDENT', 'ADMIN']}>
           <Route path="/student" page={StudentPage} name="student" />
           <Route path="/student/new-enrollment" page={StudentNewEnrollmentPage} name="studentNewEnrollment" />
           <Route path="/student/group/{id}" page={StudentGroupPage} name="studentGroup" />
