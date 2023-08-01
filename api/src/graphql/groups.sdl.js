@@ -48,5 +48,6 @@ export const schema = gql`
     updateGroup(id: String!, input: UpdateGroupInput!): Group! @requireAuth
     updateGroupAwarded(input: UpdateGroupAwardedInput!): Group! @requireAuth
     deleteGroup(id: String!): Group! @requireAuth
+    archiveGroup(id: String!): Group! @requireAuth
   }
 `

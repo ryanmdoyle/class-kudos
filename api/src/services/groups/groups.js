@@ -64,6 +64,17 @@ export const deleteGroup = ({ id }) => {
   })
 }
 
+export const archiveGroup = ({ id }) => {
+  return db.group.update({
+    where: {
+      id: id,
+    },
+    data: {
+      archived: true,
+    },
+  })
+}
+
 export const Group = {
   owner: (_obj, { root }) => {
     return db.group.findUnique({ where: { id: root?.id } }).owner()
