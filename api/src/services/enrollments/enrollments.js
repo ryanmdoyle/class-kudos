@@ -115,6 +115,9 @@ export const enrolledGroups = () => {
   return db.enrollment.findMany({
     where: {
       userId: context.userId,
+      group: {
+        archived: false,
+      },
     },
   })
 }
