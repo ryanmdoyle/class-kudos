@@ -4,7 +4,6 @@ import {
   FieldError,
   Label,
   TextField,
-  NumberField,
   Submit,
 } from '@redwoodjs/forms'
 
@@ -24,7 +23,7 @@ const StudentNewEnrollmentForm = (props) => {
         />
         <div className="container max-w-md">
           <Label
-            name="enrollId"
+            name="groupEnrollId"
             className="rw-label"
             errorClassName="rw-label rw-label-error"
           >
@@ -32,14 +31,14 @@ const StudentNewEnrollmentForm = (props) => {
           </Label>
 
           <TextField
-            name="enrollId"
+            name="groupEnrollId"
             defaultValue={props.enrollment?.enrollId}
             className="rw-input"
             errorClassName="rw-input rw-input-error"
             validation={{ required: true }}
           />
 
-          <FieldError name="enrollId" className="rw-field-error" />
+          <FieldError name="groupEnrollId" className="rw-field-error" />
         </div>
 
         <div className="rw-button-group">

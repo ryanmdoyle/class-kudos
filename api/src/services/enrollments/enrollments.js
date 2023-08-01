@@ -19,9 +19,17 @@ export const enolledUsers = ({ id }) => {
   })
 }
 
-export const createEnrollment = ({ input }) => {
+export const createEnrollment = async ({ input }) => {
+  const group = await db.group.findFirst({
+    where: {
+      enrollId: input.groupEnrollId,
+    },
+  })
   return db.enrollment.create({
-    data: input,
+    data: {
+      userId: input.userId,
+      groupId: group.id,
+    },
   })
 }
 

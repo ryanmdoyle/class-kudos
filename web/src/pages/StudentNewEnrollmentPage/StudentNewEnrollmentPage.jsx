@@ -1,4 +1,4 @@
-import { Link, navigate, routes } from '@redwoodjs/router'
+import { navigate, routes } from '@redwoodjs/router'
 import { MetaTags, useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
 
@@ -41,7 +41,7 @@ const StudentNewEnrollmentPage = () => {
         title="StudentNewEnrollment"
         description="StudentNewEnrollment page"
       />
-      <div className="block container max-w-m py-4 nes-text  text-sm">
+      <div className="max-w-m nes-text container block py-4  text-sm">
         Enter the enrollment code from your instructor to add the group!
       </div>
       <StudentNewEnrollmentForm userId={currentUser?.id} onSave={onSave} />
