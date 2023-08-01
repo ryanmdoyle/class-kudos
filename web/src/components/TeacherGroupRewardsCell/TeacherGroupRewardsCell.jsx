@@ -23,7 +23,7 @@ const DELETE_REWARD_MUTATION = gql`
 `
 
 export const Loading = ({ id }) => (
-  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible mb-4">
+  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative mb-4 overflow-visible">
     <span className="nes-text title relative -top-2">Group Rewards</span>
     <table className="rw-table text-xs">
       <thead>
@@ -48,7 +48,7 @@ export const Loading = ({ id }) => (
 )
 
 export const Empty = ({ id }) => (
-  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible mb-4">
+  <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative mb-4 overflow-visible">
     <span className="nes-text title relative -top-2">Group Rewards</span>
     <table className="rw-table text-xs">
       <thead>
@@ -92,13 +92,13 @@ export const Success = ({ id, rewardsOfGroup }) => {
   })
 
   const onDeleteClick = (id) => {
-    if (confirm('Are you sure you want to delete action?')) {
+    if (confirm('Are you sure you want to delete reward?')) {
       deleteAction({ variables: { id } })
     }
   }
 
   return (
-    <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative overflow-visible mb-4">
+    <div className="rw-segment rw-table-wrapper-responsive nes-container with-title relative mb-4 overflow-visible">
       <span className="nes-text title relative -top-2">Group Rewards</span>
       <table className="rw-table text-xs">
         <thead>
@@ -125,7 +125,7 @@ export const Success = ({ id, rewardsOfGroup }) => {
                   <button
                     type="button"
                     title={'Delete reward ' + reward.id}
-                    className="ml-3 rw-button rw-button-small rw-button-red"
+                    className="rw-button rw-button-small rw-button-red ml-3"
                     onClick={() => onDeleteClick(reward.id)}
                   >
                     Delete
