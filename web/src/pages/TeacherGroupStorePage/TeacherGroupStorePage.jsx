@@ -7,10 +7,7 @@ import TeacherLayout from 'src/layouts/TeacherLayout/TeacherLayout'
 const TeacherGroupStorePage = ({ id }) => {
   return (
     <>
-      <MetaTags
-        title="Group Store - Class Kudos"
-        description="Group Store page"
-      />
+      <MetaTags title="Group Store" description="Group Store page" />
       <TeacherLayout groupId={id}>
         <div className="grid h-full w-full grid-cols-1 grid-rows-2 gap-4">
           <div className="nes-container with-title col-span-1 row-span-1">

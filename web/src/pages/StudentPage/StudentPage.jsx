@@ -11,7 +11,7 @@ const StudentPage = () => {
 
   return (
     <>
-      <MetaTags title="Student Home - Class Kudos" description="Student Home" />
+      <MetaTags title="Student Home" description="Student Home" />
       <div className="w-full">
         <h1 className="my-6 text-xl">
           {currentUser?.firstName

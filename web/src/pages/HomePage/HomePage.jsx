@@ -11,10 +11,7 @@ const HomePage = () => {
   }
   return (
     <div className="mx-auto max-w-[95%]">
-      <MetaTags
-        title="Home - Class Kudos"
-        description="Class Kudos home page."
-      />
+      <MetaTags title="Home" description="Class Kudos home page." />
       <h2 className="mb-4 text-lg">
         Create Positive Learning Environments, One Kudo at a Time
       </h2>

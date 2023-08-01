@@ -59,7 +59,7 @@ const ResetPasswordPage = ({ resetToken }) => {
 
   return (
     <>
-      <MetaTags title="Reset Password - Class Kudos" />
+      <MetaTags title="Reset Password" />
 
       <main className="rw-main">
         <Toaster toastOptions={{ className: 'rw-toast', duration: 6000 }} />

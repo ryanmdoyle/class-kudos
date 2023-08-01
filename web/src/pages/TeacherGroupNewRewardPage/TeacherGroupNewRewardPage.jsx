@@ -6,10 +6,7 @@ import TeacherLayout from 'src/layouts/TeacherLayout/TeacherLayout'
 const TeacherGroupNewRewardPage = ({ id }) => {
   return (
     <>
-      <MetaTags
-        title="New Reward - Class Kudos"
-        description="New Reward page"
-      />
+      <MetaTags title="New Reward" description="New Reward page" />
       <TeacherLayout groupId={id}>
         <TeacherGroupNewReward groupId={id} />
       </TeacherLayout>

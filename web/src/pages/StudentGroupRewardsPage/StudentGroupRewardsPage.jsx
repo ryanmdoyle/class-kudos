@@ -10,10 +10,7 @@ const StudentGroupRewardsPage = ({ id }) => {
   const { currentUser } = useAuth()
   return (
     <>
-      <MetaTags
-        title="Group Rewards - Class Kudos"
-        description="Group Rewards page"
-      />
+      <MetaTags title="Group Rewards" description="Group Rewards page" />
 
       <StudentLayout groupId={id}>
         {currentUser?.id && (

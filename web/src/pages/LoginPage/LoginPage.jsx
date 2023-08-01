@@ -50,7 +50,7 @@ const LoginPage = () => {
 
   return (
     <>
-      <MetaTags title="Login - Class Kudos" />
+      <MetaTags title="Login" />
 
       <main className="rw-main">
         <Toaster toastOptions={{ className: 'rw-toast', duration: 6000 }} />

@@ -6,10 +6,7 @@ import TeacherLayout from 'src/layouts/TeacherLayout/TeacherLayout'
 const TeacherGroupPage = ({ id }) => {
   return (
     <>
-      <MetaTags
-        title="Group Dashboard - Class Kudos"
-        description="Group page"
-      />
+      <MetaTags title="Group Dashboard" description="Group page" />
 
       <TeacherLayout groupId={id}>
         <div className="flex h-full w-[100%] gap-4">
