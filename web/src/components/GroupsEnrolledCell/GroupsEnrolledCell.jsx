@@ -17,7 +17,7 @@ export const Loading = () => <div>Loading Groups...</div>
 
 export const Empty = () => (
   <div className="mb-4">
-    You have no groups created. Add a group to get started.
+    You have enrolled in any groups. Enroll in a group to get started!
   </div>
 )
 

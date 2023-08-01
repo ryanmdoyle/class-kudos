@@ -2,7 +2,7 @@ import { routes, navigate } from '@redwoodjs/router'
 import { MetaTags } from '@redwoodjs/web'
 
 import { useAuth } from 'src/auth'
-import GroupsEnrolledCell from 'src/components/GroupsEnrolledCell'
+import GroupsEnrolledCell from 'src/components/GroupsEnrolledCell/GroupsEnrolledCell'
 
 const StudentPage = () => {
   const { currentUser } = useAuth()
@@ -13,12 +13,12 @@ const StudentPage = () => {
     <>
       <MetaTags title="Student" description="Student Home" />
       <div className="w-full">
-        <h1 className="text-xl my-6">
+        <h1 className="my-6 text-xl">
           {currentUser?.firstName
             ? `Welcome, ${currentUser.firstName}!`
             : 'Welcome!'}
         </h1>
-        <div className="px-4 flex flex-col sm:flex-row justify-between">
+        <div className="flex flex-col justify-between px-4 sm:flex-row">
           <div className="sm:w-1/2">
             {currentUser?.id ? (
               <GroupsEnrolledCell userId={currentUser?.id} />
