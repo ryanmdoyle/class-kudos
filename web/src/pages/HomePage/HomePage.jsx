@@ -19,21 +19,21 @@ const HomePage = () => {
   }, [isAuthenticated, currentUser, hasRole])
 
   return (
-    <div className="mx-auto max-w-[95%]">
+    <div className="container mx-auto px-8">
       <MetaTags title="Home" description="Class Kudos home page." />
-      <h2 className="mb-4 text-lg">
+      <h2 className="mb-8 text-lg">
         Create Positive Learning Environments, One Kudo at a Time
       </h2>
-      <p className="mb-4 text-sm">
+      <p className="mb-8 text-sm">
         Are you ready to simplify your classroom management and foster a culture
         of positivity? Look no further! Class Kudos is your all-in-one solution
         for effortlessly managing your classroom rewards system and empowering
         your students.
       </p>
-      <h2 className="mb-4 text-lg text-green-500">
+      <h2 className="mb-8 text-lg text-green-500">
         For Teachers: Why Class Kudos?
       </h2>
-      <ul className="mb-4 text-xs">
+      <ul className="mb-8 text-xs">
         <li className="mb-3 ml-4">
           <strong className="text-green-500">
             Effortless Class Management:
@@ -72,8 +72,8 @@ const HomePage = () => {
           is never sold.
         </li>
       </ul>
-      <h2 className="mb-4 text-lg text-orange-500">For Students:</h2>
-      <ul className="mb-4 text-xs">
+      <h2 className="mb-8 text-lg text-orange-500">For Students:</h2>
+      <ul className="mb-8 text-xs">
         <li className="mb-3 ml-4">
           <strong className="text-orange-500">Track Progress:</strong> Students
           can log in to their own dashboard to enroll in groups greated by
@@ -87,7 +87,7 @@ const HomePage = () => {
           can independently redeem the awards from their own dashboards!
         </li>
       </ul>
-      <p className="mb-4 text-sm">
+      <p className="mb-8 text-sm">
         Are you ready to discover how easy it can be to stop standing over the
         printer making copies of school paper mone using half your whiteboard to
         track table points? There&apos;s a better way. Join Class Kudos today.
@@ -100,6 +100,20 @@ const HomePage = () => {
         Sign up now
       </Link>{' '}
       to unlock the potential within your classroom!
+      <div className="align-center my-8 flex justify-between pb-16 text-xs">
+        <span>Or, if your find this site helpful, consider donating!</span>
+        <a
+          href="https://www.buymeacoffee.com/hiimdoyle"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <img
+            src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+            alt="Buy Me A Coffee"
+            style={{ height: '40px', width: '150px' }}
+          />
+        </a>
+      </div>
     </div>
   )
 }
