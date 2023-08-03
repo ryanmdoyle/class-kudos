@@ -17,13 +17,19 @@ import { toast, Toaster } from '@redwoodjs/web/toast'
 import { useAuth } from 'src/auth'
 
 const SignupPage = () => {
-  const { isAuthenticated, signUp } = useAuth()
+  const { isAuthenticated, signUp, currentUser, hasRole } = useAuth()
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(routes.home())
+      if (hasRole('TEACHER')) {
+        navigate(routes.teacher({ id: currentUser.id }))
+      } else if (hasRole('STUDENT')) {
+        navigate(routes.student({ id: currentUser.id }))
+      } else {
+        navigate(routes.home())
+      }
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, currentUser, hasRole])
 
   // focus on email box on page load
   const emailRef = useRef(null)

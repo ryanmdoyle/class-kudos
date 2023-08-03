@@ -1,14 +1,23 @@
+import { useEffect } from 'react'
+
 import { Link, routes, navigate } from '@redwoodjs/router'
 import { MetaTags } from '@redwoodjs/web'
 
 import { useAuth } from 'src/auth'
 
 const HomePage = () => {
-  const { isAuthenticated, hasRole } = useAuth()
+  const { isAuthenticated, currentUser, hasRole } = useAuth()
 
-  if (isAuthenticated) {
-    hasRole('TEACHER') ? navigate(routes.teacher()) : navigate(routes.student())
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (hasRole('TEACHER')) {
+        navigate(routes.teacher({ id: currentUser.id }))
+      } else {
+        navigate(routes.student({ id: currentUser.id }))
+      }
+    }
+  }, [isAuthenticated, currentUser, hasRole])
+
   return (
     <div className="mx-auto max-w-[95%]">
       <MetaTags title="Home" description="Class Kudos home page." />
