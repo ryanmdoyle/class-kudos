@@ -35,12 +35,12 @@ const Routes = () => {
           <Route path="/student/group/{id}" page={StudentGroupPage} name="studentGroup" />
           <Route path="/student/group/awards/{id}" page={StudentGroupRewardsPage} name="studentGroupRewards" />
         </Private>
-        <Route path="/" page={HomePage} name="home" />
-        <Route path="/login" page={LoginPage} name="login" />
-        <Route path="/signup" page={SignupPage} name="signup" />
-        <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" />
-        <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" />
-        <Route notfound page={NotFoundPage} />
+        <Route path="/" page={HomePage} name="home" prerender />
+        <Route path="/login" page={LoginPage} name="login" prerender />
+        <Route path="/signup" page={SignupPage} name="signup" prerender />
+        <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" prerender />
+        <Route path="/reset-password" page={ResetPasswordPage} name="resetPassword" prerender />
+        <Route notfound page={NotFoundPage} prerender />
       </Set>
       {/* the group models use the scaffolds for frontend.  Make copies, so the scaffolds are only used for admin. */}
       <Private unauthenticated="home" roles="admin">
