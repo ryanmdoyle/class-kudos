@@ -1,8 +1,8 @@
 import { Link, routes } from '@redwoodjs/router'
 
 export const QUERY = gql`
-  query FindGroupsEnrolledQuery {
-    enrolledGroups: enrolledGroups {
+  query FindGroupsEnrolledQuery($userId: String!) {
+    enrolledGroups: findEnrolledGroups(userId: $userId) {
       id
       group {
         name
