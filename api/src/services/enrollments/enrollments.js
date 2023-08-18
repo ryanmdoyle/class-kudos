@@ -16,6 +16,9 @@ export const enrollment = ({ id }) => {
 export const enolledUsers = ({ id }) => {
   return db.enrollment.findMany({
     where: { groupId: id },
+    orderBy: {
+      user: { firstName: 'asc' },
+    },
   })
 }
 
