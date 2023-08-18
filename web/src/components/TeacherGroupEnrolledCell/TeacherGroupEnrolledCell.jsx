@@ -16,10 +16,10 @@ export const QUERY = gql`
 `
 
 export const Loading = () => (
-  <ul className="nes-container with-title h-full pb-3 px-4">
+  <ul className="nes-container with-title h-full px-4 pb-3">
     <span className="nes-text title relative -top-2">Students</span>
     <div className="overflow-y-scroll">
-      <li className="flex justify-between mb-3">
+      <li className="mb-3 flex justify-between">
         <p className="inline-block">Loading...</p>
       </li>
     </div>
@@ -27,10 +27,10 @@ export const Loading = () => (
 )
 
 export const Empty = () => (
-  <ul className="nes-container with-title h-full pb-3 px-4">
+  <ul className="nes-container with-title h-full px-4 pb-3">
     <span className="nes-text title relative -top-2">Students</span>
     <div className="overflow-y-scroll">
-      <li className="flex justify-between mb-3">
+      <li className="mb-3 flex justify-between">
         <p className="inline-block">Get started by enrolling students.</p>
       </li>
     </div>
@@ -43,9 +43,9 @@ export const Failure = ({ error }) => (
 
 export const Success = ({ enolledUsers }) => {
   return (
-    <ul className="nes-container with-title h-full pb-3 px-4">
+    <ul className="nes-container with-title h-full px-4 pb-3">
       <span className="nes-text title relative -top-2">Students</span>
-      <div className="overflow-y-scroll">
+      <div className="h-full overflow-y-scroll">
         {enolledUsers.map((enrollment) => {
           return (
             <NavLink
@@ -57,12 +57,12 @@ export const Success = ({ enolledUsers }) => {
                 studentId: enrollment.userId,
               })}
             >
-              <li className="flex justify-between mb-3">
+              <li className="mb-3 flex justify-between">
                 <p className="inline-block">
                   {enrollment.user.firstName} {enrollment.user.lastName}
                   {/* {enrollment.user.lastName.slice(0, 1)}. */}
                 </p>
-                <p className="inline-block mr-2">{enrollment.points}</p>
+                <p className="mr-2 inline-block">{enrollment.points}</p>
               </li>
             </NavLink>
           )
