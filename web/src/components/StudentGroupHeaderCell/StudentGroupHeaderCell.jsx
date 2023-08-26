@@ -1,6 +1,6 @@
 export const QUERY = gql`
-  query FindStudentGroupHeaderQuery($groupId: String!) {
-    enrolledGroup: enrolledGroup(groupId: $groupId) {
+  query FindStudentGroupHeaderQuery($groupId: String!, $userId: String!) {
+    enrolledGroup: enrolledGroup(groupId: $groupId, userId: $userId) {
       id
       group {
         name
