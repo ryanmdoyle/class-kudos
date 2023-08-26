@@ -5,13 +5,13 @@ import { QUERY as STUDENT_GROUP_HEADER_QUERY } from 'src/components/StudentGroup
 import { QUERY as STUDENT_GROUP_RECENT_REDEEMED_QUERY } from 'src/components/StudentGroupRecentRedeemedCell/StudentGroupRecentRedeemedCell'
 
 export const QUERY = gql`
-  query StudentGroupRewardsQuery($groupId: String!) {
+  query StudentGroupRewardsQuery($groupId: String!, $userId: String!) {
     rewardsOfGroup(id: $groupId) {
       id
       name
       cost
     }
-    enrolledGroup(groupId: $groupId) {
+    enrolledGroup(groupId: $groupId, userId: $userId) {
       points
     }
   }
@@ -62,7 +62,7 @@ export const Success = ({ rewardsOfGroup, enrolledGroup, userId, groupId }) => {
         },
         {
           query: STUDENT_GROUP_HEADER_QUERY,
-          variables: { groupId },
+          variables: { groupId, userId },
         },
       ],
       awaitRefetchQueries: true,
@@ -72,21 +72,22 @@ export const Success = ({ rewardsOfGroup, enrolledGroup, userId, groupId }) => {
   return (
     <div className="nes-container with-title col-span-1">
       <p className="title relative bg-white">Rewards</p>
-      <div className="flex flex-wrap justify-around gap-2 max-h-full overflow-y-scroll">
+      <div className="flex max-h-full flex-wrap justify-around gap-2 overflow-y-scroll">
         {rewardsOfGroup.map((reward) => {
           const handleClick = () => {
-            window.confirm(`You'd like to buy ${reward.name}?`)
-            createRedeemed({
-              variables: {
-                input: {
-                  name: reward.name,
-                  cost: parseInt(reward.cost),
-                  userId: userId,
-                  groupId: groupId,
-                  reviewed: false,
+            if (window.confirm(`You'd like to buy ${reward.name}?`)) {
+              createRedeemed({
+                variables: {
+                  input: {
+                    name: reward.name,
+                    cost: parseInt(reward.cost),
+                    userId: userId,
+                    groupId: groupId,
+                    reviewed: false,
+                  },
                 },
-              },
-            })
+              })
+            }
           }
 
           if (balance >= reward.cost) {
@@ -96,10 +97,10 @@ export const Success = ({ rewardsOfGroup, enrolledGroup, userId, groupId }) => {
                 className="nes-btn text-xs"
                 onClick={handleClick}
               >
-                <span className="inline-block mr-3 nes-text is-success">
+                <span className="nes-text is-success mr-3 inline-block">
                   {reward.name}
                 </span>
-                <span className="inline-block nes-text is-success">
+                <span className="nes-text is-success inline-block">
                   {reward.cost}
                 </span>
               </button>
@@ -108,13 +109,13 @@ export const Success = ({ rewardsOfGroup, enrolledGroup, userId, groupId }) => {
             return (
               <button
                 key={reward.id}
-                className="nes-btn text-xs is-disabled"
+                className="nes-btn is-disabled text-xs"
                 // onClick={handleClick}
               >
-                <span className="inline-block mr-3 is-disabled">
+                <span className="is-disabled mr-3 inline-block">
                   {reward.name}
                 </span>
-                <span className="inline-block is-disabled">{reward.cost}</span>
+                <span className="is-disabled inline-block">{reward.cost}</span>
               </button>
             )
           }

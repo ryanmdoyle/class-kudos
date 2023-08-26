@@ -30,7 +30,18 @@ export const updateRedeemed = ({ id, input }) => {
   })
 }
 
-export const deleteRedeemed = ({ id }) => {
+export const deleteRedeemed = async ({ id }) => {
+  // find redeemed
+  const redeemed = await db.redeemed.findUnique({
+    where: { id },
+  })
+  // return spent value to user
+  await updateEnrollmentPoints({
+    userId: redeemed.userId,
+    groupId: redeemed.groupId,
+    updateValue: redeemed.cost,
+  })
+
   return db.redeemed.delete({
     where: { id },
   })

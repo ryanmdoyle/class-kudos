@@ -105,10 +105,10 @@ export const deleteEnrollment = ({ id }) => {
   })
 }
 
-export const enrolledGroup = ({ groupId }) => {
+export const enrolledGroup = ({ groupId, userId }) => {
   return db.enrollment.findFirstOrThrow({
     where: {
-      userId: context.userId,
+      userId: userId,
       groupId: groupId,
     },
   })
