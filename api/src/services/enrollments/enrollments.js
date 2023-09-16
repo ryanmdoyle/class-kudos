@@ -28,12 +28,20 @@ export const createEnrollment = async ({ input }) => {
       enrollId: input.groupEnrollId,
     },
   })
-  return db.enrollment.create({
-    data: {
-      userId: input.userId,
-      groupId: group.id,
-    },
-  })
+
+  return validateUniqueness(
+    'enrollment',
+    { userId: input.userId, groupId: group.id },
+    { message: 'You are already enrolled in that group.' },
+    () => {
+      return db.enrollment.create({
+        data: {
+          userId: input.userId,
+          groupId: group.id,
+        },
+      })
+    }
+  )
 }
 
 export const createEnrollmentFromEmail = async ({ input }) => {
