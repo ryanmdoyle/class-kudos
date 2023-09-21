@@ -31,6 +31,11 @@ export const schema = gql`
     groupId: String!
   }
 
+  input StudentRedeemedInput {
+    userId: String!
+    rewardId: String!
+  }
+
   input UpdateRedeemedInput {
     userId: String
     name: String
@@ -48,6 +53,7 @@ export const schema = gql`
 
   type Mutation {
     createRedeemed(input: CreateRedeemedInput!): Redeemed! @requireAuth
+    studentRedeemed(input: StudentRedeemedInput!): Redeemed! @requireAuth
     updateRedeemed(id: String!, input: UpdateRedeemedInput!): Redeemed!
       @requireAuth
     deleteRedeemed(id: String!): Redeemed! @requireAuth
