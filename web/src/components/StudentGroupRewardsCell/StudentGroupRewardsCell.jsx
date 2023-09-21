@@ -38,16 +38,16 @@ export const Failure = ({ error }) => (
 export const Success = ({ rewardsOfGroup, enrolledGroup, userId, groupId }) => {
   const balance = enrolledGroup.points
 
-  const CREATE_REDEEMED_MUTATION = gql`
-    mutation CreateRedeemedMutation($input: CreateRedeemedInput!) {
-      createRedeemed(input: $input) {
+  const STUDENT_REDEEMED_MUTATION = gql`
+    mutation StudentRedeemedMutation($input: StudentRedeemedInput!) {
+      studentRedeemed(input: $input) {
         id
       }
     }
   `
 
-  const [createRedeemed, { loading, error }] = useMutation(
-    CREATE_REDEEMED_MUTATION,
+  const [studentRedeemed, { loading, error }] = useMutation(
+    STUDENT_REDEEMED_MUTATION,
     {
       onCompleted: () => {
         toast.success('Reward Requested')
@@ -75,8 +75,20 @@ export const Success = ({ rewardsOfGroup, enrolledGroup, userId, groupId }) => {
       <div className="flex max-h-full flex-wrap justify-around gap-2 overflow-y-scroll">
         {rewardsOfGroup.map((reward) => {
           const handleClick = () => {
-            if (window.confirm(`You'd like to buy ${reward.name}?`)) {
-              createRedeemed({
+            if (
+              window.confirm(`You'd like to buy ${reward.name}?`) &&
+              !loading
+            ) {
+              studentRedeemed({
+                variables: {
+                  input: {
+                    userId: userId,
+                    rewardId: reward.id,
+                  },
+                },
+              })
+              {
+                /* createRedeemed({
                 variables: {
                   input: {
                     name: reward.name,
@@ -86,7 +98,8 @@ export const Success = ({ rewardsOfGroup, enrolledGroup, userId, groupId }) => {
                     reviewed: false,
                   },
                 },
-              })
+              }) */
+              }
             }
           }
 

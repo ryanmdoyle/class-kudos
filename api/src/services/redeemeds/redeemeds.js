@@ -23,6 +23,21 @@ export const createRedeemed = async ({ input }) => {
   })
 }
 
+export const studentRedeemed = async ({ input }) => {
+  const reward = await db.reward.findUnique({
+    where: { id: input.rewardId },
+  })
+
+  return createRedeemed({
+    input: {
+      userId: input.userId,
+      groupId: reward.groupId,
+      cost: reward.cost,
+      name: reward.name,
+    },
+  })
+}
+
 export const updateRedeemed = ({ id, input }) => {
   return db.redeemed.update({
     data: input,
