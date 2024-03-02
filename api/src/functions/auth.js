@@ -20,7 +20,7 @@ export const handler = async (event, context) => {
     // You could use this return value to, for example, show the email
     // address in a toast message so the user will know it worked and where
     // to look for the email.
-    handler: async (user) => {
+    handler: async (user, resetToken) => {
       //       ryandoyle87+s@gmail.com
       // Check for user type (student or teacher)
       const userRole = await findUserRole({ userId: user.id })
@@ -194,6 +194,9 @@ export const handler = async (event, context) => {
   const authHandler = new DbAuthHandler(event, context, {
     // Provide prisma db client
     db: db,
+
+    // Sanitizes the returned user to the client
+    allowedUserFields: ['id', 'email', 'roles'],
 
     // The name of the property you'd call on `db` to access your user table.
     // i.e. if your Prisma model is named `User` this value would be `user`, as in `db.user`
