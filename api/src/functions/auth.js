@@ -21,7 +21,6 @@ export const handler = async (event, context) => {
     // address in a toast message so the user will know it worked and where
     // to look for the email.
     handler: async (user, resetToken) => {
-      //       ryandoyle87+s@gmail.com
       // Check for user type (student or teacher)
       const userRole = await findUserRole({ userId: user.id })
 
@@ -31,15 +30,14 @@ export const handler = async (event, context) => {
         const enrollments = await findEnrolledGroups({ userId: user.id })
         if (enrollments.length > 0) {
           enrollments.forEach(async (enrollment) => {
-            const resetToken = user.resetToken
             const groupOwner = await findGroupOwnerEmail({
               groupId: enrollment.groupId,
             })
             await sendEmail({
               to: groupOwner.email,
               subject: `Password Reset Request from ${user.email}`,
-              text: `${user.email} has requested a password reset. Use this link to reset their password: https://claskudos.com/reset-password?resetToken=${resetToken}`,
-              html: `${user.email} has requested a password reset. Use this link to reset their password: https://claskudos.com/reset-password?resetToken=${resetToken}</p>`,
+              text: `${user.email} has requested a password reset. Use this link to reset their password: https://classkudos.com/reset-password?resetToken=${resetToken}`,
+              html: `${user.email} has requested a password reset. Use this link to reset their password: https://classkudos.com/reset-password?resetToken=${resetToken}</p>`,
             })
             sentTo.push(groupOwner.email)
           })
@@ -60,8 +58,8 @@ export const handler = async (event, context) => {
         sendEmail({
           to: user.email,
           subject: 'Password Reset Request',
-          text: `Head to this link to reset your password: https://claskudos.com/reset-password?resetToken=${user.resetToken}`,
-          html: `<p>Head to this link to reset your password: https://claskudos.com/reset-password?resetToken=${user.resetToken}</p>`,
+          text: `Head to this link to reset your password: https://classkudos.com/reset-password?resetToken=${resetToken}`,
+          html: `<p>Head to this link to reset your password: https://classkudos.com/reset-password?resetToken=${resetToken}</p>`,
         })
       }
       return {
