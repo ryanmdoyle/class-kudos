@@ -42,8 +42,8 @@ export const jsonTruncate = (obj) => {
 export const timeTag = (dateTime) => {
   let output = ''
   const options = {
-    weekday: 'long',
-    month: 'short',
+    weekday: 'short',
+    month: 'numeric',
     day: 'numeric',
     hour: 'numeric',
     minute: 'numeric',
