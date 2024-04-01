@@ -14,7 +14,7 @@ const TeacherPage = () => {
       <Head>
         <title>Teacher Groups</title>
       </Head>
-      <div className="container m-auto bg-red-50 pt-6 lg:w-1/2">
+      <div className="container m-auto pt-6 lg:w-1/2">
         <h1 className="my-6 text-xl">
           {currentUser?.firstName
             ? `Welcome, ${currentUser.firstName}!`
