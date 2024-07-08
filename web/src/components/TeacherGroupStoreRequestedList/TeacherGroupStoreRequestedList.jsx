@@ -77,7 +77,7 @@ const TeacherGroupStoreRequestedList = ({ redeemeds }) => {
       confirm(
         'Are you sure you want to appove ' +
           redeemed.name +
-          'for ' +
+          ' for ' +
           redeemed.user.firstName +
           '?'
       )
