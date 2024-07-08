@@ -6,7 +6,7 @@ import { truncate } from 'src/lib/formatters'
 
 export const QUERY = gql`
   query TeacherGroupEnrolleesQuery($id: String!) {
-    enolledUsers(id: $id) {
+    enrolledUsers(id: $id) {
       id
       user {
         id
@@ -84,7 +84,7 @@ export const Failure = ({ error }) => (
   <div style={{ color: 'red' }}>Error: {error?.message}</div>
 )
 
-export const Success = ({ id, enolledUsers }) => {
+export const Success = ({ id, enrolledUsers }) => {
   const [deleteEnrollment] = useMutation(DELETE_ENROLLMENT_MUTATION, {
     onCompleted: () => {
       toast.success('Enrollment deleted')
@@ -132,7 +132,7 @@ export const Success = ({ id, enolledUsers }) => {
           </tr>
         </thead>
         <tbody>
-          {enolledUsers.map((enrollment) => {
+          {enrolledUsers.map((enrollment) => {
             return (
               <tr key={enrollment.id}>
                 <td>{truncate(enrollment.user.firstName)}</td>

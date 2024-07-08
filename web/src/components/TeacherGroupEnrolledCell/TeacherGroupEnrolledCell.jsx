@@ -2,7 +2,7 @@ import { NavLink, routes } from '@redwoodjs/router'
 
 export const QUERY = gql`
   query EnolledUsersQuery($id: String!) {
-    enolledUsers(id: $id) {
+    enrolledUsers(id: $id) {
       id
       points
       groupId
@@ -41,12 +41,12 @@ export const Failure = ({ error }) => (
   <div style={{ color: 'red' }}>Error: {error?.message}</div>
 )
 
-export const Success = ({ enolledUsers }) => {
+export const Success = ({ enrolledUsers }) => {
   return (
     <ul className="nes-container with-title h-full px-4 pb-3">
       <span className="nes-text title relative -top-2">Students</span>
       <div className="h-full overflow-y-scroll">
-        {enolledUsers.map((enrollment) => {
+        {enrolledUsers.map((enrollment) => {
           return (
             <NavLink
               className="nes-text"

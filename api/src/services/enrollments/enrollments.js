@@ -13,7 +13,7 @@ export const enrollment = ({ id }) => {
   })
 }
 
-export const enolledUsers = ({ id }) => {
+export const enrolledUsers = ({ id }) => {
   return db.enrollment.findMany({
     where: { groupId: id },
     orderBy: {
