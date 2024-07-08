@@ -43,9 +43,9 @@ export const Failure = ({ error }) => (
 
 export const Success = ({ enrolledUsers }) => {
   return (
-    <ul className="nes-container with-title h-full px-4 pb-3">
+    <ul className="nes-container with-title h-full px-4 pb-3 pr-0">
       <span className="nes-text title relative -top-2">Students</span>
-      <div className="h-full overflow-y-scroll">
+      <div className="h-full overflow-y-scroll pr-1">
         {enrolledUsers.map((enrollment) => {
           return (
             <NavLink
