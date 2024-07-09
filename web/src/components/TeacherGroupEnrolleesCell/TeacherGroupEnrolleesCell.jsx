@@ -90,7 +90,6 @@ export const Success = ({ id, enrolledUsers }) => {
       toast.success('Enrollment deleted')
     },
     onError: (error) => {
-      console.log(error)
       toast.error(error.message)
     },
     // This refetches the query on the list page. Read more about other ways to
@@ -101,7 +100,6 @@ export const Success = ({ id, enrolledUsers }) => {
   })
 
   const onDeleteClick = (id, user) => {
-    // console.log(id, user)
     if (
       confirm(
         'Are you sure you want to remove ' +
@@ -137,9 +135,17 @@ export const Success = ({ id, enrolledUsers }) => {
               <tr key={enrollment.id}>
                 <td>{truncate(enrollment.user.firstName)}</td>
                 <td>{truncate(enrollment.user.email)}</td>
-
                 <td>
                   <nav className="rw-table-actions">
+                    <Link
+                      to={routes.teacherEditEnrolledUser({
+                        userId: enrollment.user.id,
+                        groupId: id,
+                      })}
+                      className="rw-button rw-button-small rw-button ml-3"
+                    >
+                      Edit
+                    </Link>
                     <button
                       type="button"
                       title={
