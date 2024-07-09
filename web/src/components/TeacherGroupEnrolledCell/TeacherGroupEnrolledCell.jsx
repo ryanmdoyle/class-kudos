@@ -30,8 +30,12 @@ export const Empty = () => (
   <ul className="nes-container with-title h-full px-4 pb-3">
     <span className="nes-text title relative -top-2">Students</span>
     <div className="overflow-y-scroll">
-      <li className="mb-3 flex justify-between">
-        <p className="inline-block">Get started by enrolling students.</p>
+      <li className="mb-3">
+        <p>Get started by enrolling students.</p>
+        <p className="mt-4">
+          Students can create their own accounts, then enroll in your group
+          using the Enroll ID. You can find the ID under the group name.
+        </p>
       </li>
     </div>
   </ul>
