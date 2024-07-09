@@ -1,4 +1,5 @@
-import { FatalErrorBoundary, RedwoodProvider } from '@redwoodjs/web'
+import Sentry from 'src/lib/sentry'
+import { RedwoodProvider } from '@redwoodjs/web'
 import { RedwoodApolloProvider } from '@redwoodjs/web/apollo'
 
 import FatalErrorPage from 'src/pages/FatalErrorPage'
@@ -12,7 +13,7 @@ import { Toaster } from '@redwoodjs/web/toast'
 import './index.css'
 
 const App = () => (
-  <FatalErrorBoundary page={FatalErrorPage}>
+  <Sentry.ErrorBoundary fallback={FatalErrorPage}>
     <RedwoodProvider titleTemplate="%PageTitle · %AppTitle">
       <AuthProvider>
         <RedwoodApolloProvider useAuth={useAuth}>
@@ -21,7 +22,7 @@ const App = () => (
         </RedwoodApolloProvider>
       </AuthProvider>
     </RedwoodProvider>
-  </FatalErrorBoundary>
+  </Sentry.ErrorBoundary>
 )
 
 export default App
