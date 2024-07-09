@@ -1,6 +1,5 @@
-import { Link, routes, navigate } from '@redwoodjs/router'
-import { Metadata, useMutation } from '@redwoodjs/web'
-import { toast } from '@redwoodjs/web/toast'
+import { Link, routes } from '@redwoodjs/router'
+import { Metadata } from '@redwoodjs/web'
 
 import EditEnrolledUserCell from 'src/components/EditEnrolledUserCell/EditEnrolledUserCell'
 

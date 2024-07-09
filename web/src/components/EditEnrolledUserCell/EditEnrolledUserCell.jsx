@@ -2,8 +2,6 @@ import { navigate, routes } from '@redwoodjs/router'
 import { useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
 
-import UserForm from 'src/components/User/UserForm'
-
 import EditEnrolledUserForm from '../EditEnrolledUserForm/EditEnrolledUserForm'
 
 export const QUERY = gql`
