@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { Link, routes, navigate } from '@redwoodjs/router'
-import { MetaTags } from '@redwoodjs/web'
+import { Metadata } from '@redwoodjs/web'
 
 import { useAuth } from 'src/auth'
 
@@ -20,7 +20,7 @@ const HomePage = () => {
 
   return (
     <div className="container mx-auto px-8">
-      <MetaTags title="Home" description="Class Kudos home page." />
+      <Metadata title="Home" description="Class Kudos home page." />
       <h2 className="mb-8 text-lg">
         Create Positive Learning Environments, One Kudo at a Time
       </h2>

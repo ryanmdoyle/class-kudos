@@ -7,7 +7,7 @@
 // 'src/pages/HomePage/HomePage.js'         -> HomePage
 // 'src/pages/Admin/BooksPage/BooksPage.js' -> AdminBooksPage
 
-import { Set, Private, Router, Route } from '@redwoodjs/router'
+import { Set, PrivateSet, Router, Route } from '@redwoodjs/router'
 
 import ScaffoldLayout from 'src/layouts/ScaffoldLayout'
 
@@ -18,7 +18,7 @@ const Routes = () => {
   return (
     <Router useAuth={useAuth}>
       <Set wrap={MainLayout}>
-        <Private unauthenticated="home" roles={['TEACHER', 'ADMIN']}>
+        <PrivateSet unauthenticated="home" roles={['TEACHER', 'ADMIN']}>
           <Route path="/teacher" page={TeacherPage} name="teacher" />
           <Route path="/teacher/group/new" page={TeacherNewGroupPage} name="teacherNewGroup" />
           <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
@@ -29,13 +29,13 @@ const Routes = () => {
           <Route path="/teacher/group/{groupId}/editEnrolled/{userId}" page={TeacherEditEnrolledUserPage} name="teacherEditEnrolledUser" />
           <Route path="/teacher/store/{id}" page={TeacherGroupStorePage} name="teacherGroupStore" />
           <Route path="/teacher/options/{id}" page={TeacherGroupOptionsPage} name="teacherGroupOptions" />
-        </Private>
-        <Private unauthenticated="home" roles={['STUDENT', 'ADMIN']}>
+        </PrivateSet>
+        <PrivateSet unauthenticated="home" roles={['STUDENT', 'ADMIN']}>
           <Route path="/student" page={StudentPage} name="student" />
           <Route path="/student/new-enrollment" page={StudentNewEnrollmentPage} name="studentNewEnrollment" />
           <Route path="/student/group/{id}" page={StudentGroupPage} name="studentGroup" />
           <Route path="/student/group/awards/{id}" page={StudentGroupRewardsPage} name="studentGroupRewards" />
-        </Private>
+        </PrivateSet>
         <Route path="/" page={HomePage} name="home" prerender />
         <Route path="/login" page={LoginPage} name="login" prerender />
         <Route path="/signup" page={SignupPage} name="signup" prerender />
@@ -44,7 +44,7 @@ const Routes = () => {
         <Route notfound page={NotFoundPage} prerender />
       </Set>
       {/* the group models use the scaffolds for frontend.  Make copies, so the scaffolds are only used for admin. */}
-      <Private unauthenticated="home" roles="admin">
+      <PrivateSet unauthenticated="home" roles="admin">
         <Set wrap={MainLayout} title="Groups" titleTo="groups" buttonLabel="New Group" buttonTo="newGroup">
           <Route path="/groups/new" page={GroupNewGroupPage} name="newGroup" />
           <Route path="/groups/{id}/edit" page={GroupEditGroupPage} name="editGroup" />
@@ -93,7 +93,7 @@ const Routes = () => {
           <Route path="/feedbacks/{id}" page={FeedbackFeedbackPage} name="feedback" />
           <Route path="/feedbacks" page={FeedbackFeedbacksPage} name="feedbacks" />
         </Set>
-      </Private>
+      </PrivateSet>
     </Router>
   )
 }
