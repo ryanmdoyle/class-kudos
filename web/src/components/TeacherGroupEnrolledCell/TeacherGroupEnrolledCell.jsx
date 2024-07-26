@@ -51,6 +51,9 @@ export const Failure = ({ error }) => (
 export const Success = ({ id, enrolledUsers }) => {
   const isMulti = useMatch('/teacher/group/{id}/multi').match
   const selected = useSelectedContext()
+  const selectedIds = selected?.selectedUsers
+    ? selected.selectedUsers?.map((enrollment) => enrollment.userId)
+    : null
 
   const handleClick = (enrollment) => {
     selected.toggleSelectedUser(enrollment)
@@ -64,7 +67,8 @@ export const Success = ({ id, enrolledUsers }) => {
         <div className="my-4 flex w-full justify-between gap-4 px-4">
           <NavLink
             className={`nes-btn title relative`}
-            activeClassName={'is-success'}
+            activeClassName={!isMulti && 'is-success'}
+            matchSubPaths={true}
             to={routes.teacherGroup({ id: id })}
           >
             Single
@@ -80,13 +84,16 @@ export const Success = ({ id, enrolledUsers }) => {
         <ul className="relative h-full overflow-y-scroll pl-4">
           {isMulti
             ? enrolledUsers.map((enrollment) => {
+                const color = selectedIds?.includes(enrollment.userId)
+                  ? 'nes-text is-primary'
+                  : 'nes-text'
                 return (
                   <li key={enrollment.id}>
                     <button
                       onClick={() => {
                         handleClick(enrollment)
                       }}
-                      className="inline flex w-full justify-between pb-3 pr-2"
+                      className={`inline flex w-full justify-between pb-3 pr-2 hover:underline ${color}`}
                     >
                       <div>
                         {enrollment?.user?.firstName}{' '}
