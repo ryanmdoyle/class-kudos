@@ -24,6 +24,13 @@ export const schema = gql`
     groupId: String!
   }
 
+  input CreateFeedbacksInput {
+    name: String!
+    value: Int!
+    userIds: [String!]!
+    groupId: String!
+  }
+
   input UpdateFeedbackInput {
     name: String
     value: Int
@@ -33,6 +40,7 @@ export const schema = gql`
 
   type Mutation {
     createFeedback(input: CreateFeedbackInput!): Feedback! @requireAuth
+    createFeedbacks(input: CreateFeedbacksInput!): Int! @requireAuth
     updateFeedback(id: String!, input: UpdateFeedbackInput!): Feedback!
       @requireAuth
     deleteFeedback(id: String!): Feedback! @requireAuth
