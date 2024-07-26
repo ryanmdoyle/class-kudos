@@ -22,6 +22,7 @@ const Routes = () => {
           <Route path="/teacher" page={TeacherPage} name="teacher" />
           <Route path="/teacher/group/new" page={TeacherNewGroupPage} name="teacherNewGroup" />
           <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
+          <Route path="/teacher/group/{id}/multi" page={TeacherGroupStudentsPage} name="teacherGroupStudents" />
           <Route path="/teacher/group/{id}/student/{studentId}" page={TeacherGroupStudentPage} name="teacherGroupStudent" />
           <Route path="/teacher/group/{id}/enrollment/new" page={TeacherGroupNewEnrollmentPage} name="teacherGroupNewEnrollment" />
           <Route path="/teacher/group/{id}/action/new" page={TeacherGroupNewActionPage} name="teacherGroupNewAction" />
