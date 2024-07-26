@@ -89,7 +89,7 @@ export const Success = ({ actionsOfGroup, id, studentId }) => {
           return (
             <button
               key={action.id}
-              className="nes-btn text-xs"
+              className="nes-btn text-s"
               onClick={handleClick}
             >
               <span className="mr-3 inline-block">{action.name}</span>
