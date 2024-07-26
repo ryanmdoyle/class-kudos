@@ -5,7 +5,7 @@ import { toast } from '@redwoodjs/web/toast'
 import EditEnrolledUserForm from '../EditEnrolledUserForm/EditEnrolledUserForm'
 
 export const QUERY = gql`
-  query EditUserById($id: String!) {
+  query EditEnrolledUserById($id: String!) {
     user: user(id: $id) {
       id
       email
@@ -15,7 +15,7 @@ export const QUERY = gql`
   }
 `
 const UPDATE_USER_MUTATION = gql`
-  mutation UpdateUserMutation($id: String!, $input: UpdateUserInput!) {
+  mutation UpdateEnrolledUserMutation($id: String!, $input: UpdateUserInput!) {
     updateUser(id: $id, input: $input) {
       id
       email
