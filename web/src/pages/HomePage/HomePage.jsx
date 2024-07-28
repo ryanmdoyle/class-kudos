@@ -9,7 +9,7 @@ const HomePage = () => {
   const { isAuthenticated, currentUser, hasRole } = useAuth()
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (currentUser && isAuthenticated) {
       if (hasRole('TEACHER')) {
         navigate(routes.teacher({ id: currentUser.id }))
       } else {
