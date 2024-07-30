@@ -1,3 +1,4 @@
+import { useLocation } from '@redwoodjs/router'
 import { toast } from '@redwoodjs/web/toast'
 
 export const QUERY = gql`
@@ -42,6 +43,9 @@ export const Failure = ({ error }) => (
 )
 
 export const Success = ({ TeacherGroupHeader }) => {
+  const { pathname } = useLocation()
+  const onOptionsPage = pathname === `/teacher/options/${TeacherGroupHeader.id}`
+
   const handleCopy = () => {
     navigator.clipboard.writeText(TeacherGroupHeader.enrollId)
     toast.success('Copied Enroll ID!')
@@ -49,9 +53,16 @@ export const Success = ({ TeacherGroupHeader }) => {
   return (
     <div className="nes-container mb-4 flex justify-between">
       <div className="flex flex-col">
-        <span className="text-2xl">{TeacherGroupHeader.name}</span>
+        {onOptionsPage ? (
+          <input
+            className="border-4 border-dotted border-gray-400 px-4 py-2 text-2xl"
+            defaultValue={TeacherGroupHeader.name}
+          ></input>
+        ) : (
+          <span className="text-2xl">{TeacherGroupHeader.name}</span>
+        )}
         <button
-          className="nes-text text-xs text-gray-400 hover:text-gray-800"
+          className="nes-text text-left align-top text-xs text-gray-400 hover:text-gray-800"
           onClick={handleCopy}
         >
           Enroll ID: {TeacherGroupHeader.enrollId}

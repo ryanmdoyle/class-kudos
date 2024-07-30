@@ -1,5 +1,5 @@
-import { Link, navigate, routes } from '@redwoodjs/router'
-import { MetaTags, useMutation } from '@redwoodjs/web'
+import { navigate, routes, Link } from '@redwoodjs/router'
+import { Metadata, useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
 
 import TeacherGroupNewEnrollmentForm from 'src/components/TeacherGroupNewEnrollmentForm'
@@ -36,9 +36,18 @@ const TeacherGroupNewEnrollmentPage = ({ id }) => {
 
   return (
     <>
-      <MetaTags title="New Enrollment" description="New Enrollment page" />
+      <Metadata
+        title="New Enrollment by Email"
+        description="Enroll student by email page."
+      />
+      <Link
+        to={routes.teacherGroupOptions({ id: id })}
+        className="nes-btn h-10 w-48"
+      >
+        {'<- back'}
+      </Link>
       <div className="max-w-m nes-text container block py-4  text-sm">
-        Enter the enrollment code from your instructor to add the group!
+        Enter a student email address to enroll them to your group.
       </div>
       <TeacherGroupNewEnrollmentForm onSave={onSave} />
     </>
