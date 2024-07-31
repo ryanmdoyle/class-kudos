@@ -58,6 +58,18 @@ export const updateGroupRewarded = ({ groupId, updateValue }) => {
   })
 }
 
+export const updateGroupName = ({ input }) => {
+  const { groupId, name } = input
+  return db.group.update({
+    where: {
+      id: groupId,
+    },
+    data: {
+      name: name,
+    },
+  })
+}
+
 export const deleteGroup = ({ id }) => {
   return db.group.delete({
     where: { id },

@@ -1,5 +1,10 @@
+import { useState } from 'react'
+
 import { useLocation } from '@redwoodjs/router'
+import { useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
+
+import GroupNameForm from 'src/components/GroupNameForm/GroupNameForm'
 
 export const QUERY = gql`
   query TeacherGroupHeaderQuery($id: String!) {
@@ -12,6 +17,14 @@ export const QUERY = gql`
       enrollments {
         id
       }
+    }
+  }
+`
+
+export const EDIT_GROUP_NAME_MUTATION = gql`
+  mutation updateGroupName($input: UpdateGroupNameInput!) {
+    updateGroupName(input: $input) {
+      id
     }
   }
 `
@@ -46,6 +59,33 @@ export const Success = ({ TeacherGroupHeader }) => {
   const { pathname } = useLocation()
   const onOptionsPage = pathname === `/teacher/options/${TeacherGroupHeader.id}`
 
+  const [updateName, { loading, error }] = useMutation(
+    EDIT_GROUP_NAME_MUTATION,
+    {
+      onCompleted: () => {
+        toast.success('Group Name Updated')
+      },
+      refetchQueries: [
+        { query: QUERY, variables: { id: TeacherGroupHeader.id } },
+      ],
+      awaitRefetchQueries: true,
+      onError: (error) => {
+        toast.error(error.message)
+      },
+    }
+  )
+
+  const handleNameChange = (id, name) => {
+    updateName({
+      variables: {
+        input: {
+          groupId: id,
+          name: name,
+        },
+      },
+    })
+  }
+
   const handleCopy = () => {
     navigator.clipboard.writeText(TeacherGroupHeader.enrollId)
     toast.success('Copied Enroll ID!')
@@ -54,10 +94,11 @@ export const Success = ({ TeacherGroupHeader }) => {
     <div className="nes-container mb-4 flex justify-between">
       <div className="flex flex-col">
         {onOptionsPage ? (
-          <input
-            className="border-4 border-dotted border-gray-400 px-4 py-2 text-2xl"
-            defaultValue={TeacherGroupHeader.name}
-          ></input>
+          <GroupNameForm
+            id={TeacherGroupHeader.id}
+            name={TeacherGroupHeader.name}
+            handleNameChange={handleNameChange}
+          />
         ) : (
           <span className="text-2xl">{TeacherGroupHeader.name}</span>
         )}

@@ -43,10 +43,16 @@ export const schema = gql`
     updateValue: Int!
   }
 
+  input UpdateGroupNameInput {
+    groupId: String!
+    name: String!
+  }
+
   type Mutation {
     createGroup(input: CreateGroupInput!): Group! @requireAuth
     updateGroup(id: String!, input: UpdateGroupInput!): Group! @requireAuth
     updateGroupAwarded(input: UpdateGroupAwardedInput!): Group! @requireAuth
+    updateGroupName(input: UpdateGroupNameInput!): Group! @requireAuth
     deleteGroup(id: String!): Group! @requireAuth
     archiveGroup(id: String!): Group! @requireAuth
   }
