@@ -20,6 +20,7 @@ const Routes = () => {
       <Set wrap={MainLayout}>
         <PrivateSet unauthenticated="home" roles={['TEACHER', 'ADMIN']}>
           <Route path="/teacher" page={TeacherPage} name="teacher" />
+          <Route path="/teacher/profile" page={TeacherProfilePage} name="teacherProfile" />
           <Route path="/teacher/group/new" page={TeacherNewGroupPage} name="teacherNewGroup" />
           <Route path="/teacher/group/{id}" page={TeacherGroupPage} name="teacherGroup" />
           <Route path="/teacher/group/{id}/multi" page={TeacherGroupStudentsPage} name="teacherGroupStudents" />

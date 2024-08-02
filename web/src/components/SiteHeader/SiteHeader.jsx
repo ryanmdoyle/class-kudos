@@ -1,9 +1,9 @@
-import { navigate, routes } from '@redwoodjs/router'
+import { navigate, routes, Link } from '@redwoodjs/router'
 
 import { useAuth } from 'src/auth'
 
 const SiteHeader = () => {
-  const { isAuthenticated, currentUser, logOut } = useAuth()
+  const { isAuthenticated, logOut, hasRole } = useAuth()
 
   const handleLogOut = () => {
     logOut()
@@ -27,15 +27,22 @@ const SiteHeader = () => {
         <i className="nes-icon coin mt-2 h-[36px]"></i>
         <h1 className="mt-2 h-[36px] pl-4 text-2xl">Class Kudos</h1>
       </div>
-      {isAuthenticated ? (
-        <button className="nes-btn" onClick={handleLogOut}>
-          Logout
-        </button>
-      ) : (
-        <button className="nes-btn is-primary" onClick={handleLogIn}>
-          Log In
-        </button>
-      )}
+      <div className="flex gap-2">
+        {hasRole('TEACHER') && (
+          <Link to={routes.teacherProfile()} className="nes-btn h-10">
+            Edit Profile
+          </Link>
+        )}
+        {isAuthenticated ? (
+          <button className="nes-btn" onClick={handleLogOut}>
+            Logout
+          </button>
+        ) : (
+          <button className="nes-btn is-primary" onClick={handleLogIn}>
+            Log In
+          </button>
+        )}
+      </div>
     </div>
   )
 }
