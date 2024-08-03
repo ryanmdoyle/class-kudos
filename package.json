@@ -7,9 +7,9 @@
     ]
   },
   "devDependencies": {
-    "@redwoodjs/auth-dbauth-setup": "7.7.2",
-    "@redwoodjs/core": "7.7.2",
-    "@redwoodjs/realtime": "7.7.2",
+    "@redwoodjs/auth-dbauth-setup": "7.7.3",
+    "@redwoodjs/core": "7.7.3",
+    "@redwoodjs/realtime": "7.7.3",
     "@redwoodjs/studio": "11",
     "prettier-plugin-tailwindcss": "^0.3.0"
   },
