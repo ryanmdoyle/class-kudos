@@ -2,6 +2,7 @@ import { useParams } from '@redwoodjs/router'
 import { useMutation } from '@redwoodjs/web'
 import { toast } from '@redwoodjs/web/toast'
 
+import { QUERY as REDEEMED_ALERT_QUERY } from 'src/components/RedeemedAlertCell/RedeemedAlertCell'
 import { QUERY as TECHER_GROUP_STORE_APPROVED_QUERY } from 'src/components/TeacherGroupStoreApprovedCell/TeacherGroupStoreApprovedCell'
 import { QUERY as TECHER_GROUP_STORE_REQUESTED_QUERY } from 'src/components/TeacherGroupStoreRequestedCell/TeacherGroupStoreRequestedCell'
 import { timeTag, truncate } from 'src/lib/formatters'
@@ -32,11 +33,9 @@ const TeacherGroupStoreRequestedList = ({ redeemeds }) => {
     onError: (error) => {
       toast.error(error.message)
     },
-    // This refetches the query on the list page. Read more about other ways to
-    // update the cache over here:
-    // https://www.apollographql.com/docs/react/data/mutations/#making-all-other-cache-updates
     refetchQueries: [
       { query: TECHER_GROUP_STORE_REQUESTED_QUERY, variables: { groupId: id } },
+      { query: REDEEMED_ALERT_QUERY, variables: { groupId: id } },
     ],
     awaitRefetchQueries: true,
   })
@@ -77,7 +76,7 @@ const TeacherGroupStoreRequestedList = ({ redeemeds }) => {
       confirm(
         'Are you sure you want to appove ' +
           redeemed.name +
-          'for ' +
+          ' for ' +
           redeemed.user.firstName +
           '?'
       )

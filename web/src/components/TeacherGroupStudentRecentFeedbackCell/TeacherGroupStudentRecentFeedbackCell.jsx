@@ -117,9 +117,9 @@ export const Success = ({ feedbackOfUser, userId, groupId }) => {
   }
 
   return (
-    <div className="nes-container with-title h-1/2">
+    <div className="nes-container with-title h-1/2 pr-0">
       <p className="title relative bg-white">Recent Feedback</p>
-      <div className="h-full overflow-y-scroll">
+      <div className="h-full overflow-y-scroll pr-2">
         <table className="rw-table">
           <thead>
             <tr>

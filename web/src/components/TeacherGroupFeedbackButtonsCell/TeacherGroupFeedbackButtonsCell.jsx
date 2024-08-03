@@ -25,7 +25,7 @@ export const QUERY = gql`
 export const Loading = () => (
   <div className="nes-container with-title h-1/2">
     <span className="title relative -top-2">Give Feedback</span>
-    <div className="flex flex-wrap justify-around gap-2 max-h-full overflow-y-scroll">
+    <div className="flex max-h-full flex-wrap justify-around gap-2 overflow-y-scroll">
       Loading...
     </div>
   </div>
@@ -34,7 +34,7 @@ export const Loading = () => (
 export const Empty = () => (
   <div className="nes-container with-title h-1/2">
     <span className="title relative -top-2">Give Feedback</span>
-    <div className="flex flex-wrap justify-around gap-2 max-h-full overflow-y-scroll">
+    <div className="flex max-h-full flex-wrap justify-around gap-2 overflow-y-scroll">
       No actions have been created yet! Actions are different types of tasks,
       behaviors, or consequences that you can give students feedback for. Head
       over to the Options page to get started making actions for your group.
@@ -69,9 +69,9 @@ export const Success = ({ actionsOfGroup, id, studentId }) => {
   )
 
   return (
-    <div className="nes-container with-title h-1/2">
+    <div className="nes-container with-title h-1/2 pb-0 pr-0">
       <span className="title relative -top-2">Give Feedback</span>
-      <div className="flex flex-wrap justify-around gap-2 max-h-full overflow-y-scroll">
+      <div className="flex max-h-full flex-wrap justify-around gap-2 overflow-y-scroll pr-2">
         {actionsOfGroup.map((action) => {
           const handleClick = () => {
             createFeedback({
@@ -89,14 +89,14 @@ export const Success = ({ actionsOfGroup, id, studentId }) => {
           return (
             <button
               key={action.id}
-              className="nes-btn text-xs"
+              className="nes-btn text-s"
               onClick={handleClick}
             >
-              <span className="inline-block mr-3">{action.name}</span>
+              <span className="mr-3 inline-block">{action.name}</span>
               {action.value >= 0 ? (
                 <span className="inline-block">{action.value}</span>
               ) : (
-                <span className="inline-block nes-text is-error">
+                <span className="nes-text is-error inline-block">
                   {action.value}
                 </span>
               )}

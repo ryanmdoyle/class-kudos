@@ -14,7 +14,7 @@ const TeacherGroupPage = ({ id }) => {
             <TeacherGroupEnrolledCell id={id} />
           </div>
           <div className="nes-container w-2/3">
-            {`<- Select a student to get started.`}
+            <div className="pt-16">{`<- Select a student to get started.`}</div>
           </div>
         </div>
       </TeacherLayout>

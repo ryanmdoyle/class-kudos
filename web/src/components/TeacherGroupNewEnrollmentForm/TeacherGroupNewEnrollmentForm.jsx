@@ -42,7 +42,10 @@ const TeacherGroupNewEnrollmentForm = (props) => {
         </div>
 
         <div className="rw-button-group">
-          <Submit disabled={props.loading} className="rw-button rw-button-blue">
+          <Submit
+            disabled={props.loading}
+            className="nes-btn is-success h-10 w-48"
+          >
             Add Student
           </Submit>
         </div>

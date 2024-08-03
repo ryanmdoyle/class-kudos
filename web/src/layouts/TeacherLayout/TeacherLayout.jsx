@@ -1,11 +1,12 @@
 import { NavLink, routes } from '@redwoodjs/router'
 
+import RedeemedAlertCell from 'src/components/RedeemedAlertCell/RedeemedAlertCell'
 import TeacherGroupHeaderCell from 'src/components/TeacherGroupHeaderCell/TeacherGroupHeaderCell'
 
 const TeacherLayout = ({ children, groupId }) => {
   return (
     <>
-      <div className="flex w-full justify-center gap-x-8 mb-4">
+      <div className="mb-4 flex w-full justify-center gap-x-8">
         <button>
           <NavLink
             className="nes-btn is-primary"
@@ -25,15 +26,20 @@ const TeacherLayout = ({ children, groupId }) => {
             Feedback
           </NavLink>
         </button>
-        <button>
-          <NavLink
-            className="nes-btn is-primary"
-            activeClassName="is-success"
-            to={routes.teacherGroupStore({ id: groupId })}
-          >
-            Store
-          </NavLink>
-        </button>
+        <div className="relative">
+          <button>
+            <NavLink
+              className="nes-btn is-primary"
+              activeClassName="is-success"
+              to={routes.teacherGroupStore({ id: groupId })}
+            >
+              Store
+            </NavLink>
+            <div className="absolute -top-4 right-0">
+              <RedeemedAlertCell groupId={groupId} />
+            </div>
+          </button>
+        </div>
         <button>
           <NavLink
             className="nes-btn is-primary"

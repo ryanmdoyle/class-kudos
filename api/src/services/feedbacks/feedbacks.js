@@ -48,6 +48,51 @@ export const createFeedback = async ({ input }) => {
   })
 }
 
+export const createFeedbacks = async ({ input }) => {
+  const totalGroupPoints = input.value * input.userIds.length
+  const feedbackData = await input.userIds.map((userId) => {
+    return {
+      userId: userId,
+      groupId: input.groupId,
+      value: input.value,
+      name: input.name,
+    }
+  })
+
+  const [groupPoints, enrollmentPoints, feedbacksCreated] =
+    await db.$transaction([
+      updateGroupRewarded({
+        groupId: input.groupId,
+        updateValue: totalGroupPoints,
+      }),
+      db.enrollment.updateMany({
+        where: {
+          AND: [
+            {
+              userId: {
+                in: input.userIds,
+              },
+            },
+            {
+              groupId: {
+                equals: input.groupId,
+              },
+            },
+          ],
+        },
+        data: {
+          points: {
+            increment: input.value,
+          },
+        },
+      }),
+      db.feedback.createMany({
+        data: feedbackData,
+      }),
+    ])
+  return feedbacksCreated.count
+}
+
 export const updateFeedback = ({ id, input }) => {
   return db.feedback.update({
     data: input,
