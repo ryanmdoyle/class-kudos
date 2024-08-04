@@ -82,7 +82,7 @@ export const Success = ({ actionsOfGroup, id, studentId }) => {
 
   return (
     <>
-      <div className="nes-container with-title h-1/2 pb-0 pr-0">
+      <div className="nes-container with-title h-1/2 pb-4 pr-0">
         <span className="title relative -top-2">Give Feedback</span>
         <div className="flex max-h-full flex-wrap justify-around gap-2 overflow-y-scroll pr-2">
           {actionsOfGroup.map((action) => {
