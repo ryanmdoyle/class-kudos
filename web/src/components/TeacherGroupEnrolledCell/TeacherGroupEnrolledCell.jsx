@@ -81,7 +81,7 @@ export const Success = ({ id, enrolledUsers }) => {
             Multi
           </NavLink>
         </div>
-        <ul className="relative h-full overflow-y-scroll pl-4">
+        <ul className="relative h-full overflow-y-scroll pb-[100px] pl-4">
           {isMulti
             ? enrolledUsers.map((enrollment) => {
                 const color = selectedIds?.includes(enrollment.userId)
@@ -93,7 +93,7 @@ export const Success = ({ id, enrolledUsers }) => {
                       onClick={() => {
                         handleClick(enrollment)
                       }}
-                      className={`inline flex w-full justify-between pb-3 pr-2 hover:underline ${color}`}
+                      className={`flex w-full justify-between pb-3 pr-2 hover:underline ${color}`}
                     >
                       <div>
                         {enrollment?.user?.firstName}{' '}
