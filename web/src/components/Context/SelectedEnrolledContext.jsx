@@ -22,9 +22,13 @@ export const SelectedEnrolledProvider = ({ children }) => {
     }
   }
 
+  const selectMultiUsers = (enrollments) => {
+    setSelectedUsers([...enrollments])
+  }
+
   return (
     <SelectedEnrolledContext.Provider
-      value={{ selectedUsers, toggleSelectedUser }}
+      value={{ selectedUsers, toggleSelectedUser, selectMultiUsers }}
     >
       {children}
     </SelectedEnrolledContext.Provider>

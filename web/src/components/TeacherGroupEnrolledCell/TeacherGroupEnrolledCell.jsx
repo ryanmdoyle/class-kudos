@@ -1,4 +1,4 @@
-import { NavLink, routes, useMatch } from '@redwoodjs/router'
+import { NavLink, routes, useMatch, useLocation } from '@redwoodjs/router'
 
 import { useSelectedContext } from 'src/components/Context/SelectedEnrolledContext'
 import TeacherGroupEnrolledListLink from 'src/components/TeacherGroupEnrolledListLink/TeacherGroupEnrolledListLink'
@@ -59,6 +59,10 @@ export const Success = ({ id, enrolledUsers }) => {
     selected.toggleSelectedUser(enrollment)
   }
 
+  const handleAll = () => {
+    selected.selectMultiUsers(enrolledUsers)
+  }
+
   return (
     <div className="nes-container with-title h-full p-0">
       <span className="nes-text title absolute left-4 top-4">Students</span>
@@ -73,13 +77,23 @@ export const Success = ({ id, enrolledUsers }) => {
           >
             Single
           </NavLink>
-          <NavLink
-            className={`nes-btn title relative`}
-            activeClassName={'is-success'}
-            to={routes.teacherGroupStudents({ id: id })}
-          >
-            Multi
-          </NavLink>
+          <div>
+            {isMulti && (
+              <button
+                className={`nes-btn title is-primary relative mr-2`}
+                onClick={handleAll}
+              >
+                All
+              </button>
+            )}
+            <NavLink
+              className={`nes-btn title relative`}
+              activeClassName={'is-success'}
+              to={routes.teacherGroupStudents({ id: id })}
+            >
+              Multi
+            </NavLink>
+          </div>
         </div>
         <ul className="relative h-full overflow-y-scroll pb-[100px] pl-4">
           {isMulti
