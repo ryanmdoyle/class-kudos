@@ -52,6 +52,7 @@ export const Success = ({ actionsOfGroup, id, studentId }) => {
     {
       onCompleted: () => {
         toast.success('Kudos Awarded!')
+        selected.clearSelected()
       },
       onError: (error) => {
         toast.error(error.message)
@@ -108,13 +109,21 @@ export const Success = ({ actionsOfGroup, id, studentId }) => {
           })}
         </div>
       </div>
-      <div className="nes-container with-title h-1/2 pb-2 pr-0">
+      <div className="nes-container with-title relative h-1/2 pb-2 pr-0">
         <span className="title relative -top-2">Selected:</span>
         <ul className="flex max-h-full flex-wrap gap-4 overflow-y-scroll pr-2">
           {selected.selectedUsers.map((enrollment) => (
             <li key={enrollment.id}>{enrollment.user.firstName}</li>
           ))}
         </ul>
+        {selected.selectedUsers.length > 0 && (
+          <button
+            className="nes-btn is-error absolute -right-4 -top-4"
+            onClick={selected.clearSelected}
+          >
+            X
+          </button>
+        )}
       </div>
     </>
   )
