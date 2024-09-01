@@ -22,7 +22,7 @@ export const Loading = () => (
 export const Empty = () => (
   <div className="nes-container with-title col-span-2">
     <p className="title relative bg-white">Redeemed Rewards</p>
-    <p>No feedback yet!</p>
+    <p>Nothing redeemed yet!</p>
   </div>
 )
 
@@ -32,7 +32,7 @@ export const Failure = ({ error }) => (
 
 export const Success = ({ redeemedOfStudent }) => {
   return (
-    <div className="nes-container with-title w-full col-span-2">
+    <div className="nes-container with-title col-span-2 w-full">
       <p className="title relative bg-white">Redeemed Rewards</p>
       {/* <div className="flex flex-wrap justify-around gap-2 max-h-full overflow-y-scroll"> */}
       <StudentGroupRecentRedeemedList redeemed={redeemedOfStudent} />
