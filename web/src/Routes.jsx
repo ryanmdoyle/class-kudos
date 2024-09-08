@@ -18,6 +18,7 @@ const Routes = () => {
   return (
     <Router useAuth={useAuth}>
       <Set wrap={MainLayout}>
+        <Route path="/" page={HomePage} name="home" prerender />
         <PrivateSet unauthenticated="home" roles={['TEACHER', 'ADMIN']}>
           <Route path="/teacher" page={TeacherPage} name="teacher" />
           <Route path="/teacher/profile" page={TeacherProfilePage} name="teacherProfile" />
@@ -38,7 +39,6 @@ const Routes = () => {
           <Route path="/student/group/{id}" page={StudentGroupPage} name="studentGroup" />
           <Route path="/student/group/awards/{id}" page={StudentGroupRewardsPage} name="studentGroupRewards" />
         </PrivateSet>
-        <Route path="/" page={HomePage} name="home" prerender />
         <Route path="/login" page={LoginPage} name="login" prerender />
         <Route path="/signup" page={SignupPage} name="signup" prerender />
         <Route path="/forgot-password" page={ForgotPasswordPage} name="forgotPassword" prerender />
