@@ -29,6 +29,18 @@ export const deleteUser = ({ id }) => {
   })
 }
 
+export const usersInGroup = ({ groupId }) => {
+  return db.user.findMany({
+    where: {
+      enrollments: {
+        some: {
+          groupId: groupId,
+        },
+      },
+    },
+  })
+}
+
 export const User = {
   roles: (_obj, { root }) => {
     return db.user.findUnique({ where: { id: root?.id } }).roles()

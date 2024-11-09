@@ -1,19 +1,20 @@
-import { NavLink, routes, useMatch, useLocation } from '@redwoodjs/router'
+import { NavLink, routes, useMatch } from '@redwoodjs/router'
 
 import { useSelectedContext } from 'src/components/Context/SelectedEnrolledContext'
 import TeacherGroupEnrolledListLink from 'src/components/TeacherGroupEnrolledListLink/TeacherGroupEnrolledListLink'
 
 export const QUERY = gql`
   query EnolledUsersQuery($id: String!) {
+    usersInGroup(groupId: $id) {
+      id
+      firstName
+      lastName
+    }
     enrolledUsers(id: $id) {
       id
       points
       groupId
       userId
-      user {
-        firstName
-        lastName
-      }
     }
   }
 `
@@ -48,7 +49,14 @@ export const Failure = ({ error }) => (
   <div style={{ color: 'red' }}>Error: {error?.message}</div>
 )
 
-export const Success = ({ id, enrolledUsers }) => {
+export const Success = ({ id, enrolledUsers, usersInGroup }) => {
+  // Merge user & enrollment data
+  const userMap = new Map(usersInGroup.map((user) => [user.id, user]))
+  const mergedData = enrolledUsers.map((enrollment) => ({
+    ...enrollment,
+    user: userMap.get(enrollment.userId),
+  }))
+
   const isMulti = useMatch('/teacher/group/{id}/multi').match
   const selected = useSelectedContext()
   const selectedIds = selected?.selectedUsers
@@ -97,7 +105,7 @@ export const Success = ({ id, enrolledUsers }) => {
         </div>
         <ul className="relative h-full overflow-y-scroll pb-[100px] pl-4">
           {isMulti
-            ? enrolledUsers.map((enrollment) => {
+            ? mergedData.map((enrollment) => {
                 const color = selectedIds?.includes(enrollment.userId)
                   ? 'nes-text is-primary'
                   : 'nes-text'
@@ -118,7 +126,7 @@ export const Success = ({ id, enrolledUsers }) => {
                   </li>
                 )
               })
-            : enrolledUsers.map((enrollment) => {
+            : mergedData.map((enrollment) => {
                 return (
                   <TeacherGroupEnrolledListLink
                     key={enrollment.id}

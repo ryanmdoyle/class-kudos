@@ -12,9 +12,6 @@ export const QUERY = gql`
       description
       enrollId
       awardedPoints
-      enrollments {
-        id
-      }
     }
   }
 `
