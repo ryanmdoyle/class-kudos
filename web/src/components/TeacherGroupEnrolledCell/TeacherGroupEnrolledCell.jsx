@@ -78,8 +78,8 @@ export const Success = ({ id, enrolledUsers, usersInGroup }) => {
       <div className="h-full overflow-hidden">
         <div className="my-4 flex w-full justify-between gap-4 px-4">
           <NavLink
-            className={`nes-btn title relative`}
-            activeClassName={!isMulti && ' nes-btn title relative is-success'}
+            className={'nes-btn title relative'}
+            activeClassName={`nes-btn title relative`}
             matchSubPaths={true}
             to={routes.teacherGroup({ id: id })}
           >
@@ -94,6 +94,7 @@ export const Success = ({ id, enrolledUsers, usersInGroup }) => {
                 All
               </button>
             )}
+            {!isMulti && (
             <NavLink
               className={`nes-btn title relative`}
               activeClassName={'nes-btn title relative is-success'}
@@ -101,6 +102,7 @@ export const Success = ({ id, enrolledUsers, usersInGroup }) => {
             >
               Multi
             </NavLink>
+            )}
           </div>
         </div>
         <ul className="relative h-full overflow-y-scroll pb-[100px] pl-4">
