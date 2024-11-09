@@ -68,7 +68,7 @@ export const Success = ({ id, enrolledUsers, usersInGroup }) => {
   }
 
   const handleAll = () => {
-    selected.selectMultiUsers(enrolledUsers)
+    selected.selectMultiUsers(mergedData)
   }
 
   return (
