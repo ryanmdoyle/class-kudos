@@ -10,7 +10,7 @@ const TeacherLayout = ({ children, groupId }) => {
       return (
         <NavLink
           className="nes-btn is-primary"
-          activeClassName="is-success"
+          activeClassName="nes-btn is-success"
           to={routes.student()}
         >
           Home
@@ -21,7 +21,7 @@ const TeacherLayout = ({ children, groupId }) => {
       return (
         <NavLink
           className="nes-btn is-primary"
-          activeClassName="is-success"
+          activeClassName="nes-btn is-success"
           to={routes.teacher()}
         >
           Home
@@ -31,7 +31,7 @@ const TeacherLayout = ({ children, groupId }) => {
     return (
       <NavLink
         className="nes-btn is-primary"
-        activeClassName="is-success"
+        activeClassName="nes-btn is-success"
         to={routes.teacher()}
       >
         Home
@@ -48,7 +48,7 @@ const TeacherLayout = ({ children, groupId }) => {
         <button>
           <NavLink
             className="nes-btn is-primary"
-            activeClassName="is-success"
+            activeClassName="nes-btn is-success"
             matchSubPaths="true"
             to={routes.teacherGroup({ id: groupId })}
           >
@@ -58,7 +58,7 @@ const TeacherLayout = ({ children, groupId }) => {
         <button>
           <NavLink
             className="nes-btn is-primary"
-            activeClassName="is-success"
+            activeClassName="nes-btn is-success"
             to={routes.home()}
           >
             Store
@@ -67,7 +67,7 @@ const TeacherLayout = ({ children, groupId }) => {
         <button>
           <NavLink
             className="nes-btn is-primary"
-            activeClassName="is-success"
+            activeClassName="nes-btn is-success"
             to={routes.groupOptions({ id: groupId })}
           >
             Options

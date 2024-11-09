@@ -79,7 +79,7 @@ export const Success = ({ id, enrolledUsers, usersInGroup }) => {
         <div className="my-4 flex w-full justify-between gap-4 px-4">
           <NavLink
             className={`nes-btn title relative`}
-            activeClassName={!isMulti && 'is-success'}
+            activeClassName={!isMulti && ' nes-btn title relative is-success'}
             matchSubPaths={true}
             to={routes.teacherGroup({ id: id })}
           >
@@ -96,7 +96,7 @@ export const Success = ({ id, enrolledUsers, usersInGroup }) => {
             )}
             <NavLink
               className={`nes-btn title relative`}
-              activeClassName={'is-success'}
+              activeClassName={'nes-btn title relative is-success'}
               to={routes.teacherGroupStudents({ id: id })}
             >
               Multi
