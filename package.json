@@ -7,9 +7,9 @@
     ]
   },
   "devDependencies": {
-    "@redwoodjs/auth-dbauth-setup": "7.7.4",
-    "@redwoodjs/core": "7.7.4",
-    "@redwoodjs/realtime": "7.7.4",
+    "@redwoodjs/auth-dbauth-setup": "8.4.0",
+    "@redwoodjs/core": "8.4.0",
+    "@redwoodjs/realtime": "8.4.0",
     "@redwoodjs/studio": "11",
     "prettier-plugin-tailwindcss": "^0.3.0"
   },
@@ -23,5 +23,5 @@
   "prisma": {
     "seed": "yarn rw exec seed"
   },
-  "packageManager": "yarn@3.6.0"
+  "packageManager": "yarn@4.4.0"
 }
