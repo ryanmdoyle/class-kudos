@@ -12,7 +12,7 @@ const StudentLayout = ({ children, groupId }) => {
         <button>
           <NavLink
             className="nes-btn is-primary"
-            activeClassName="is-success"
+            activeClassName="nes-btn is-success"
             to={routes.student()}
           >
             Home
@@ -21,7 +21,7 @@ const StudentLayout = ({ children, groupId }) => {
         <button>
           <NavLink
             className="nes-btn is-primary"
-            activeClassName="is-success"
+            activeClassName="nes-btn is-success"
             matchSubPaths="true"
             to={routes.studentGroup({ id: groupId })}
           >
@@ -31,7 +31,7 @@ const StudentLayout = ({ children, groupId }) => {
         <button>
           <NavLink
             className="nes-btn is-primary"
-            activeClassName="is-success"
+            activeClassName="nes-btn is-success"
             matchSubPaths="true"
             to={routes.studentGroupRewards({ id: groupId })}
           >
