@@ -1,0 +1,3 @@
+Generated migration: ./migrations/0005_group_awardedpoints.sql
+Applying migration in development...
+Generating Prisma Client

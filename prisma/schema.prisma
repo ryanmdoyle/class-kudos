@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+generator client {
+  provider = "prisma-client"
+
+  runtime                = "workerd"
+  moduleFormat           = "esm"
+  generatedFileExtension = "ts"
+  importFileExtension    = "ts"
+
+  output          = "../generated/prisma"
+  previewFeatures = ["queryCompiler", "driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(uuid())
+  username    String       @unique
+  email       String?      @unique // only needed for teacher accounts, add after user creation
+  firstName   String
+  lastName    String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now())
+  credentials Credential[]
+  resetCode   ResetCode[]
+  role        UserRole
+  groupsOwned Group[]
+  enrollments Enrollment[]
+  kudos       Kudos[]
+  redeemeds   Redeemed[]
+}
+
+model Credential {
+  id           String   @id @default(uuid()) // Internal DB ID
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  createdAt    DateTime @default(now())
+  credentialId String   @unique // WebAuthn credential identifier
+  publicKey    Bytes
+  counter      Int      @default(0)
+
+  @@index([credentialId])
+  @@index([userId])
+}
+
+model ResetCode {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  userId    String // user that created code
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+enum UserRole {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+model Group {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?      @default("")
+  enrollId       String?      @unique
+  rewardedPoints Int          @default(0)
+  owner          User         @relation(fields: [ownerId], references: [id])
+  ownerId        String
+  archived       Boolean      @default(false)
+  enrollments    Enrollment[]
+  kudos          Kudos[]
+  KudosType      KudosType[]
+  rewards        Reward[]
+  redeemed       Redeemed[]
+}
+
+model Enrollment {
+  id      String @id @default(uuid())
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId String
+  points  Int    @default(0)
+
+  @@unique([userId, groupId])
+}
+
+model KudosType {
+  id      String @id @default(uuid())
+  name    String
+  value   Int
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId String
+}
+
+model Kudos {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  name      String   @default("Kudos")
+  value     Int      @default(1)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+}
+
+model Reward {
+  id               String  @id @default(uuid())
+  name             String
+  cost             Int
+  responseRequired Boolean @default(false)
+  responsePrompt   String?
+  group            Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId          String
+}
+
+model Redeemed {
+  id         String    @id @default(uuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  name       String
+  cost       Int
+  response   String?
+  reviewed   Boolean   @default(false)
+  reviewedAt DateTime?
+  group      Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId    String
+  createdAt  DateTime  @default(now())
+}

@@ -1,0 +1,82 @@
+"use client";
+
+import { Group, KudosType } from "@generated/prisma"
+import { Button } from "../ui/button";
+import { useState, useEffect } from "react";
+import { RewardSelected } from "./RewardSelected";
+import { EnrollmentWithUser } from "@/app/lib/types";
+import { link } from '@/app/shared/links'
+import { GroupHeader } from "./GroupHeader";
+
+export function GroupDashboard({ group, initialEnrollments, groupKudoTypes }: { group: Group, initialEnrollments: EnrollmentWithUser[], groupKudoTypes: KudosType[] }) {
+  const [enrollments, setEnrollments] = useState<EnrollmentWithUser[]>(initialEnrollments)
+  const [selected, setSelected] = useState<EnrollmentWithUser[]>([])
+
+  useEffect(() => {
+    // Update the selected enrollments to reference the latest versions from the enrollments array
+    setSelected((previousSelected) => {
+      return previousSelected.map((selectedEnrollment) => {
+        const updatedEnrollment = enrollments.find(
+          (enrollment) => enrollment.id === selectedEnrollment.id
+        )
+
+        // If there's a new version, use it; otherwise, fall back to the old one
+        return updatedEnrollment ?? selectedEnrollment
+      })
+    })
+  }, [enrollments])
+
+
+  const handleSelect = (enrollment: EnrollmentWithUser) => {
+    setSelected(prev =>
+      prev.some(e => e.id === enrollment.id)
+        ? prev.filter(e => e.id !== enrollment.id)
+        : [...prev, enrollment]
+    );
+  };
+
+  return (
+    <div className="grid grid-cols-4 grid-rows-1 h-full">
+      {enrollments.length > 0 && (
+        <div className="p-4 bg-green-background border border-border flex flex-col justify-start overflow-auto col-span-1 row-span-1">
+          {enrollments.map(enrollment => (
+            <Button
+              className={`w-full mb-2 flex justify-between items-center ${selected.some(e => e.id === enrollment.id) ? "bg-main" : ""}`}
+              variant="neutral"
+              key={enrollment.id}
+              onClick={() => handleSelect(enrollment)}
+            >
+              <span>{enrollment.user.firstName} {enrollment.user.lastName}</span>
+              <span>{enrollment.points}</span>
+            </Button>
+          ))}
+        </div>
+      )}
+
+      <div className={`bg-green-background min-h-full ${enrollments.length > 0 ? "col-span-3" : "col-span-4"} row-span-1 border border-border flex flex-col gap-4 items-center justify-center p-6`}>
+        <div className="grid grid-rows-[100px_1fr] w-full h-full gap-4">
+          {/* Group Name & Points */}
+          {group && <GroupHeader group={group} />}
+
+          {/* Selected students & Kudos Buttons */}
+          {enrollments.length === 0 ? (
+            <div className="center">
+              <div className="p-4 bg-background neo-container center flex flex-col max-w-[600px]">
+                <h2 className="text-xl font-bold mb-2">
+                  Let's get set up!
+                </h2>
+                <ul className="list-disc pl-5 flex flex-col gap-2">
+                  <li>Enroll some students. Have your student create an account, then use the code <strong>{group.enrollId}</strong> to add this group.</li>
+                  <li><a className="text-purple-600" href={link("/teacher/:groupId/options", { groupId: group.id })}>Add types of kudos</a> to give to your students along with some rewards they can redeem.</li>
+                </ul>
+              </div>
+            </div>
+
+          ) : (
+            <RewardSelected selected={selected} groupKudoTypes={groupKudoTypes} setEnrollments={setEnrollments} />
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
