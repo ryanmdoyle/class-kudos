@@ -17,6 +17,7 @@ import {
 import { db } from "@/db";
 import { RequestInfo } from "rwsdk/worker";
 import { GroupHeader } from "@/app/components/teacher/GroupHeader";
+import { GroupWarningArea } from "@/app/components/teacher/GroupWarningArea";
 
 export async function Options({ params, request }: RequestInfo) {
   const groupId = params.groupId;
@@ -142,6 +143,9 @@ export async function Options({ params, request }: RequestInfo) {
 
           )}
         </div>
+        {group && (
+          <GroupWarningArea group={group} />
+        )}
       </div>
     </div>
   )
