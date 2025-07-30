@@ -6,7 +6,6 @@ import { Input } from "../ui/input";
 
 const handleSubmit = async (formData: FormData) => {
   const email = formData.get("email");
-  console.log("handle submit data", { email });
   const result = await addTeacherEmail(formData);
   if (result.success) {
     console.log("Front success!")

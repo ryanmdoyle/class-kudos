@@ -297,3 +297,20 @@ export async function deleteReward(id: string): Promise<{ success: boolean, erro
     return { success: false, error: err as string }
   }
 }
+
+export async function archiveGroup(id: string): Promise<{ success: boolean; error?: string | null }> {
+  try {
+    await db.group.update({
+      where: { id },
+      data: { archived: true },
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to archive group:", error);
+    return {
+      success: false,
+      error: error.message ?? "Unknown error",
+    };
+  }
+}

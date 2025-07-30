@@ -67,6 +67,7 @@ export async function finishPasskeyRegistration(
     firstName: string,
     lastName: string,
     role: UserRole,
+    email?: string,
   },
   registration: RegistrationResponseJSON,
 ) {
@@ -99,6 +100,7 @@ export async function finishPasskeyRegistration(
       firstName: userOptions.firstName,
       lastName: userOptions.lastName,
       role: userOptions.role,
+      ...(userOptions.email ? { email: userOptions.email } : {}), // conditionally include email for teachers
     },
   });
 
