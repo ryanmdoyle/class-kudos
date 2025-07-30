@@ -10,7 +10,10 @@ export async function Student() {
   const { request, ctx } = requestInfo;
 
   const enrollments = await db.enrollment.findMany({
-    where: { userId: ctx.user?.id },
+    where: {
+      userId: ctx.user?.id,
+      group: { archived: false }
+    },
     include: { group: true },
     orderBy: {
       group: {

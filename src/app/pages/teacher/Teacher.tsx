@@ -8,7 +8,10 @@ export async function Teacher() {
   const { request, ctx } = requestInfo;
 
   const groups = await db.group.findMany({
-    where: { ownerId: ctx.user?.id },
+    where: {
+      ownerId: ctx.user?.id,
+      archived: false,
+    },
     orderBy: { name: "asc" }
   });
 
