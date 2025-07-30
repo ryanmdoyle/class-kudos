@@ -105,7 +105,7 @@ export async function Options({ params, request }: RequestInfo) {
           <h2 className="text-2xl font-bold mb-6">Enrolled Students</h2>
           {enrollments.length === 0 ? (
             <p>No students enrolled yet. {group?.enrollId ? (
-              <> Have students use the code <strong className="text-lg">{group.enrollId}</strong> to enroll in this group.</>
+              <> Have students use the code <strong className="text-lg font-code">{group.enrollId}</strong> to enroll in this group.</>
             ) : null}</p>
           ) : (
 
@@ -113,7 +113,7 @@ export async function Options({ params, request }: RequestInfo) {
               <TableCaption className="text-foreground">
                 A list of your enrolled students.
                 {group?.enrollId ? (
-                  <> Have students use the code <strong className="text-lg">{group.enrollId}</strong> to enroll in this group.</>
+                  <> Have students use the code <strong className="text-lg font-code">{group.enrollId}</strong> to enroll in this group.</>
                 ) : null}
               </TableCaption>
               <TableHeader>

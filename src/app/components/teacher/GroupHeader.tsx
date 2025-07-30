@@ -20,11 +20,17 @@ export function GroupHeader({ group }: { group: Group }) {
         </h1>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <i className="text-gray-500 hover:text-purple-600 hover:underline">Enroll ID: {group.enrollId}</i>
+            <i className="text-gray-500 hover:text-purple-600 hover:underline">
+              {`Enroll Code: `}
+              <span className="font-code">
+                {group.enrollId}
+              </span>
+            </i>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-3xl">Enroll ID: {group.enrollId} </AlertDialogTitle>
+              <AlertDialogTitle className="text-3xl">Enroll Code: <span className="font-code">
+                {group.enrollId}</span></AlertDialogTitle>
               <AlertDialogDescription>
                 Use this code to have students join your group.
                 They can enter the code once they log in to join.
