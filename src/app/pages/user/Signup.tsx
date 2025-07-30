@@ -21,6 +21,7 @@ export function Signup() {
   const [username, setUsername] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
   const [role, setRole] = useState<"" | UserRole>(""); //role, or empty string for the html select element
   const [result, setResult] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export function Signup() {
       firstName,
       lastName,
       role: role as UserRole, // cast from the 'role' state
+      ...(email ? { email: email } : {}), // conditionally include email if role is teacher
     }, registration);
 
     if (!success) {
@@ -50,14 +52,19 @@ export function Signup() {
 
   const handlePerformPasskeyRegister = () => {
     const missingFields: string[] = [];
+    if (role !== UserRole.TEACHER && role !== UserRole.STUDENT) {
+      missingFields.push("Role (must be selected)");
+    }
+
     if (!firstName.trim()) missingFields.push("First Name");
     if (!lastName.trim()) missingFields.push("Last Name");
     if (!username.trim()) missingFields.push("Username");
     if (username.trim().length < 3) {
       missingFields.push("Username must be at least 3 characters");
     }
-    if (role !== "TEACHER" && role !== "STUDENT") {
-      missingFields.push("Role (must be selected)");
+
+    if (role === UserRole.TEACHER) {
+      if (!email.trim()) missingFields.push("Email");
     }
 
     if (missingFields.length > 0) {
@@ -75,13 +82,17 @@ export function Signup() {
       if (taken) {
         setFormError("Username is already taken.");
       } else {
-        setFormError(null);
+        setFormError(null)
       }
     }, 500),
     []
   );
 
   useEffect(() => {
+    if (username.length === 0) {
+      setFormError(null)
+    }
+
     if (username.length >= 3) {
       debouncedCheckUsername(username);
     }
@@ -102,20 +113,19 @@ export function Signup() {
       <div className="auth-form max-w-[400px] w-full mx-auto px-10">
 
         <h1 className="page-title text-center">Create an Account</h1>
+        <p className="py-4">Select your role:</p>
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value as "TEACHER" | "STUDENT")}
+          className="outline-2 w-full h-10 pl-2"
+        >
+          <option value="" disabled>
+            Select your role
+          </option>
+          <option value="STUDENT">Student</option>
+          <option value="TEACHER">Teacher</option>
+        </select>
         <p className="py-6">Enter a username to setup an account.</p>
-        {result && (
-          <Alert variant="destructive" className="mb-5">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>{result}</AlertTitle>
-          </Alert>
-        )}
-        {formError && (
-          <Alert variant="error" className="mb-5">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Oops!</AlertTitle>
-            <AlertDescription>{formError}</AlertDescription>
-          </Alert>
-        )}
         <Input
           type="text"
           value={username}
@@ -134,21 +144,30 @@ export function Signup() {
           onChange={(e) => setLastName(e.target.value)}
           placeholder="Last Name"
         />
-        <p className="py-4">Select your role:</p>
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value as "TEACHER" | "STUDENT")}
-          className="outline-2 w-full h-10"
-        >
-          <option value="" disabled>
-            Select your role
-          </option>
-          <option value="STUDENT">Student</option>
-          <option value="TEACHER">Teacher</option>
-        </select>
+        {role === UserRole.TEACHER && (
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+          />
+        )}
         <Button onClick={handlePerformPasskeyRegister} disabled={isPending} className="w-full">
           {isPending ? <>...</> : "Register with passkey"}
         </Button>
+        {result && (
+          <Alert variant="destructive" className="mb-5">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>{result}</AlertTitle>
+          </Alert>
+        )}
+        {formError && (
+          <Alert variant="error" className="mb-5">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Oops!</AlertTitle>
+            <AlertDescription>{formError}</AlertDescription>
+          </Alert>
+        )}
       </div>
     </AuthLayout>
   );
