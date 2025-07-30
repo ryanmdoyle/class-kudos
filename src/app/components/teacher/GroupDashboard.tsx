@@ -66,8 +66,16 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes }: { 
                   Let's get set up!
                 </h2>
                 <ul className="list-disc pl-5 flex flex-col gap-2">
-                  <li>Enroll some students. Have your student create an account, then use the code <strong>{group.enrollId}</strong> to add this group.</li>
-                  <li><a className="text-purple-600" href={link("/teacher/:groupId/options", { groupId: group.id })}>Add types of kudos</a> to give to your students along with some rewards they can redeem.</li>
+                  <li>Enroll some students. Have your student create an account, then use the code <strong className="font-code">{group.enrollId}</strong> to add this group.</li>
+                  <li className={`${groupKudoTypes.length > 0 ? "line-through" : ""}`}>
+                    <a
+                      className="text-purple-600"
+                      href={link("/teacher/:groupId/options", { groupId: group.id })}
+                    >
+                      Add types of kudos
+                    </a>{" "}
+                    to give to your students along with some rewards they can redeem.
+                  </li>
                 </ul>
               </div>
             </div>
