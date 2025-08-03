@@ -90,9 +90,9 @@ export default defineApp([
   },
   render(Document, [
     route("/", [isAuthenticated, routeToDashboardByRoleOnLogin, Login]),
+    prefix("/legal", legalRoutes),
     prefix("/user", userRoutes),
     prefix("/student", [isAuthenticated, checkRoleAccess, studentRoutes]),
     prefix("/teacher", [isAuthenticated, checkRoleAccess, teacherRoutes]),
-    prefix("/legal", legalRoutes),
   ]),
 ]);

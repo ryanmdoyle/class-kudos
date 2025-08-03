@@ -246,11 +246,12 @@ export async function createStudentResetCode(userId: string): Promise<{ code?: s
     const code = nanoid(6);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes from now
 
-    // 2. Save new reset code in DB after removing any existing
+    // 2. Remove other resetCodes
     await db.resetCode.deleteMany({
       where: { userId }
     })
 
+    // 3. Create a new resetCode
     const resetCode = await db.resetCode.create({
       data: {
         userId,
@@ -259,13 +260,6 @@ export async function createStudentResetCode(userId: string): Promise<{ code?: s
         used: false,
       },
     })
-
-    // 3. Remove existing credentials for student
-    if (resetCode) {
-      await db.credential.deleteMany({
-        where: { userId },
-      })
-    }
 
     return { success: true, error: null, code: resetCode.code };
   } catch (error) {

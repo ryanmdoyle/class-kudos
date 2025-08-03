@@ -47,7 +47,7 @@ export function DeleteGroupButton({ group }: { group: Group }) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Group {group.name}?</AlertDialogTitle>
+          <AlertDialogTitle>Archive Group {group.name}?</AlertDialogTitle>
           <AlertDialogDescription>
             You cannot undo this action!  Type in the Group Name to continue.
           </AlertDialogDescription>
@@ -67,7 +67,7 @@ export function DeleteGroupButton({ group }: { group: Group }) {
         </form>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction type="submit" form="archiveGroupForm">Delete Group</AlertDialogAction>
+          <AlertDialogAction type="submit" form="archiveGroupForm">Archive Group</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

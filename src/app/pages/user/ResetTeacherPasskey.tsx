@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { startRegistration } from "@simplewebauthn/browser";
 import {
   startPasskeyRegistration,
@@ -13,14 +13,21 @@ import { link } from "@/app/shared/links";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Input } from "@/app/components/ui/input";
+import { RequestInfo } from "rwsdk/worker"
 
 
-export function ResetTeacherPasskey() {
+
+export function ResetTeacherPasskey({ params }: RequestInfo) {
   const [username, setUsername] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [result, setResult] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (params.code)
+      setResetCode(params.code)
+  }, [params])
 
   const passkeyRegister = async () => {
     // 1. Check for the valid code
