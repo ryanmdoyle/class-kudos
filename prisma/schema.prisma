@@ -39,7 +39,7 @@ model User {
 
 model Credential {
   id           String   @id @default(uuid()) // Internal DB ID
-  userId       String   @unique
+  userId       String
   user         User     @relation(fields: [userId], references: [id])
   createdAt    DateTime @default(now())
   credentialId String   @unique // WebAuthn credential identifier

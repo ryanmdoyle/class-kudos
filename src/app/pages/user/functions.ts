@@ -13,6 +13,7 @@ import { db, User, UserRole } from "@/db";
 import { env } from "cloudflare:workers";
 import { nanoid } from 'nanoid';
 import { Resend } from 'resend';
+import { createPasswordResetEmail } from "@/app/lib/email";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
@@ -268,21 +269,19 @@ export async function requestTeacherResetCode(email: string): Promise<{ success:
 
       // email them a link to reset!
       const resend = new Resend(env.RESEND_API);
-      console.log("sending email!", user.email)
+
+      // Generate the email content
+      const emailContent = createPasswordResetEmail(user, resetCode);
+
       const { data, error } = await resend.emails.send({
-        from: "Acme <onboarding@resend.dev>",
-        to: "doylecodes@gmail.com",
-        subject: "👋 Hello World",
-        text: `Hello World`,
+        from: "Class Kudos <reset@classkudos.com>",
+        to: user.email,
+        subject: "🔐 Password Reset Code",
+        ...emailContent // This spreads both html and text properties
       });
-      console.log(data, error)
-      // await resend.emails.send({
-      //   from: 'onboarding@resend.dev',
-      //   to: user.email,
-      //   subject: 'Hello World',
-      //   html: `<p>Here is your reset code: <a href="http://localhost:5173/user/teacher-reset?${resetCode.code}">${resetCode.code}</a></p>`
-      // });
-      return { success: true }
+
+      if (data) return { success: true }
+      return { success: false, error: "Unsuccessful Email Send" }
     }
     return { success: false, error: null }
   } catch (err) {

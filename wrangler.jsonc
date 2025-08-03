@@ -3,7 +3,9 @@
   "name": "__change_me__",
   "main": "src/worker.tsx",
   "compatibility_date": "2025-05-07",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "assets": {
     "binding": "ASSETS"
   },
@@ -24,14 +26,16 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["SessionDurableObject"]
+      "new_sqlite_classes": [
+        "SessionDurableObject"
+      ]
     }
   ],
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "__change_me__",
-      "database_id": "__change_me__"
+      "database_name": "class-kudos",
+      "database_id": "2f795d36-c464-4eef-92bf-d4a9aabc820b"
     }
   ]
 }
