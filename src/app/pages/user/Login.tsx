@@ -69,7 +69,7 @@ export function Login() {
           {isPending ? <>...</> : "Login with Passkey"}
         </Button>
         <p className="justify-center mb-4">
-          <a href={link("/user/lost-passkey")}>Lost your passkey?</a>
+          <a href={link("/user/request-passkey")}>Logging in from a new device or lost your passkey?</a>
         </p>
         <p className="justify-center">
           By clicking continue, you agree to our <a href={link("/legal/terms")}>Terms of Service</a> and <a href={link("/legal/privacy")}>Privacy Policy</a>.

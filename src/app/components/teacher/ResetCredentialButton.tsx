@@ -42,18 +42,18 @@ export function CreateResetCodeButton({ userId }: { userId: string }) {
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{code ? "Current Reset Code:" : "Are you absolutely sure?"}</AlertDialogTitle>
+            <AlertDialogTitle>{code ? "Current Code:" : "Are you absolutely sure?"}</AlertDialogTitle>
             <AlertDialogDescription>
               {code ?
                 <p className="text-3xl">
                   {code}
                 </p>
                 :
-                <p>This action cannot be undone. The currrent passkey for the student will be deleted, and a code will be generated to allow the student to reset their passkey.  <strong>The code will last 5 minutes.</strong></p>}
+                <p>This will generate a code you can share with your student to create a new passkey. You’ll need to do this if they are logging in from a new device or if they’ve lost or deleted their old passkey.  <strong>The code will last 5 minutes.</strong></p>}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => { handleReset(userId) }} type="button">Generate {code ? "New Reset" : "Reset"} Code</AlertDialogAction>
+            <AlertDialogAction onClick={() => { handleReset(userId) }} type="button">Generate {code ? "New Request" : "Request"} Code</AlertDialogAction>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -121,8 +121,9 @@ export async function Options({ params, request }: RequestInfo) {
                 <TableRow>
                   <TableHead>First Name</TableHead>
                   <TableHead>Last Name</TableHead>
+                  <TableHead>Username</TableHead>
                   <TableHead className="text-right w-[100px]">Edit</TableHead>
-                  <TableHead className="text-right w-[100px]">Reset Passcode</TableHead>
+                  <TableHead className="text-right w-[100px]">Request Passcode</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -130,6 +131,7 @@ export async function Options({ params, request }: RequestInfo) {
                   <TableRow key={enrollment.id} className="bg-purple-200">
                     <TableCell className="font-base">{enrollment.user.firstName}</TableCell>
                     <TableCell>{enrollment.user.lastName}</TableCell>
+                    <TableCell>{enrollment.user.username}</TableCell>
                     <TableCell className="text-right p-0">
                       <EditEnrolledButton enrollment={enrollment} />
                     </TableCell>

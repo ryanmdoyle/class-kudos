@@ -24,7 +24,7 @@ import {
 } from "@/app/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
-export function LostPasskey() {
+export function RequestPasskey() {
   const [tab, setTab] = useState<"student" | "teacher">("student");
 
   const [studentUsername, setStudentUsername] = useState("");
@@ -105,7 +105,7 @@ export function LostPasskey() {
         </a>
       </div>
       <div className="auth-form max-w-[400px] w-full mx-auto px-10">
-        <h1 className="text-3xl text-center mb-4">Get New Passkey</h1>
+        <h1 className="text-3xl text-center mb-4">Request a Passkey</h1>
         <Tabs value={tab} onValueChange={(val) => setTab(val as "student" | "teacher")}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="student">Student</TabsTrigger>
@@ -113,14 +113,14 @@ export function LostPasskey() {
           </TabsList>
 
           <TabsContent value="student">
-            <Card>
-              <CardHeader>
+            <Card className="gap-2">
+              <CardHeader className="mb-4">
                 <CardTitle>Get a Student Passkey</CardTitle>
                 <CardDescription>
-                  Request a reset from a teacher you're enrolled with.
+                  Ask a teacher for a code to get a new passkey, or reset one you've lost. They can make a code from the options page of a group you've enrolled in{" :)"}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-2 my-4">
+              <CardContent className="grid">
                 <div className="grid gap-2">
                   <Label htmlFor="student-username">Username</Label>
                   <Input
@@ -149,14 +149,14 @@ export function LostPasskey() {
           </TabsContent>
 
           <TabsContent value="teacher">
-            <Card>
+            <Card className="gap-2">
               <CardHeader className="mb-4">
                 <CardTitle>Get Teacher Passkey</CardTitle>
                 <CardDescription>
-                  Enter your email and we’ll email you a link.
+                  Enter the email associated with your account and you'll receive a link to create a new passkey.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4">
+              <CardContent className="grid">
                 <div className="grid gap-2">
                   <Label htmlFor="teacher-email">Email</Label>
                   <Input
