@@ -13,8 +13,7 @@ import { requestInfo } from "rwsdk/worker";
 import { db, User, UserRole } from "@/db";
 import { env } from "cloudflare:workers";
 import { nanoid } from 'nanoid';
-import { Resend } from 'resend';
-import { createPasswordResetEmail } from "@/app/lib/email";
+import { createPasswordResetEmail, sendEmail } from "@/app/lib/email";
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
@@ -268,20 +267,19 @@ export async function requestTeacherResetCode(email: string): Promise<{ success:
         },
       })
 
-      // email them a link to reset!
-      const resend = new Resend(env.RESEND_API);
-
       // Generate the email content
       const emailContent = createPasswordResetEmail(user, resetCode);
 
-      const { data, error } = await resend.emails.send({
+      const { id } = await sendEmail({
         from: "Class Kudos <reset@classkudos.com>",
         to: user.email,
         subject: "🔐 Password Reset Code",
-        ...emailContent // This spreads both html and text properties
-      });
+        html: emailContent.html,
+        text: emailContent.text,
+      },
+        env.RESEND_API)
 
-      if (data) return { success: true }
+      if (id) return { success: true }
       return { success: false, error: "Unsuccessful Email Send" }
     }
     return { success: false, error: null }
