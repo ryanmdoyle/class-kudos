@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "__change_me__",
+  "name": "class-kudos-sdk",
   "main": "src/worker.tsx",
   "compatibility_date": "2025-05-07",
   "compatibility_flags": [
@@ -21,7 +21,7 @@
     ]
   },
   "vars": {
-    "WEBAUTHN_APP_NAME": "__change_me__"
+    "WEBAUTHN_APP_NAME": "class-kudos-sdk"
   },
   "migrations": [
     {

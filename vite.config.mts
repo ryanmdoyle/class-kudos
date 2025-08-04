@@ -14,4 +14,5 @@ export default defineConfig({
     redwood(),
     tailwindcss()
   ],
+  assetsInclude: ['**/*.wasm'],
 });
