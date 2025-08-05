@@ -1,3 +1,5 @@
+"use client"
+
 import { cn } from "@/app/lib/utils"
 
 type Props = {

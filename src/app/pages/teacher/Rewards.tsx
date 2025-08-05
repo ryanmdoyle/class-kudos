@@ -81,7 +81,7 @@ export async function Rewards({ params, request }: RequestInfo) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {reviewed.map((r) => (
+              {reviewed.length > 0 && reviewed.map((r) => (
                 <TableRow key={r.id} className="bg-background">
                   <TableCell className="font-base">{r.name}</TableCell>
                   <TableCell className="text-right">{r.cost}</TableCell>
