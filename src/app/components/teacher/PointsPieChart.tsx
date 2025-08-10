@@ -73,8 +73,8 @@ export function PointsPieChart({ kudos }: { kudos: KudosWithUser[] }) {
   return (
     <Card className="flex flex-col bg-secondary-background text-foreground">
       <CardHeader className="items-center pb-0">
-        <CardTitle>Kudos by Student</CardTitle>
-        <CardDescription>Totals from all given kudos</CardDescription>
+        <CardTitle>Total Kudos</CardTitle>
+        {/* <CardDescription>by student</CardDescription> */}
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <ChartContainer
@@ -106,7 +106,7 @@ export function PointsPieChart({ kudos }: { kudos: KudosWithUser[] }) {
                         <tspan
                           x={viewBox.cx}
                           y={viewBox.cy}
-                          className="fill-foreground text-3xl font-bold"
+                          className="fill-foreground text-3xl font-display font-bold"
                         >
                           {totalKudos.toLocaleString()}
                         </tspan>
@@ -127,11 +127,8 @@ export function PointsPieChart({ kudos }: { kudos: KudosWithUser[] }) {
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm">
-        <div className="flex items-center gap-2 leading-none font-medium">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-        </div>
         <div className="text-muted-foreground leading-none">
-          Showing total kudos per student
+          Shows the total kudos given to each student.
         </div>
       </CardFooter>
     </Card>
