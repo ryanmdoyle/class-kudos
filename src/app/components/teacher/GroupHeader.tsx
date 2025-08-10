@@ -43,7 +43,7 @@ export function GroupHeader({ group }: { group: Group }) {
         </AlertDialog>
       </div>
       <div className="flex items-center gap-2 w-full justify-end">
-        <span className="text-4xl text-end">
+        <span className="text-4xl text-end font-display">
           {group?.rewardedPoints}
         </span>
         <img src="/images/coin.png" className="h-[65px]" />

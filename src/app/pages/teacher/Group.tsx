@@ -18,13 +18,25 @@ export async function Group({ params, request }: RequestInfo) {
     orderBy: { name: "asc" }
   });
 
+  const kudos = await db.kudos.findMany({
+    where: { groupId },
+    include: {
+      user: {
+        select: {
+          firstName: true,
+          lastName: true
+        }
+      }
+    }
+  })
+
   return (
     <div className="flex flex-col h-screen min-w-screen">
 
       <TeacherNav url={request.url} currentGroup={groupId} />
 
       <div className="flex-1 overflow-auto">
-        {group && <GroupDashboard group={group} initialEnrollments={enrollments} groupKudoTypes={kudoTypes} />}
+        {group && <GroupDashboard group={group} initialEnrollments={enrollments} groupKudoTypes={kudoTypes} initialKudos={kudos} />}
       </div>
     </div>
   );
