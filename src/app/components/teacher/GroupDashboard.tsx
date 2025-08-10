@@ -1,14 +1,16 @@
 "use client";
 
-import { Group, KudosType } from "@generated/prisma"
+import { Group, Kudos, KudosType } from "@generated/prisma"
 import { Button } from "../ui/button";
 import { useState, useEffect } from "react";
 import { RewardSelected } from "./RewardSelected";
-import { EnrollmentWithUser } from "@/app/lib/types";
+import { EnrollmentWithUser, KudosWithUser } from "@/app/lib/types";
 import { link } from '@/app/shared/links'
 import { GroupHeader } from "./GroupHeader";
 
-export function GroupDashboard({ group, initialEnrollments, groupKudoTypes }: { group: Group, initialEnrollments: EnrollmentWithUser[], groupKudoTypes: KudosType[] }) {
+
+
+export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, initialKudos }: { group: Group, initialEnrollments: EnrollmentWithUser[], groupKudoTypes: KudosType[], initialKudos: KudosWithUser[] }) {
   const [enrollments, setEnrollments] = useState<EnrollmentWithUser[]>(initialEnrollments)
   const [selected, setSelected] = useState<EnrollmentWithUser[]>([])
 
@@ -81,7 +83,7 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes }: { 
             </div>
 
           ) : (
-            <RewardSelected selected={selected} groupKudoTypes={groupKudoTypes} setEnrollments={setEnrollments} />
+            <RewardSelected selected={selected} groupKudoTypes={groupKudoTypes} setEnrollments={setEnrollments} kudos={initialKudos} />
           )}
         </div>
       </div>
