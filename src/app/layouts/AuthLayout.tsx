@@ -7,8 +7,8 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
             <img src="/images/students.png" alt="Students Learning" className="mx-auto w-[300px]" />
             <div className="text-5xl text-white font-bold">Class Kudos</div>
           </div>
-          <div className="text-white text-sm absolute bottom-0 left-0 right-0 p-10">
-            “Easy Class Rewards & Store”
+          <div className="text-white text-md absolute bottom-0 left-0 right-0 p-10">
+            “Classroom Rewards Made Effortless”
           </div>
         </div>
         <div className="center bg-white relative">
