@@ -1,11 +1,12 @@
 "use client";
 
-import { KudosType, User } from "@generated/prisma";
+import { KudosType } from "@generated/prisma";
 import { Button } from "../ui/button";
 import { addKudos, getUpdatedEnrollments } from "./functions";
-import { EnrollmentWithUser } from "@/app/lib/types";
+import { EnrollmentWithUser, KudosWithUser } from "@/app/lib/types";
+import { PointsPieChart } from "./PointsPieChart"
 
-export function RewardSelected({ selected, groupKudoTypes, setEnrollments }: { selected: EnrollmentWithUser[], groupKudoTypes: KudosType[], setEnrollments: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>> }) {
+export function RewardSelected({ selected, groupKudoTypes, setEnrollments, kudos }: { selected: EnrollmentWithUser[], groupKudoTypes: KudosType[], setEnrollments: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>>, kudos: KudosWithUser[] }) {
 
   async function handleGiveKudos(kudoType: KudosType) {
     await addKudos(kudoType, selected)
@@ -16,12 +17,15 @@ export function RewardSelected({ selected, groupKudoTypes, setEnrollments }: { s
   }
 
   if (!selected || selected.length === 0) return (
-    <div className="center">
+    <div className="center flex-col gap-6">
       <div className="p-4 bg-background neo-container center">
         <h2 className="text-xl font-bold">
           Select someone to reward them with kudos!
         </h2>
       </div>
+      {kudos.length > 0 && (
+        <PointsPieChart kudos={kudos} />
+      )}
     </div>
   );
 
