@@ -32,7 +32,7 @@ export function RequestRewardButtons({ rewards, enrollment }: { rewards: Reward[
             <Button onClick={() => { handleSubmit(reward, enrollment) }} key={reward.id} variant="gold" disabled>{reward.name} {reward.cost}</Button>
           )
           return (
-            <AlertDialog>
+            <AlertDialog key={reward.id}>
               <AlertDialogTrigger asChild>
                 <Button key={reward.id} variant="gold">{reward.name} {reward.cost}</Button>
               </AlertDialogTrigger>
@@ -49,7 +49,6 @@ export function RequestRewardButtons({ rewards, enrollment }: { rewards: Reward[
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            // <Button onClick={() => { handleSubmit(reward, enrollment) }} key={reward.id} variant="gold" >{reward.name} {reward.cost}</Button>
           )
         })
       )}
