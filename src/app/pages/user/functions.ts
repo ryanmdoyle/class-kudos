@@ -40,6 +40,12 @@ export async function startPasskeyRegistration(username: string) {
       // Prefer user verification (biometric, PIN, etc.), but allow authentication even if it's not available
       userVerification: "preferred",
     },
+    // Add supported algorithms for better compatibility
+    supportedAlgorithmIDs: [-7, -257], // ES256 and RS256
+    // Set a reasonable timeout (default is often too short for some managers)
+    timeout: 60000, // 60 seconds
+    // Exclude existing credentials to prevent duplicate registrations
+    excludeCredentials: await getExistingCredentialsForUser(username),
   });
 
   await sessions.save(headers, { challenge: options.challenge });
@@ -54,12 +60,35 @@ export async function startPasskeyLogin() {
   const options = await generateAuthenticationOptions({
     rpID,
     userVerification: "preferred",
+    // Empty array allows any registered credential to be used
     allowCredentials: [],
+    // Increase timeout for better user experience
+    timeout: 60000, // 60 seconds
   });
 
   await sessions.save(headers, { challenge: options.challenge });
 
   return options;
+}
+
+// Helper function to get existing credentials for a user (for registration exclusion)
+async function getExistingCredentialsForUser(username: string) {
+  try {
+    const user = await db.user.findUnique({
+      where: { username },
+      include: { credentials: true }
+    });
+
+    if (!user) return [];
+
+    return user.credentials.map(cred => ({
+      id: cred.credentialId,
+      type: 'public-key' as const,
+    }));
+  } catch (error) {
+    console.error('Error fetching existing credentials:', error);
+    return [];
+  }
 }
 
 export async function finishPasskeyRegistration(
