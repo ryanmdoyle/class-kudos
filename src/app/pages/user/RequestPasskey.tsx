@@ -89,10 +89,10 @@ export function RequestPasskey() {
 
     setFormError(null);
     const res = await requestTeacherResetCode(teacherEmail);
-    if (res.error) {
+    if (res) {
       setResult("If an account exists with that email, a reset link has been sent.");
-    } else if (res.success == false && res.error) {
-      setResult(res.error)
+    } else {
+      setResult("There's been an error, please try again.")
     }
   };
 

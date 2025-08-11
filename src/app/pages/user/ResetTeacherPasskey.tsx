@@ -57,7 +57,17 @@ export function ResetTeacherPasskey({ params }: RequestInfo) {
     if (!success) {
       setResult("Reset failed");
     } else {
-      window.location.href = link("/user/login");
+      let count = 5;
+      setResult(`Success! Redirecting to Login page in ${count}...`);
+
+      const countdown = setInterval(() => {
+        count -= 1;
+        setResult(`Success! Redirecting to Login page in ${count}...`);
+        if (count <= 0) {
+          clearInterval(countdown);
+          window.location.href = link("/user/login");
+        }
+      }, 1000);
     }
   };
 
