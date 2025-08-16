@@ -48,23 +48,30 @@ export function RewardSelected({ selected, groupKudoTypes, setEnrollments, kudos
 
   // Multiple selected
   return (
-    <div className="p-4 bg-background neo-container grid grid-cols-2 gap-4">
-      <div>
+    <div className="p-4 bg-background neo-container grid grid-cols-2 gap-4 overflow-hidden">
+
+      <div className="flex flex-col overflow-hidden">
         <h2 className="text-lg font-semibold mb-2">Selected:</h2>
-        <ul className="list-disc list-inside">
-          {selected.map(sel => (
-            <li key={sel.id}>
-              {sel.user.firstName} {sel.user.lastName}
-            </li>
-          ))}
-        </ul>
+        <div className="flex-1 overflow-y-auto p-2">
+
+          <ul className="list-disc list-inside">
+            {selected.map(sel => (
+              <li key={sel.id}>
+                {sel.user.firstName} {sel.user.lastName}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-      <div className="flex flex-col items-start gap-1">
+
+      <div className="flex flex-col items-start gap-1 overflow-hidden">
         <h2 className="text-lg font-semibold mb-2">Give kudos to selected:</h2>
         {/* Reward buttons go here */}
-        {groupKudoTypes && groupKudoTypes.map(kudoType => (
-          <Button key={kudoType.id} variant="gold" className="m-1" onClick={() => handleGiveKudos(kudoType)}>{kudoType.name}</Button>
-        ))}
+        <div className="flex-1 overflow-y-auto p-2">
+          {groupKudoTypes && groupKudoTypes.map(kudoType => (
+            <Button key={kudoType.id} variant="gold" className="m-1" onClick={() => handleGiveKudos(kudoType)}>{kudoType.name}</Button>
+          ))}
+        </div>
       </div>
     </div>
   );
