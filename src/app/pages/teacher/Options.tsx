@@ -4,7 +4,7 @@ import { AddRewardButton } from "@/app/components/teacher/AddRewardButton";
 import { EditRewardButton } from "@/app/components/teacher/EditRewardButton";
 import { EditEnrolledButton } from "@/app/components/teacher/EditEnrolledButton";
 import { TeacherNav } from "@/app/components/teacher/TeacherNav"
-import { CreateResetCodeButton } from '@/app/components/teacher/ResetCredentialButton'
+import { CreateAccessCodeButton } from '@/app/components/teacher/ResetCredentialButton'
 import {
   Table,
   TableBody,
@@ -123,7 +123,7 @@ export async function Options({ params, request }: RequestInfo) {
                   <TableHead>Last Name</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead className="text-right w-[100px]">Edit</TableHead>
-                  <TableHead className="text-right w-[100px]">Request Passcode</TableHead>
+                  <TableHead className="text-right w-[100px]">Access Code</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -136,7 +136,7 @@ export async function Options({ params, request }: RequestInfo) {
                       <EditEnrolledButton enrollment={enrollment} />
                     </TableCell>
                     <TableCell className="text-right p-0">
-                      <CreateResetCodeButton userId={enrollment.user.id} />
+                      <CreateAccessCodeButton userId={enrollment.user.id} />
                     </TableCell>
                   </TableRow>
                 ))}

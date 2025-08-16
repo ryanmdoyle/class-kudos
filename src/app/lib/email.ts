@@ -1,7 +1,7 @@
-import { ResetCode, User } from "@generated/prisma";
+import { AccessCode, User } from "@generated/prisma";
 
 // Email template function - put this in a separate file like emailTemplates.js
-export function createPasswordResetEmail(user: User, resetCode: ResetCode) {
+export function createPasswordResetEmail(user: User, accessCode: AccessCode) {
   const html = `
     <!DOCTYPE html>
     <html lang="en">
@@ -33,9 +33,9 @@ export function createPasswordResetEmail(user: User, resetCode: ResetCode) {
           <p style="color: oklch(0% 0 0); font-size: 14px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">
             Your Reset Code
           </p>
-          <a href="https://www.classkudos.com/user/teacher-reset/${resetCode.code}" style="text-decoration: none; display: inline-block;">
+          <a href="https://www.classkudos.com/user/teacher-reset/${accessCode.code}" style="text-decoration: none; display: inline-block;">
             <div style="font-family: 'Courier New', Consolas, Monaco, monospace; font-size: 32px; font-weight: bold; color: oklch(70.28% 0.1753 295.36); letter-spacing: 3px; margin: 0; padding: 15px; background-color: oklch(100% 0 0); border: 2px solid oklch(0% 0 0); border-radius: 0; box-shadow: 2px 2px 0px 0px oklch(0% 0 0); cursor: pointer; transition: all 0.2s ease;">
-              ${resetCode.code}
+              ${accessCode.code}
             </div>
           </a>
         </div>
@@ -43,10 +43,10 @@ export function createPasswordResetEmail(user: User, resetCode: ResetCode) {
         <!-- Instructions -->
         <div style="margin: 30px 0;">
           <p style="color: oklch(0% 0 0); font-size: 16px; line-height: 1.5; margin: 0;">
-            Click the code above or <a href="https://www.classkudos.com/user/teacher-reset/${resetCode.code}" style="color: oklch(70.28% 0.1753 295.36); text-decoration: underline; font-weight: bold;">click here</a> to reset your password automatically.
+            Click the code above or <a href="https://www.classkudos.com/user/teacher-reset/${accessCode.code}" style="color: oklch(70.28% 0.1753 295.36); text-decoration: underline; font-weight: bold;">click here</a> to reset your password automatically.
           </p>
           <p style="color: oklch(0% 0 0); font-size: 14px; line-height: 1.5; margin: 15px 0 0 0; opacity: 0.7;">
-            This code will expire on ${new Date(resetCode.expiresAt).toLocaleString()}.
+            This code will expire on ${new Date(accessCode.expiresAt).toLocaleString()}.
           </p>
         </div>
         
@@ -76,11 +76,11 @@ export function createPasswordResetEmail(user: User, resetCode: ResetCode) {
 
 You requested a password reset for your account.
 
-Your reset code: ${resetCode.code}
+Your reset code: ${accessCode.code}
 
 Enter this code on the password reset page to create a new password.
 
-This code will expire on ${new Date(resetCode.expiresAt).toLocaleString()}.
+This code will expire on ${new Date(accessCode.expiresAt).toLocaleString()}.
 
 If you didn't request this password reset, please ignore this email.
 

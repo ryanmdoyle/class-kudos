@@ -240,19 +240,19 @@ export async function editReward(formData: FormData) {
   }
 }
 
-export async function createStudentResetCode(userId: string): Promise<{ code?: string, success: boolean, error: string | null }> {
+export async function createStudentAccessCode(userId: string): Promise<{ code?: string, success: boolean, error: string | null }> {
   try {
     // 1. Generate reset code
     const code = nanoid(6);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes from now
 
-    // 2. Remove other resetCodes
-    await db.resetCode.deleteMany({
+    // 2. Remove other accessCodes
+    await db.accessCode.deleteMany({
       where: { userId }
     })
 
-    // 3. Create a new resetCode
-    const resetCode = await db.resetCode.create({
+    // 3. Create a new accessCode
+    const accessCode = await db.accessCode.create({
       data: {
         userId,
         code,
@@ -261,7 +261,7 @@ export async function createStudentResetCode(userId: string): Promise<{ code?: s
       },
     })
 
-    return { success: true, error: null, code: resetCode.code };
+    return { success: true, error: null, code: accessCode.code };
   } catch (error) {
     console.error(error);
     return { success: false, error: error instanceof Error ? error.message : String(error) };

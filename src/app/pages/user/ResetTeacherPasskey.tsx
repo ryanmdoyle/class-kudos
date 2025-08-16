@@ -5,7 +5,7 @@ import { startRegistration } from "@simplewebauthn/browser";
 import {
   startPasskeyRegistration,
   finishPasskeyReset,
-  validateTeacherResetCode,
+  validateTeacherAccessCode,
 } from "./functions";
 import { Button } from "@/app/components/ui/button";
 import { AuthLayout } from "@/app/layouts/AuthLayout";
@@ -19,19 +19,19 @@ import { RequestInfo } from "rwsdk/worker"
 
 export function ResetTeacherPasskey({ params }: RequestInfo) {
   const [username, setUsername] = useState("");
-  const [resetCode, setResetCode] = useState("");
+  const [accessCode, setAccessCode] = useState("");
   const [result, setResult] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (params.code)
-      setResetCode(params.code)
+      setAccessCode(params.code)
   }, [params])
 
   const passkeyRegister = async () => {
     // 1. Check for the valid code
-    const validatedUser = await validateTeacherResetCode(username, resetCode)
+    const validatedUser = await validateTeacherAccessCode(username, accessCode)
 
     if (validatedUser.valid === false || !validatedUser.user) {
       setFormError(`Invalid username or reset code. Please try again.`)
@@ -74,7 +74,7 @@ export function ResetTeacherPasskey({ params }: RequestInfo) {
   const handlePerformPasskeyRegister = () => {
     const missingFields: string[] = [];
     if (!username.trim()) missingFields.push("First Name");
-    if (!resetCode.trim()) missingFields.push("Last Name");
+    if (!accessCode.trim()) missingFields.push("Last Name");
 
     if (missingFields.length > 0) {
       setFormError(`Please complete missing fields: \n${missingFields.join(", \n")}`);
@@ -112,8 +112,8 @@ export function ResetTeacherPasskey({ params }: RequestInfo) {
         />
         <Input
           type="text"
-          value={resetCode}
-          onChange={(e) => setResetCode(e.target.value)}
+          value={accessCode}
+          onChange={(e) => setAccessCode(e.target.value)}
           placeholder="reset code"
         />
         <Button onClick={handlePerformPasskeyRegister} disabled={isPending} className="w-full">

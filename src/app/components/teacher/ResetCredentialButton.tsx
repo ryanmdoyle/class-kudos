@@ -13,20 +13,20 @@ import {
 } from "@/app/components/ui/alert-dialog"
 
 import { Button } from "@/app/components/ui/button"
-import { createStudentResetCode } from './functions';
+import { createStudentAccessCode } from './functions';
 import { useState } from "react";
 
-export function CreateResetCodeButton({ userId }: { userId: string }) {
+export function CreateAccessCodeButton({ userId }: { userId: string }) {
   const [code, setCode] = useState<string | null>(null)
 
   const handleReset = async (userId: string) => {
-    const newCode = await createStudentResetCode(userId)
+    const newCode = await createStudentAccessCode(userId)
     if (newCode.code) {
       setCode(newCode.code)
-      // Clear the code after 5 minutes (300,000 ms)
+      // Clear the code after 15 minutes
       setTimeout(() => {
         setCode(null);
-      }, 1000 * 60 * 5);
+      }, 1000 * 60 * 15);
     }
   }
 
@@ -36,7 +36,7 @@ export function CreateResetCodeButton({ userId }: { userId: string }) {
         <AlertDialogTrigger asChild>
           {code ? <strong className="mr-2 text-lg">{code}</strong> : (
             <Button variant="neutral" size="sm" className="m-0 mr-2 bg-red-400">
-              Reset
+              Generate
             </Button>
           )}
         </AlertDialogTrigger>
@@ -49,11 +49,11 @@ export function CreateResetCodeButton({ userId }: { userId: string }) {
                   {code}
                 </p>
                 :
-                <p>This will generate a code you can share with your student to create a new passkey. You’ll need to do this if they are logging in from a new device or if they’ve lost or deleted their old passkey.  <strong>The code will last 5 minutes.</strong></p>}
+                <p>This will generate a code you can share with your student to login.  <strong>The code will last 15 minutes.</strong></p>}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => { handleReset(userId) }} type="button">Generate {code ? "New Request" : "Request"} Code</AlertDialogAction>
+            <AlertDialogAction onClick={() => { handleReset(userId) }} type="button">Generate Access Code</AlertDialogAction>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>

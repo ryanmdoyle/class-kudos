@@ -15,7 +15,7 @@ import {
 import { Label } from "@/app/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
 import { startRegistration } from "@simplewebauthn/browser";
-import { requestTeacherResetCode, validateStudentPasskey, finishPasskeyReset, startPasskeyRegistration } from './functions'
+import { requestTeacherAccessCode, validateStudentPasskey, finishPasskeyReset, startPasskeyRegistration } from './functions'
 import { useState } from "react";
 import {
   Alert,
@@ -28,7 +28,7 @@ export function RequestPasskey() {
   const [tab, setTab] = useState<"student" | "teacher">("student");
 
   const [studentUsername, setStudentUsername] = useState("");
-  const [studentResetCode, setStudentResetCode] = useState("");
+  const [studentAccessCode, setStudentAccessCode] = useState("");
 
   const [teacherEmail, setTeacherEmail] = useState("");
 
@@ -38,7 +38,7 @@ export function RequestPasskey() {
   const handleStudentRequest = async () => {
     const missing: string[] = [];
     if (!studentUsername.trim()) missing.push("Username");
-    if (!studentResetCode.trim()) missing.push("Reset Code");
+    if (!studentAccessCode.trim()) missing.push("Reset Code");
 
     if (missing.length > 0) {
       setFormError(`Please complete missing fields:\n${missing.join(", ")}`);
@@ -46,7 +46,7 @@ export function RequestPasskey() {
     }
 
     setFormError(null);
-    const validated = await validateStudentPasskey(studentUsername, studentResetCode);
+    const validated = await validateStudentPasskey(studentUsername, studentAccessCode);
     // set errors for not success
     if (!validated || validated.success === false || !validated.user) {
       if (validated.error) setFormError(validated.error)
@@ -88,7 +88,7 @@ export function RequestPasskey() {
     }
 
     setFormError(null);
-    const res = await requestTeacherResetCode(teacherEmail);
+    const res = await requestTeacherAccessCode(teacherEmail);
     if (res) {
       setResult("If an account exists with that email, a reset link has been sent.");
     } else {
@@ -137,8 +137,8 @@ export function RequestPasskey() {
                   <Input
                     id="reset-code"
                     placeholder="Enter code from teacher"
-                    value={studentResetCode}
-                    onChange={(e) => setStudentResetCode(e.target.value)}
+                    value={studentAccessCode}
+                    onChange={(e) => setStudentAccessCode(e.target.value)}
                   />
                 </div>
               </CardContent>
