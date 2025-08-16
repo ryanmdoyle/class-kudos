@@ -1,9 +1,10 @@
 "use server";
 
-import { db, KudosType, Redeemed } from "@/db";
+import { AccessCode, db, KudosType, Redeemed } from "@/db";
 import { nanoid } from 'nanoid';
 import { requestInfo } from "rwsdk/worker";
 import { EnrollmentWithUser } from "@/app/lib/types";
+import { UserRole } from "@generated/prisma/enums";
 
 export async function addGroup(formData: FormData) {
   const { ctx } = requestInfo;
@@ -240,19 +241,19 @@ export async function editReward(formData: FormData) {
   }
 }
 
-export async function createStudentResetCode(userId: string): Promise<{ code?: string, success: boolean, error: string | null }> {
+export async function createStudentAccessCode(userId: string): Promise<{ code?: string, success: boolean, error: string | null }> {
   try {
     // 1. Generate reset code
     const code = nanoid(6);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes from now
 
-    // 2. Remove other resetCodes
-    await db.resetCode.deleteMany({
+    // 2. Remove other accessCodes
+    await db.accessCode.deleteMany({
       where: { userId }
     })
 
-    // 3. Create a new resetCode
-    const resetCode = await db.resetCode.create({
+    // 3. Create a new accessCode
+    const accessCode = await db.accessCode.create({
       data: {
         userId,
         code,
@@ -261,7 +262,7 @@ export async function createStudentResetCode(userId: string): Promise<{ code?: s
       },
     })
 
-    return { success: true, error: null, code: resetCode.code };
+    return { success: true, error: null, code: accessCode.code };
   } catch (error) {
     console.error(error);
     return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -306,5 +307,74 @@ export async function archiveGroup(id: string): Promise<{ success: boolean; erro
       success: false,
       error: error.message ?? "Unknown error",
     };
+  }
+}
+
+async function ensureUniqueUsername(username: string): Promise<string> {
+  let uniqueUsername = username
+  let exists = await db.user.findUnique({ where: { username: uniqueUsername } })
+
+  while (exists) {
+    // Replace last 3 digits with a new random 3-digit number
+    uniqueUsername = uniqueUsername.replace(/\d{3}$/, () =>
+      Math.floor(100 + Math.random() * 900).toString()
+    )
+    exists = await db.user.findUnique({ where: { username: uniqueUsername } })
+  }
+
+  return uniqueUsername
+}
+
+export async function createNewStudents(preview: { firstName: string; lastName: string, username: string }[], groupId: string) {
+  // Generate usernames (unique)
+  const usersToCreate = await Promise.all(
+    preview.map(async (student) => {
+      const username = await ensureUniqueUsername(student.username)
+      return {
+        firstName: student.firstName,
+        lastName: student.lastName,
+        username,
+        role: "STUDENT" as UserRole,
+      }
+    })
+  )
+
+  // Insert users
+  const createdUsers = await db.user.createMany({
+    data: usersToCreate,
+  })
+
+  // Fetch inserted users (because createMany doesn’t return them, just the number of users created)
+  const insertedUsers = await db.user.findMany({
+    where: { username: { in: usersToCreate.map((u) => u.username) } },
+  })
+
+  // Create enrollments
+  await db.enrollment.createMany({
+    data: insertedUsers.map((u) => ({
+      userId: u.id,
+      groupId,
+    })),
+  })
+
+  // Generate one shared access code
+  const accessCode = nanoid(6)
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes from now
+
+  await db.accessCode.createMany({
+    data: insertedUsers.map((u) => ({
+      code: accessCode,
+      expiresAt,
+      userId: u.id,
+    })),
+  })
+
+  return {
+    accessCode,
+    users: insertedUsers.map((u) => ({
+      id: u.id,
+      name: `${u.firstName} ${u.lastName}`,
+      username: u.username,
+    })),
   }
 }

@@ -211,14 +211,14 @@ export async function finishPasskeyLogin(login: AuthenticationResponseJSON) {
   return true;
 }
 
-export async function validateTeacherResetCode(username: string, code: string): Promise<{ valid: boolean, user: User | null }> {
+export async function validateTeacherAccessCode(username: string, code: string): Promise<{ valid: boolean, user: User | null }> {
   const user = await db.user.findUnique({
     where: { username },
   });
 
   if (!user || user.role !== "TEACHER") return { valid: false, user: null };
 
-  const resetCode = await db.resetCode.findFirst({
+  const accessCode = await db.accessCode.findFirst({
     where: {
       userId: user.id,
       code,
@@ -227,7 +227,7 @@ export async function validateTeacherResetCode(username: string, code: string): 
     },
   });
 
-  return { valid: !!resetCode, user };
+  return { valid: !!accessCode, user };
 }
 
 export async function finishPasskeyReset(
@@ -275,7 +275,7 @@ export async function finishPasskeyReset(
   return true;
 }
 
-export async function requestTeacherResetCode(email: string): Promise<{ success: boolean; error?: string | null }> {
+export async function requestTeacherAccessCode(email: string): Promise<{ success: boolean; error?: string | null }> {
   try {
     const user = await db.user.findUnique({
       where: { email: email }
@@ -287,7 +287,7 @@ export async function requestTeacherResetCode(email: string): Promise<{ success:
       const code = nanoid(12)
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes from now
 
-      const resetCode = await db.resetCode.create({
+      const accessCode = await db.accessCode.create({
         data: {
           userId: user.id,
           code: code,
@@ -297,7 +297,7 @@ export async function requestTeacherResetCode(email: string): Promise<{ success:
       })
 
       // Generate the email content
-      const emailContent = createPasswordResetEmail(user, resetCode);
+      const emailContent = createPasswordResetEmail(user, accessCode);
 
       const { id } = await sendEmail({
         from: "Class Kudos <reset@classkudos.com>",
@@ -321,22 +321,22 @@ type PublicUser = Pick<User, 'id' | 'username' | 'firstName' | 'lastName' | 'rol
 
 export async function validateStudentPasskey(
   username: string,
-  resetCode: string
+  accessCode: string
 ): Promise<{ success: boolean; user?: PublicUser, error?: string | null }> {
   try {
     // Look up the user by username and include reset codes
     const userWithCode = await db.user.findUnique({
       where: { username },
-      include: { resetCode: true },
+      include: { accessCode: true },
     });
 
     if (!userWithCode) {
       return { success: false, error: "Username not found. Please try again." };
     }
 
-    const codeEntry = userWithCode.resetCode[0];
+    const codeEntry = userWithCode.accessCode[0];
 
-    if (!codeEntry || codeEntry.code !== resetCode) {
+    if (!codeEntry || codeEntry.code !== accessCode) {
       return { success: false, error: "Invalid reset code. Please try again." };
     }
 
@@ -372,4 +372,55 @@ export async function checkUsernameAvailability(username: string): Promise<{ tak
   })
 
   return { taken: !!user }; // force bool
+}
+
+export async function studentAccessCodeLogin(
+  username: string,
+  code: string
+): Promise<{ success: boolean; error?: string | null }> {
+  const { headers } = requestInfo;
+
+  const cleanUsername = username.trim();
+  const cleanCode = code.trim();
+
+  if (!cleanUsername || !cleanCode) {
+    return { success: false, error: "Username and access code are required." };
+  }
+
+  // 1. Find the student
+  const user = await db.user.findUnique({
+    where: { username: cleanUsername },
+  });
+
+  if (!user || user.role !== "STUDENT") {
+    return { success: false, error: "Invalid student account." };
+  }
+
+  // 2. Look for a matching access code
+  const accessCode = await db.accessCode.findFirst({
+    where: {
+      userId: user.id,
+      code: cleanCode,
+      used: false,
+      expiresAt: { gt: new Date() },
+    },
+  });
+
+  if (!accessCode) {
+    return { success: false, error: "Invalid or expired access code." };
+  }
+
+  // 3. Mark the code as used
+  await db.accessCode.update({
+    where: { id: accessCode.id },
+    data: { used: true },
+  });
+
+  // 4. Save session (same as passkey login)
+  await sessions.save(headers, {
+    userId: user.id,
+    challenge: null,
+  });
+
+  return { success: true };
 }

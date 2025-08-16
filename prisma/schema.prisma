@@ -29,7 +29,7 @@ model User {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @default(now())
   credentials Credential[]
-  resetCode   ResetCode[]
+  accessCode  AccessCode[]
   role        UserRole
   groupsOwned Group[]
   enrollments Enrollment[]
@@ -50,12 +50,12 @@ model Credential {
   @@index([userId])
 }
 
-model ResetCode {
+model AccessCode {
   id        String   @id @default(uuid())
-  code      String   @unique
+  code      String
   expiresAt DateTime
   used      Boolean  @default(false)
-  userId    String // user that created code
+  userId    String
   user      User     @relation(fields: [userId], references: [id])
 }
 
