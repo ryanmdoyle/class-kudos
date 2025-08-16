@@ -52,7 +52,7 @@ model Credential {
 
 model AccessCode {
   id        String   @id @default(uuid())
-  code      String   @unique
+  code      String
   expiresAt DateTime
   used      Boolean  @default(false)
   userId    String

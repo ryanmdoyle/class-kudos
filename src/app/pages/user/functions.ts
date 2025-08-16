@@ -373,3 +373,54 @@ export async function checkUsernameAvailability(username: string): Promise<{ tak
 
   return { taken: !!user }; // force bool
 }
+
+export async function studentAccessCodeLogin(
+  username: string,
+  code: string
+): Promise<{ success: boolean; error?: string | null }> {
+  const { headers } = requestInfo;
+
+  const cleanUsername = username.trim();
+  const cleanCode = code.trim();
+
+  if (!cleanUsername || !cleanCode) {
+    return { success: false, error: "Username and access code are required." };
+  }
+
+  // 1. Find the student
+  const user = await db.user.findUnique({
+    where: { username: cleanUsername },
+  });
+
+  if (!user || user.role !== "STUDENT") {
+    return { success: false, error: "Invalid student account." };
+  }
+
+  // 2. Look for a matching access code
+  const accessCode = await db.accessCode.findFirst({
+    where: {
+      userId: user.id,
+      code: cleanCode,
+      used: false,
+      expiresAt: { gt: new Date() },
+    },
+  });
+
+  if (!accessCode) {
+    return { success: false, error: "Invalid or expired access code." };
+  }
+
+  // 3. Mark the code as used
+  await db.accessCode.update({
+    where: { id: accessCode.id },
+    data: { used: true },
+  });
+
+  // 4. Save session (same as passkey login)
+  await sessions.save(headers, {
+    userId: user.id,
+    challenge: null,
+  });
+
+  return { success: true };
+}

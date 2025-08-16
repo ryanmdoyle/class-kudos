@@ -108,13 +108,13 @@ export function RequestPasskey() {
       </div>
       <div className="auth-form max-w-[400px] w-full mx-auto px-10">
         <h1 className="text-3xl text-center mb-4">Request a Passkey</h1>
-        <Tabs value={tab} onValueChange={(val) => setTab(val as "student" | "teacher")}>
+        {/* <Tabs value={tab} onValueChange={(val) => setTab(val as "student" | "teacher")}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="student">Student</TabsTrigger>
             <TabsTrigger value="teacher">Teacher</TabsTrigger>
-          </TabsList>
+          </TabsList> */}
 
-          <TabsContent value="student">
+        {/* <TabsContent value="student">
             <Card className="gap-2">
               <CardHeader className="mb-4">
                 <CardTitle>Get a Student Passkey</CardTitle>
@@ -148,36 +148,36 @@ export function RequestPasskey() {
                 </Button>
               </CardFooter>
             </Card>
-          </TabsContent>
+          </TabsContent> */}
 
-          <TabsContent value="teacher">
-            <Card className="gap-2">
-              <CardHeader className="mb-4">
-                <CardTitle>Get Teacher Passkey</CardTitle>
-                <CardDescription>
-                  Enter the email associated with your account and you'll receive a link to create a new passkey.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid">
-                <div className="grid gap-2">
-                  <Label htmlFor="teacher-email">Email</Label>
-                  <Input
-                    id="teacher-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={teacherEmail}
-                    onChange={(e) => setTeacherEmail(e.target.value)}
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button className="w-full" onClick={handleTeacherRequest} type="button">
-                  Request New Passkey
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        {/* <TabsContent value="teacher"> */}
+        <Card className="gap-2">
+          <CardHeader className="mb-4">
+            <CardTitle>Get Teacher Passkey</CardTitle>
+            <CardDescription>
+              Enter the email associated with your account and you'll receive a link to create a new passkey.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid">
+            <div className="grid gap-2">
+              <Label htmlFor="teacher-email">Email</Label>
+              <Input
+                id="teacher-email"
+                type="email"
+                placeholder="you@example.com"
+                value={teacherEmail}
+                onChange={(e) => setTeacherEmail(e.target.value)}
+              />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button className="w-full" onClick={handleTeacherRequest} type="button">
+              Request New Passkey
+            </Button>
+          </CardFooter>
+        </Card>
+        {/* </TabsContent>
+        </Tabs> */}
 
       </div>
       {result && (

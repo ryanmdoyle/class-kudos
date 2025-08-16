@@ -1,10 +1,10 @@
 import { AddKudoTypeButton } from "@/app/components/teacher/AddKudoTypeButton";
+import { AddNewStudentsButton } from "@/app/components/teacher/AddNewStudentsButton";
 import { EditKudoTypeButton } from "@/app/components/teacher/EditKudoTypeButton";
 import { AddRewardButton } from "@/app/components/teacher/AddRewardButton";
 import { EditRewardButton } from "@/app/components/teacher/EditRewardButton";
 import { EditEnrolledButton } from "@/app/components/teacher/EditEnrolledButton";
 import { TeacherNav } from "@/app/components/teacher/TeacherNav"
-import { CreateAccessCodeButton } from '@/app/components/teacher/ResetCredentialButton'
 import {
   Table,
   TableBody,
@@ -18,6 +18,7 @@ import { db } from "@/db";
 import { RequestInfo } from "rwsdk/worker";
 import { GroupHeader } from "@/app/components/teacher/GroupHeader";
 import { GroupWarningArea } from "@/app/components/teacher/GroupWarningArea";
+import { StudentAccessCodeCell } from "@/app/components/teacher/StudentAccessCodeCell";
 
 export async function Options({ params, request }: RequestInfo) {
   const groupId = params.groupId;
@@ -48,65 +49,68 @@ export async function Options({ params, request }: RequestInfo) {
       <TeacherNav url={request.url} currentGroup={groupId} />
       <div className="flex flex-col flex-1 gap-4 bg-green-background min-w-screen overflow-auto p-8">
         {group && <GroupHeader group={group} />}
-        <div className="bg-background w-full neo-container p-6 mb-4 relative">
-          <h2 className="text-2xl font-bold mb-6">Kudos</h2>
-          <Table>
-            <TableCaption className="text-foreground">
-              "Kudos" are what you reward students with. They can be simple titles like "Helping," or longer ideas, such as "Turning work in early."
-            </TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead className="text-right w-[100px]">Edit Kudo Type</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {kudoTypes.map((kudo) => (
-                <TableRow key={kudo.id} className="bg-purple-200">
-                  <TableCell className="font-base">{kudo.name}</TableCell>
-                  <TableCell>{kudo.value}</TableCell>
-                  <TableCell className="text-right p-0">
-                    <EditKudoTypeButton kudoType={kudo} />
-                  </TableCell>
+        <div className="flex gap-4">
+          <div className="bg-background w-full neo-container p-6 mb-4 relative">
+            <h2 className="text-2xl font-bold mb-6">Kudos</h2>
+            <Table>
+              <TableCaption className="text-foreground">
+                "Kudos" are what you reward students with. They can be simple titles like "Helping," or longer ideas, such as "Turning work in early."
+              </TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Value</TableHead>
+                  <TableHead className="text-right w-[100px]">Edit Kudo Type</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <AddKudoTypeButton groupId={groupId} />
-        </div>
-        <div className="bg-background w-full neo-container p-6 mb-4 relative">
-          <h2 className="text-2xl font-bold mb-6">Rewards</h2>
-          <Table>
-            <TableCaption className="text-foreground">
-              "Rewards" are what your students will be able to redeem with their kudos.
-            </TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Cost</TableHead>
-                <TableHead className="text-right w-[100px]">Edit Reward</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rewards.map((reward) => (
-                <TableRow key={reward.id} className="bg-purple-200">
-                  <TableCell className="font-base">{reward.name}</TableCell>
-                  <TableCell>{reward.cost}</TableCell>
-                  <TableCell className="text-right p-0">
-                    <EditRewardButton reward={reward} />
-                  </TableCell>
+              </TableHeader>
+              <TableBody>
+                {kudoTypes.map((kudo) => (
+                  <TableRow key={kudo.id} className="bg-purple-200">
+                    <TableCell className="font-base">{kudo.name}</TableCell>
+                    <TableCell>{kudo.value}</TableCell>
+                    <TableCell className="text-right p-0">
+                      <EditKudoTypeButton kudoType={kudo} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <AddKudoTypeButton groupId={groupId} />
+          </div>
+          <div className="bg-background w-full neo-container p-6 mb-4 relative">
+            <h2 className="text-2xl font-bold mb-6">Rewards</h2>
+            <Table>
+              <TableCaption className="text-foreground">
+                "Rewards" are what your students will be able to redeem with their kudos.
+              </TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Cost</TableHead>
+                  <TableHead className="text-right w-[100px]">Edit Reward</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <AddRewardButton groupId={groupId} />
+              </TableHeader>
+              <TableBody>
+                {rewards.map((reward) => (
+                  <TableRow key={reward.id} className="bg-purple-200">
+                    <TableCell className="font-base">{reward.name}</TableCell>
+                    <TableCell>{reward.cost}</TableCell>
+                    <TableCell className="text-right p-0">
+                      <EditRewardButton reward={reward} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <AddRewardButton groupId={groupId} />
+          </div>
         </div>
+
         <div className="bg-background w-full neo-container p-6 relative">
           <h2 className="text-2xl font-bold mb-6">Enrolled Students</h2>
           {enrollments.length === 0 ? (
-            <p>No students enrolled yet. {group?.enrollId ? (
-              <> Have students use the code <strong className="text-lg font-code">{group.enrollId}</strong> to enroll in this group.</>
+            <p>No students enrolled yet. Add new students to get started! {group?.enrollId ? (
+              <> If a student has an account already, they can use the code <strong className="text-lg font-code">{group.enrollId}</strong> to enroll in this group.</>
             ) : null}</p>
           ) : (
 
@@ -114,7 +118,7 @@ export async function Options({ params, request }: RequestInfo) {
               <TableCaption className="text-foreground">
                 A list of your enrolled students.
                 {group?.enrollId ? (
-                  <> Have students use the code <strong className="text-lg font-code">{group.enrollId}</strong> to enroll in this group.</>
+                  <> If a student has an account already, they can use the code <strong className="text-lg font-code">{group.enrollId}</strong> to enroll in this group.</>
                 ) : null}
               </TableCaption>
               <TableHeader>
@@ -122,8 +126,8 @@ export async function Options({ params, request }: RequestInfo) {
                   <TableHead>First Name</TableHead>
                   <TableHead>Last Name</TableHead>
                   <TableHead>Username</TableHead>
-                  <TableHead className="text-right w-[100px]">Edit</TableHead>
-                  <TableHead className="text-right w-[100px]">Access Code</TableHead>
+                  <TableHead className="text-right">Access Code</TableHead>
+                  <TableHead className="text-right pr-6">Edit</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -133,10 +137,10 @@ export async function Options({ params, request }: RequestInfo) {
                     <TableCell>{enrollment.user.lastName}</TableCell>
                     <TableCell>{enrollment.user.username}</TableCell>
                     <TableCell className="text-right p-0">
-                      <EditEnrolledButton enrollment={enrollment} />
+                      <StudentAccessCodeCell userId={enrollment.user.id} />
                     </TableCell>
-                    <TableCell className="text-right p-0">
-                      <CreateAccessCodeButton userId={enrollment.user.id} />
+                    <TableCell className="text-right p-0 pr-2">
+                      <EditEnrolledButton enrollment={enrollment} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -144,6 +148,7 @@ export async function Options({ params, request }: RequestInfo) {
             </Table>
 
           )}
+          {group && <AddNewStudentsButton groupId={group.id} />}
         </div>
         {group && (
           <GroupWarningArea group={group} />
