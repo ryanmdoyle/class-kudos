@@ -37,10 +37,30 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, init
     );
   };
 
+  const handleSelectAll = () => {
+    setSelected(enrollments);
+  };
+
+  const handleClearSelection = () => {
+    setSelected([]);
+  };
+
   return (
     <div className="grid grid-cols-4 grid-rows-1 h-full">
       {enrollments.length > 0 && (
         <div className="p-4 bg-green-background border border-border flex flex-col justify-start overflow-auto col-span-1 row-span-1">
+          {/* Control buttons */}
+          <div className="flex gap-2 mb-2">
+            <Button onClick={handleSelectAll} variant="neutral" className="w-full">
+              Select All
+            </Button>
+            {selected.length > 0 && (
+              <Button onClick={handleClearSelection} variant="neutral" className="w-full">
+                Clear
+              </Button>
+            )}
+          </div>
+          {/* Enrollments List */}
           {enrollments.map(enrollment => (
             <Button
               className={`w-full mb-2 flex justify-between items-center ${selected.some(e => e.id === enrollment.id) ? "bg-main" : ""}`}
