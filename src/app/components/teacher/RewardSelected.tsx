@@ -3,10 +3,25 @@
 import { KudosType } from "@generated/prisma";
 import { Button } from "../ui/button";
 import { addKudos, getUpdatedEnrollments } from "./functions";
-import { EnrollmentWithUser, KudosWithUser } from "@/app/lib/types";
+import { EnrollmentWithUser, KudosWithUser, Name } from "@/app/lib/types";
 import { PointsPieChart } from "./PointsPieChart"
+import { RandomStudentButton } from "./tools/RandomStudentButton";
+import { RandomGroupsButton } from "./tools/RandomGroupsButton";
+import { KudosLeaderboard } from "./tools/KudosLeaderboard";
 
-export function RewardSelected({ selected, groupKudoTypes, setEnrollments, kudos }: { selected: EnrollmentWithUser[], groupKudoTypes: KudosType[], setEnrollments: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>>, kudos: KudosWithUser[] }) {
+export function RewardSelected({
+  selected,
+  groupKudoTypes,
+  setEnrollments,
+  kudos,
+  names
+}: {
+  selected: EnrollmentWithUser[],
+  groupKudoTypes: KudosType[],
+  setEnrollments: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>>,
+  kudos: KudosWithUser[],
+  names: Name[]
+}) {
 
   async function handleGiveKudos(kudoType: KudosType) {
     await addKudos(kudoType, selected)
@@ -24,7 +39,14 @@ export function RewardSelected({ selected, groupKudoTypes, setEnrollments, kudos
         </h2>
       </div>
       {kudos.length > 0 && (
-        <PointsPieChart kudos={kudos} />
+        <div className="flex gap-6">
+          <KudosLeaderboard kudos={kudos} />
+          <PointsPieChart kudos={kudos} />
+          <div className="flex flex-col">
+            <RandomStudentButton names={names} />
+            <RandomGroupsButton names={names} />
+          </div>
+        </div>
       )}
     </div>
   );
@@ -39,7 +61,15 @@ export function RewardSelected({ selected, groupKudoTypes, setEnrollments, kudos
         {/* Reward buttons go here */}
         <div className="flex gap-2">
           {groupKudoTypes && groupKudoTypes.map(kudoType => (
-            <Button key={kudoType.id} variant="gold" className="m-1" onClick={() => handleGiveKudos(kudoType)}>{kudoType.name}</Button>
+            <Button
+              key={kudoType.id}
+              variant="gold"
+              className="m-1 flex items-center justify-between min-w-[120px]"
+              onClick={() => handleGiveKudos(kudoType)}
+            >
+              <span className="font-medium">{kudoType.name}</span>
+              <span className="text-lg font-bold ml-2">+{kudoType.value}</span>
+            </Button>
           ))}
         </div>
       </div>
@@ -67,9 +97,17 @@ export function RewardSelected({ selected, groupKudoTypes, setEnrollments, kudos
       <div className="flex flex-col items-start gap-1 overflow-hidden">
         <h2 className="text-lg font-semibold mb-2">Give kudos to selected:</h2>
         {/* Reward buttons go here */}
-        <div className="flex-1 overflow-y-auto p-2">
+        <div className="flex-1 overflow-y-auto p-2 gap-2">
           {groupKudoTypes && groupKudoTypes.map(kudoType => (
-            <Button key={kudoType.id} variant="gold" className="m-1" onClick={() => handleGiveKudos(kudoType)}>{kudoType.name}</Button>
+            <Button
+              key={kudoType.id}
+              variant="gold"
+              className="flex items-center justify-between min-w-[120px]"
+              onClick={() => handleGiveKudos(kudoType)}
+            >
+              <span className="font-medium">{kudoType.name}</span>
+              <span className="text-lg font-bold ml-2">+{kudoType.value}</span>
+            </Button>
           ))}
         </div>
       </div>
