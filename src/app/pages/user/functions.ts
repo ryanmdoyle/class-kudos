@@ -60,8 +60,6 @@ export async function startPasskeyLogin() {
   const options = await generateAuthenticationOptions({
     rpID,
     userVerification: "preferred",
-    // Empty array allows any registered credential to be used
-    allowCredentials: [],
     // Increase timeout for better user experience
     timeout: 60000, // 60 seconds
   });
