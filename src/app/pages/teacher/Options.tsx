@@ -19,6 +19,9 @@ import { RequestInfo } from "rwsdk/worker";
 import { GroupHeader } from "@/app/components/teacher/GroupHeader";
 import { GroupWarningArea } from "@/app/components/teacher/GroupWarningArea";
 import { StudentAccessCodeCell } from "@/app/components/teacher/StudentAccessCodeCell";
+import { EnrollmentWithUser } from "@/app/lib/types";
+import { GenerateClassAccessButton } from "@/app/components/teacher/options/GenerateClassAccessButton";
+import { CopyUsernamesButton } from "@/app/components/teacher/options/CopyUsernamesButton";
 
 export async function Options({ params, request }: RequestInfo) {
   const groupId = params.groupId;
@@ -43,6 +46,16 @@ export async function Options({ params, request }: RequestInfo) {
   const group = await db.group.findUnique({
     where: { id: groupId },
   });
+
+  function getUserIdsFromEnrollments(enrollments: EnrollmentWithUser[]): string[] {
+    return enrollments.map(enrollment => enrollment.userId);
+  }
+
+  function getUsernamesFromEnrollments(enrollments: EnrollmentWithUser[]): string[] {
+    return enrollments.map(enrollment => enrollment.user.username);
+  }
+
+  const userIds = getUserIdsFromEnrollments(enrollments)
 
   return (
     <div className="h-screen min-w-screen flex flex-col">
@@ -125,8 +138,18 @@ export async function Options({ params, request }: RequestInfo) {
                 <TableRow>
                   <TableHead>First Name</TableHead>
                   <TableHead>Last Name</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead className="text-right">Access Code</TableHead>
+                  <TableHead className="text-right">
+                    <div className="flex justify-start items-center gap-4 h-full">
+                      <span>Username</span>
+                      <CopyUsernamesButton usernames={getUsernamesFromEnrollments(enrollments)} />
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <div className="flex justify-end items-center gap-4 h-full">
+                      <GenerateClassAccessButton userIds={userIds} />
+                      <span>Access Code</span>
+                    </div>
+                  </TableHead>
                   <TableHead className="text-right pr-6">Edit</TableHead>
                 </TableRow>
               </TableHeader>

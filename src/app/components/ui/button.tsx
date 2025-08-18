@@ -19,6 +19,7 @@ const buttonVariants = cva(
         gold:
           "text-main-foreground bg-yellow-500 border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
         noShadow: "text-main-foreground bg-main border-2 border-border",
+        noShadowNeutral: "text-main-foreground bg-secondary-background hover:bg-green-background border-2 border-border",
         neutral:
           "bg-secondary-background text-foreground border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
         reverse:
@@ -29,6 +30,7 @@ const buttonVariants = cva(
         sm: "h-9 px-3",
         lg: "h-11 px-8",
         icon: "size-10",
+        smIcon: "size-8",
       },
     },
     defaultVariants: {
