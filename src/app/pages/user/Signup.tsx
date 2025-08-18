@@ -113,7 +113,7 @@ export function Signup() {
       <div className="auth-form max-w-[400px] w-full mx-auto px-10">
 
         <h1 className="page-title text-center pb-6">Create a Teacher Account</h1>
-        {/* <p className="py-4">Select your role:</p>
+        <p className="py-4">Select your role:</p>
         <select
           value={role}
           onChange={(e) => setRole(e.target.value as "TEACHER" | "STUDENT")}
@@ -124,8 +124,8 @@ export function Signup() {
           </option>
           <option value="STUDENT">Student</option>
           <option value="TEACHER">Teacher</option>
-        </select> */}
-        {/* <p className="py-6">Enter a username to setup an account.</p> */}
+        </select>
+        <p className="py-6">Enter a username to setup an account.</p>
         <Input
           type="text"
           value={username}

@@ -79,7 +79,7 @@ export function Login() {
           Register
         </a>
       </div>
-      <div className="auth-form max-w-[400px] w-full mx-auto px-10">
+      <div className="auth-form max-w-[600px] w-full mx-auto px-10">
         <h1 className="text-3xl text-center mb-4">Login</h1>
         <Tabs value={tab} onValueChange={(val) => setTab(val as "student" | "teacher")}>
           <TabsList className="grid w-full grid-cols-2">
@@ -91,7 +91,10 @@ export function Login() {
             <Card className="gap-2">
               <CardHeader className="mb-4">
                 <CardTitle>Student Login</CardTitle>
-                <CardDescription>Enter your username and the access code from your teacher to sign-in.</CardDescription>
+                <CardDescription>
+                  <strong>Passkey login: </strong>Enter only your username.<br />
+                  <strong>Access Code Login: </strong>Enter username and teacher-created access code.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid">
                 <Input
@@ -100,6 +103,9 @@ export function Login() {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Username"
                 />
+                <Button onClick={handlePerformPasskeyLogin} disabled={isPending} className="w-full mb-6">
+                  {isPending ? <>...</> : "Login with passkey"}
+                </Button>
                 <Input
                   type="text"
                   value={code}
@@ -113,13 +119,14 @@ export function Login() {
                     <AlertDescription>{result}</AlertDescription>
                   </Alert>
                 )}
-
+                <Button onClick={handleStudentLogin} disabled={isPending} className="w-full mb-6">
+                  {isPending ? <>...</> : "Login with access code"}
+                </Button>
               </CardContent>
               <CardFooter className="flex flex-col">
-
-                <Button onClick={handleStudentLogin} disabled={isPending} className="w-full mb-6">
-                  {isPending ? <>...</> : "Login"}
-                </Button>
+                <p className="justify-center">
+                  <a href={link("/user/what-are-passkeys")}>What are passkeys?</a>
+                </p>
                 <p className="justify-center">
                   By clicking continue, you agree to our <a href={link("/legal/terms")}>Terms of Service</a> and <a href={link("/legal/privacy")}>Privacy Policy</a>.
                 </p>

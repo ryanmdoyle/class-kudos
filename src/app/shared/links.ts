@@ -7,6 +7,7 @@ export const link = defineLinks([
   "/user/logout",
   "/user/request-passkey",
   "/user/teacher-reset",
+  "/user/what-are-passkeys",
   "/teacher",
   "/teacher/:groupId",
   "/teacher/:groupId/rewards",
