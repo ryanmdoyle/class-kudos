@@ -21,6 +21,14 @@ export async function Rewards({ params, request }: RequestInfo) {
   const redeemed = await db.redeemed.findMany({
     where: { groupId: groupId },
     orderBy: { createdAt: "desc" },
+    include: {
+      user: {
+        select: {
+          firstName: true,
+          lastName: true
+        }
+      }
+    }
   })
 
   const group = await db.group.findUnique({
@@ -43,7 +51,8 @@ export async function Rewards({ params, request }: RequestInfo) {
             </TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[500px]">Reward</TableHead>
+                <TableHead>Reward</TableHead>
+                <TableHead>Requested By</TableHead>
                 <TableHead className="text-right">Cost</TableHead>
                 <TableHead className="text-right">Date Recieved</TableHead>
                 <TableHead className="text-right"></TableHead>
@@ -53,6 +62,7 @@ export async function Rewards({ params, request }: RequestInfo) {
               {pending.map((p) => (
                 <TableRow key={p.id} className={p.reviewed === true ? "bg-green-300" : "bg-background"}>
                   <TableCell className="font-base">{p.name}</TableCell>
+                  <TableCell className="font-base">{p.user.firstName} {p.user.lastName}</TableCell>
                   <TableCell className="text-right">{p.cost}</TableCell>
                   <TableCell className="text-right">{p.createdAt.toDateString()}</TableCell>
                   <TableCell className="text-right">
@@ -74,7 +84,8 @@ export async function Rewards({ params, request }: RequestInfo) {
             )}
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[500px]">Reward</TableHead>
+                <TableHead>Reward</TableHead>
+                <TableHead>Requested By</TableHead>
                 <TableHead className="text-right">Cost</TableHead>
                 <TableHead className="text-right">Date Recieved</TableHead>
                 <TableHead className="text-right"></TableHead>
@@ -84,6 +95,7 @@ export async function Rewards({ params, request }: RequestInfo) {
               {reviewed.length > 0 && reviewed.map((r) => (
                 <TableRow key={r.id} className="bg-background">
                   <TableCell className="font-base">{r.name}</TableCell>
+                  <TableCell className="font-base">{r.user.firstName} {r.user.lastName}</TableCell>
                   <TableCell className="text-right">{r.cost}</TableCell>
                   <TableCell className="text-right">{r.createdAt.toDateString()}</TableCell>
                   <TableCell className="text-right"><CancelRedeemedButton redeemed={r} /></TableCell>
