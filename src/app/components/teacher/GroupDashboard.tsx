@@ -118,7 +118,7 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, init
             </div>
 
           ) : (
-            <RewardSelected selected={selected} groupKudoTypes={groupKudoTypes} setEnrollments={setEnrollments} kudos={initialKudos} names={names} />
+            <RewardSelected selected={selected} setSelected={setSelected} groupKudoTypes={groupKudoTypes} setEnrollments={setEnrollments} kudos={initialKudos} names={names} />
           )}
         </div>
       </div>

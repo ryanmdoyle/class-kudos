@@ -11,12 +11,14 @@ import { KudosLeaderboard } from "./tools/KudosLeaderboard";
 
 export function RewardSelected({
   selected,
+  setSelected,
   groupKudoTypes,
   setEnrollments,
   kudos,
   names
 }: {
   selected: EnrollmentWithUser[],
+  setSelected: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>>,
   groupKudoTypes: KudosType[],
   setEnrollments: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>>,
   kudos: KudosWithUser[],
@@ -25,10 +27,11 @@ export function RewardSelected({
 
   async function handleGiveKudos(kudoType: KudosType) {
     await addKudos(kudoType, selected)
-    const result = await getUpdatedEnrollments(kudoType.groupId)
-    if (result.success && result.data) {
-      setEnrollments(result.data)
-    }
+    // const result = await getUpdatedEnrollments(kudoType.groupId)
+    // if (result.success && result.data) {
+    //   setEnrollments(result.data)
+    // }
+    setSelected([])
   }
 
   if (!selected || selected.length === 0) return (
