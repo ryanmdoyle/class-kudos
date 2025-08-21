@@ -5,8 +5,7 @@ import { Button } from "../ui/button";
 import { addKudos, getUpdatedEnrollments } from "./functions";
 import { EnrollmentWithUser, KudosWithUser, Name } from "@/app/lib/types";
 import { PointsPieChart } from "./PointsPieChart"
-import { RandomStudentButton } from "./tools/RandomStudentButton";
-import { RandomGroupsButton } from "./tools/RandomGroupsButton";
+import { GroupTools } from "./tools/GroupTools";
 import { KudosLeaderboard } from "./tools/KudosLeaderboard";
 
 export function RewardSelected({
@@ -35,20 +34,17 @@ export function RewardSelected({
   }
 
   if (!selected || selected.length === 0) return (
-    <div className="center flex-col gap-6">
+    <div className="center flex-col gap-6 p-4">
       <div className="p-4 bg-background neo-container center">
-        <h2 className="text-xl font-bold">
+        <span className="font-bold">
           Select someone to reward them with kudos!
-        </h2>
+        </span>
       </div>
       {kudos.length > 0 && (
-        <div className="flex gap-6">
+        <div className="flex flex-wrap gap-6">
           <KudosLeaderboard kudos={kudos} />
           <PointsPieChart kudos={kudos} />
-          <div className="flex flex-col">
-            <RandomStudentButton names={names} />
-            <RandomGroupsButton names={names} />
-          </div>
+          <GroupTools names={names} />
         </div>
       )}
     </div>

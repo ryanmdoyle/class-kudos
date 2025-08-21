@@ -77,7 +77,7 @@ export function KudosLeaderboard({ kudos }: { kudos: KudosWithUser[] }) {
   }
 
   return (
-    <Card className="flex flex-col bg-secondary-background text-foreground">
+    <Card className="flex flex-col bg-background text-foreground">
       <CardHeader className="items-center pb-0">
         <CardTitle>Leaderboard</CardTitle>
       </CardHeader>

@@ -69,7 +69,7 @@ export function PointsPieChart({ kudos }: { kudos: KudosWithUser[] }) {
   }, [chartData])
 
   return (
-    <Card className="flex flex-col bg-secondary-background text-foreground">
+    <Card className="flex flex-col bg-background text-foreground">
       <CardHeader className="items-center pb-0">
         <CardTitle>Total Kudos</CardTitle>
         {/* <CardDescription>by student</CardDescription> */}
