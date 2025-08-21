@@ -90,7 +90,7 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, init
         </div>
       )}
 
-      <div className={`bg-green-background min-h-full ${enrollments.length > 0 ? "col-span-3" : "col-span-4"} row-span-1 border border-border flex flex-col gap-4 items-center justify-center p-6`}>
+      <div className={`bg-green-background overflow-auto ${enrollments.length > 0 ? "col-span-3" : "col-span-4"} row-span-1 border border-border flex flex-col gap-4 items-center justify-center p-6`}>
         <div className="grid grid-rows-[100px_1fr] w-full h-full gap-4">
           {/* Group Name & Points */}
           {group && <GroupHeader group={group} />}
@@ -118,7 +118,7 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, init
             </div>
 
           ) : (
-            <RewardSelected selected={selected} groupKudoTypes={groupKudoTypes} setEnrollments={setEnrollments} kudos={initialKudos} names={names} />
+            <RewardSelected selected={selected} setSelected={setSelected} groupKudoTypes={groupKudoTypes} setEnrollments={setEnrollments} kudos={initialKudos} names={names} />
           )}
         </div>
       </div>
