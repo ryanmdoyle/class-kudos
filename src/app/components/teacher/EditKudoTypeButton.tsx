@@ -20,6 +20,10 @@ const handleSubmit = async (formData: FormData) => {
   editKudoType(formData)
 }
 
+const handleDelete = async (kudoTypeId: string) => {
+  await deleteKudoType(kudoTypeId)
+}
+
 export function EditKudoTypeButton({ kudoType }: { kudoType: KudosType }) {
 
   return (
@@ -52,8 +56,9 @@ export function EditKudoTypeButton({ kudoType }: { kudoType: KudosType }) {
           <input type="hidden" name="id" value={kudoType.id} />
         </form>
         <AlertDialogFooter className="relative">
-          <Button onClick={() => { deleteKudoType(kudoType.id) }} className='bg-red-400 absolute left-0' form="editKudoTypeForm">Delete</Button>
-
+          <form action={() => handleDelete(kudoType.id)} id="deleteKudoTypeForm">
+            <Button type="submit" className='bg-red-400 absolute left-0' form="deleteKudoTypeForm">Delete</Button>
+          </form>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction type="submit" form="editKudoTypeForm">Continue</AlertDialogAction>
 
