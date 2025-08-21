@@ -17,7 +17,11 @@ import { Reward } from '@generated/prisma';
 import { editReward, deleteReward } from './functions';
 
 const handleSubmit = async (formData: FormData) => {
-  editReward(formData)
+  await editReward(formData)
+}
+
+const handleDelete = async (rewardId: string) => {
+  await deleteReward(rewardId)
 }
 
 export function EditRewardButton({ reward }: { reward: Reward }) {
@@ -52,7 +56,9 @@ export function EditRewardButton({ reward }: { reward: Reward }) {
           <input type="hidden" name="id" value={reward.id} />
         </form>
         <AlertDialogFooter className="relative">
-          <Button onClick={() => { deleteReward(reward.id) }} className='bg-red-400 absolute left-0' form="editKudoTypeForm">Delete</Button>
+          <form action={() => handleDelete(reward.id)} id="deleteRewardForm">
+            <Button type="submit" className='bg-red-400 absolute left-0' form="deleteRewardForm">Delete</Button>
+          </form>
 
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction type="submit" form="editRewardForm">Continue</AlertDialogAction>
