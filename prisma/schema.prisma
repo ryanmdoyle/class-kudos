@@ -21,20 +21,21 @@ datasource db {
 }
 
 model User {
-  id          String       @id @default(uuid())
-  username    String       @unique
-  email       String?      @unique // only needed for teacher accounts, add after user creation
-  firstName   String
-  lastName    String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @default(now())
-  credentials Credential[]
-  accessCode  AccessCode[]
-  role        UserRole
-  groupsOwned Group[]
-  enrollments Enrollment[]
-  kudos       Kudos[]
-  redeemeds   Redeemed[]
+  id              String            @id @default(uuid())
+  username        String            @unique
+  email           String?           @unique // only needed for teacher accounts, add after user creation
+  firstName       String
+  lastName        String
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @default(now())
+  credentials     Credential[]
+  accessCode      AccessCode[]
+  role            UserRole
+  groupsOwned     Group[]
+  enrollments     Enrollment[]
+  kudos           Kudos[]
+  redeemeds       Redeemed[]
+  locationHistory LocationHistory[]
 }
 
 model Credential {
@@ -66,19 +67,21 @@ enum UserRole {
 }
 
 model Group {
-  id             String       @id @default(uuid())
-  name           String
-  description    String?      @default("")
-  enrollId       String?      @unique
-  rewardedPoints Int          @default(0)
-  owner          User         @relation(fields: [ownerId], references: [id])
-  ownerId        String
-  archived       Boolean      @default(false)
-  enrollments    Enrollment[]
-  kudos          Kudos[]
-  KudosType      KudosType[]
-  rewards        Reward[]
-  redeemed       Redeemed[]
+  id              String            @id @default(uuid())
+  name            String
+  description     String?           @default("")
+  enrollId        String?           @unique
+  rewardedPoints  Int               @default(0)
+  owner           User              @relation(fields: [ownerId], references: [id])
+  ownerId         String
+  archived        Boolean           @default(false)
+  enrollments     Enrollment[]
+  kudos           Kudos[]
+  KudosType       KudosType[]
+  rewards         Reward[]
+  redeemed        Redeemed[]
+  locations       Location[]
+  locationHistory LocationHistory[]
 }
 
 model Enrollment {
@@ -88,6 +91,10 @@ model Enrollment {
   group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId String
   points  Int    @default(0)
+
+  currentLocation   Location? @relation(fields: [currentLocationId], references: [id])
+  currentLocationId String?
+  locationUpdatedAt DateTime?
 
   @@unique([userId, groupId])
 }
@@ -133,4 +140,41 @@ model Redeemed {
   group      Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId    String
   createdAt  DateTime  @default(now())
+}
+
+model Location {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  color       String? // Hex color for UI display (e.g., "#FF5733")
+  isActive    Boolean  @default(true)
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Students currently at this location
+  currentStudents Enrollment[]
+
+  // Historical location visits
+  locationHistory LocationHistory[]
+
+  @@index([groupId])
+}
+
+model LocationHistory {
+  id         String    @id @default(uuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  location   Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId String
+  group      Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId    String
+  arrivedAt  DateTime  @default(now())
+  leftAt     DateTime?
+  duration   Int? // Duration in minutes, calculated when leftAt is set
+
+  @@index([groupId, userId])
+  @@index([locationId])
+  @@index([arrivedAt])
 }

@@ -378,3 +378,46 @@ export async function createNewStudents(preview: { firstName: string; lastName: 
     })),
   }
 }
+
+export async function addLocation(formData: FormData) {
+  const name = formData.get('name') as string;
+  const color = formData.get('color') as string;
+  const groupId = formData.get('groupId') as string;
+
+  // Add your Prisma logic here
+  await db.location.create({
+    data: {
+      name,
+      color,
+      groupId,
+    }
+  });
+}
+
+export async function editLocation(formData: FormData) {
+  const name = formData.get('name') as string;
+  const color = formData.get('color') as string;
+  const id = formData.get('id') as string;
+
+  // Add your Prisma logic here
+  await db.location.update({
+    where: { id },
+    data: {
+      name,
+      color,
+    }
+  });
+}
+
+export async function deleteLocation(id: string): Promise<{ success: boolean, error?: string | null }> {
+  try {
+    const result = await db.location.update({
+      where: { id },
+      data: { isActive: false }
+    })
+    if (result) return { success: true }
+    return { success: false, error: "Something went wrong!" }
+  } catch (err) {
+    return { success: false, error: err as string }
+  }
+}
