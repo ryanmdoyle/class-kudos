@@ -26,10 +26,10 @@ export function RewardSelected({
 
   async function handleGiveKudos(kudoType: KudosType) {
     await addKudos(kudoType, selected)
-    // const result = await getUpdatedEnrollments(kudoType.groupId)
-    // if (result.success && result.data) {
-    //   setEnrollments(result.data)
-    // }
+    const result = await getUpdatedEnrollments(kudoType.groupId)
+    if (result.success && result.data) {
+      setEnrollments(result.data)
+    }
     setSelected([])
   }
 
