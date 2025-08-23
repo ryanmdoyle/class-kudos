@@ -1,6 +1,6 @@
 "use server";
 
-import { AccessCode, db, KudosType, Redeemed } from "@/db";
+import { db, KudosType, Redeemed } from "@/db";
 import { nanoid } from 'nanoid';
 import { requestInfo } from "rwsdk/worker";
 import { EnrollmentWithUser } from "@/app/lib/types";
@@ -92,37 +92,44 @@ export async function addKudos(kudosType: KudosType, selected: EnrollmentWithUse
       return { success: false, error: "Kudos type and at least one user are required." };
     }
 
-    const results = await Promise.all(
-      selected.map(async (enrollment) => {
-        // 1. Create the Kudo
-        await db.kudos.create({
-          data: {
-            name: kudosType.name,
-            value: kudosType.value,
-            groupId: kudosType.groupId,
-            userId: enrollment.userId,
-          },
-        });
+    // Group by groupId to batch group updates
+    const groupUpdates = new Map<string, number>();
 
-        // 2. Update the enrollment's points
-        await db.enrollment.update({
-          where: { id: enrollment.id },
-          data: {
-            points: enrollment.points + kudosType.value,
-          },
-        });
+    // Prepare all operations
+    const kudosData = selected.map(enrollment => {
+      const currentGroupTotal = groupUpdates.get(enrollment.groupId) || 0;
+      groupUpdates.set(enrollment.groupId, currentGroupTotal + kudosType.value);
 
-        // 3. Update the groups point total
-        await db.group.update({
-          where: { id: enrollment.groupId },
-          data: {
-            rewardedPoints: { increment: kudosType.value }
-          }
-        })
-      })
+      return {
+        name: kudosType.name,
+        value: kudosType.value,
+        groupId: kudosType.groupId,
+        userId: enrollment.userId,
+      };
+    });
+
+    const enrollmentUpdates = selected.map(enrollment => ({
+      where: { id: enrollment.id },
+      data: { points: { increment: kudosType.value } }
+    }));
+
+    // Execute database calls
+    await db.kudos.createMany({ data: kudosData });
+
+    await Promise.all(
+      enrollmentUpdates.map(update => db.enrollment.update(update))
     );
 
-    return { success: true, error: null, updated: results.length };
+    await Promise.all(
+      Array.from(groupUpdates.entries()).map(([groupId, points]) =>
+        db.group.update({
+          where: { id: groupId },
+          data: { rewardedPoints: { increment: points } }
+        })
+      )
+    );
+
+    return { success: true, error: null, updated: selected.length };
   } catch (error) {
     console.error(error);
     return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -376,5 +383,48 @@ export async function createNewStudents(preview: { firstName: string; lastName: 
       name: `${u.firstName} ${u.lastName}`,
       username: u.username,
     })),
+  }
+}
+
+export async function addLocation(formData: FormData) {
+  const name = formData.get('name') as string;
+  const color = formData.get('color') as string;
+  const groupId = formData.get('groupId') as string;
+
+  // Add your Prisma logic here
+  await db.location.create({
+    data: {
+      name,
+      color,
+      groupId,
+    }
+  });
+}
+
+export async function editLocation(formData: FormData) {
+  const name = formData.get('name') as string;
+  const color = formData.get('color') as string;
+  const id = formData.get('id') as string;
+
+  // Add your Prisma logic here
+  await db.location.update({
+    where: { id },
+    data: {
+      name,
+      color,
+    }
+  });
+}
+
+export async function deleteLocation(id: string): Promise<{ success: boolean, error?: string | null }> {
+  try {
+    const result = await db.location.update({
+      where: { id },
+      data: { isActive: false }
+    })
+    if (result) return { success: true }
+    return { success: false, error: "Something went wrong!" }
+  } catch (err) {
+    return { success: false, error: err as string }
   }
 }

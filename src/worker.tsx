@@ -2,6 +2,7 @@ import { defineApp, ErrorResponse } from "rwsdk/worker";
 import { route, render, prefix } from "rwsdk/router";
 import { Document } from "@/app/Document";
 import { Login } from "@/app/pages/user/Login"
+import { Locations } from "@/app/pages/public/Locations"
 import { setCommonHeaders } from "@/app/headers";
 import { userRoutes } from "@/app/pages/user/routes";
 import { legalRoutes } from "@/app/pages/legal/routes";
@@ -91,6 +92,7 @@ export default defineApp([
   render(Document, [
     route("/", [isAuthenticated, routeToDashboardByRoleOnLogin, Login]),
     prefix("/legal", legalRoutes),
+    route("/travel-log/:groupPublicId", [Locations]),
     prefix("/user", userRoutes),
     prefix("/student", [isAuthenticated, checkRoleAccess, studentRoutes]),
     prefix("/teacher", [isAuthenticated, checkRoleAccess, teacherRoutes]),

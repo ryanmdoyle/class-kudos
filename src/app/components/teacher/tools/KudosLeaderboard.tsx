@@ -11,7 +11,7 @@ import {
 } from "@/app/components/ui/card"
 import { Trophy, Medal, Award } from "lucide-react"
 
-export const description = "A leaderboard showing the top 10 students by kudos earned."
+export const description = "A leaderboard showing the top students by kudos earned."
 
 type LeaderboardEntry = {
   rank: number

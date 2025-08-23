@@ -4,6 +4,8 @@ import { EditKudoTypeButton } from "@/app/components/teacher/EditKudoTypeButton"
 import { AddRewardButton } from "@/app/components/teacher/AddRewardButton";
 import { EditRewardButton } from "@/app/components/teacher/EditRewardButton";
 import { EditEnrolledButton } from "@/app/components/teacher/EditEnrolledButton";
+import { EditLocationButton } from "@/app/components/teacher/EditLocationButton";
+import { AddLocationButton } from "@/app/components/teacher/AddLocationButton";
 import { TeacherNav } from "@/app/components/teacher/TeacherNav"
 import {
   Table,
@@ -46,6 +48,13 @@ export async function Options({ params, request }: RequestInfo) {
   const group = await db.group.findUnique({
     where: { id: groupId },
   });
+
+  const locations = await db.location.findMany({
+    where: {
+      groupId: groupId,
+      isActive: true,
+    }
+  })
 
   function getUserIdsFromEnrollments(enrollments: EnrollmentWithUser[]): string[] {
     return enrollments.map(enrollment => enrollment.userId);
@@ -173,6 +182,63 @@ export async function Options({ params, request }: RequestInfo) {
           )}
           {group && <AddNewStudentsButton groupId={group.id} />}
         </div>
+
+        <div className="bg-background w-full neo-container p-6 relative">
+          <h2 className="text-2xl font-bold mb-6">Locations</h2>
+          {enrollments.length === 0 ? (
+            <p>No students enrolled yet. Add new students to get started! {group?.enrollId ? (
+              <> If a student has an account already, they can use the code <strong className="text-lg font-code">{group.enrollId}</strong> to enroll in this group.</>
+            ) : null}</p>
+          ) : (
+
+            <Table>
+              <TableCaption className="text-foreground">
+                Locations you'd like to track. Add spaces outside your classroom, and student can select them as options when leaving your room.<br></br>
+                <p className="mt-4 bold font-display">
+                  Access the public travel log page for students at:{" "}
+                  <a
+                    href={`https://www.classkudos.com/travel-log/${group?.publicId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    classkudos.com/travel-log/{group?.publicId}
+                  </a>
+                </p>              </TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Color</TableHead>
+                  <TableHead className="text-right pr-6">Edit</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {locations.map((location) => (
+                  <TableRow key={location.id} className="bg-purple-200">
+                    <TableCell className="font-base">{location.name}</TableCell>
+                    <TableCell className="font-base">{location.description}</TableCell>
+                    <TableCell>
+                      <div
+                        style={{
+                          width: '20px',
+                          height: '20px',
+                          backgroundColor: location.color || "#808080",
+                          border: '1px solid #ccc'
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right p-0 pr-2">
+                      <EditLocationButton location={location} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+          <AddLocationButton groupId={groupId} />
+        </div>
+
         {group && (
           <GroupWarningArea group={group} />
         )}
