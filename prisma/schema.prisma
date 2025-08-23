@@ -75,6 +75,7 @@ model Group {
   owner           User              @relation(fields: [ownerId], references: [id])
   ownerId         String
   archived        Boolean           @default(false)
+  publicId        String            @unique @default(nanoid(6))
   enrollments     Enrollment[]
   kudos           Kudos[]
   KudosType       KudosType[]

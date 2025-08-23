@@ -193,8 +193,18 @@ export async function Options({ params, request }: RequestInfo) {
 
             <Table>
               <TableCaption className="text-foreground">
-                Locations you'd like to track. Add spaces outside your classroom, and student can select them as options when leaving your room.
-              </TableCaption>
+                Locations you'd like to track. Add spaces outside your classroom, and student can select them as options when leaving your room.<br></br>
+                <p className="mt-4 bold font-display">
+                  Access the public travel log page for students at:{" "}
+                  <a
+                    href={`https://www.classkudos.com/travel-log/${group?.publicId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    classkudos.com/travel-log/{group?.publicId}
+                  </a>
+                </p>              </TableCaption>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>

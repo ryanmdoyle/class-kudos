@@ -92,9 +92,9 @@ export default defineApp([
   render(Document, [
     route("/", [isAuthenticated, routeToDashboardByRoleOnLogin, Login]),
     prefix("/legal", legalRoutes),
+    route("/travel-log/:groupPublicId", [Locations]),
     prefix("/user", userRoutes),
     prefix("/student", [isAuthenticated, checkRoleAccess, studentRoutes]),
     prefix("/teacher", [isAuthenticated, checkRoleAccess, teacherRoutes]),
-    route("/locations/:groupId", [Locations]),
   ]),
 ]);

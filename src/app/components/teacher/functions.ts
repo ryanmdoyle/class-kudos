@@ -110,10 +110,10 @@ export async function addKudos(kudosType: KudosType, selected: EnrollmentWithUse
 
     const enrollmentUpdates = selected.map(enrollment => ({
       where: { id: enrollment.id },
-      data: { points: enrollment.points + kudosType.value }
+      data: { points: { increment: kudosType.value } }
     }));
 
-    // Execute in sequence with better error handling
+    // Execute database calls
     await db.kudos.createMany({ data: kudosData });
 
     await Promise.all(

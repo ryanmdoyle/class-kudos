@@ -17,5 +17,5 @@ export const link = defineLinks([
   "/student/:groupId/rewards",
   "/legal/privacy",
   "/legal/terms",
-  "/locations/:groupId"
+  "/travel-log/:groupPublicId"
 ]);

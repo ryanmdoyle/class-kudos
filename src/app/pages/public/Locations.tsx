@@ -1,28 +1,30 @@
-import { TeacherNav } from "@/app/components/teacher/TeacherNav"
 import { RequestInfo } from "rwsdk/worker"
 import { db } from "@/db";
 import { StudentTravelLog } from "@/app/components/public/StudentTravelLog"
 
-export async function Locations({ params, request }: RequestInfo) {
-  const groupId = params.groupId;
+export async function Locations({ params }: RequestInfo) {
+  const publicId = params.groupPublicId;
+
+  const group = await db.group.findUnique({
+    where: { publicId },
+    select: { id: true, publicId: true }
+  })
 
   const enrollments = await db.enrollment.findMany({
-    where: { groupId: groupId },
+    where: { groupId: group?.id },
     include: { user: true, currentLocation: true }
   });
 
   const locations = await db.location.findMany({
-    where: { groupId }
+    where: { groupId: group?.id, isActive: true }
   })
-
-  console.log(enrollments, locations)
 
   return (
     <div className="flex flex-col h-screen min-w-screen">
 
-      <h1>Locations</h1>
+      <h1 className="font-display text-2xl center py-6 bg-background">Student Travel Log</h1>
 
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto bg-green-background">
         <StudentTravelLog enrollments={enrollments} groupLocations={locations} />
       </div>
     </div>
