@@ -17,7 +17,7 @@ import {
   TableRow,
 } from "@/app/components/ui/table"
 import { db } from "@/db";
-import { RequestInfo } from "rwsdk/worker";
+import { ErrorResponse, RequestInfo } from "rwsdk/worker";
 import { GroupHeader } from "@/app/components/teacher/GroupHeader";
 import { GroupWarningArea } from "@/app/components/teacher/GroupWarningArea";
 import { StudentAccessCodeCell } from "@/app/components/teacher/StudentAccessCodeCell";
@@ -28,33 +28,38 @@ import { CopyUsernamesButton } from "@/app/components/teacher/options/CopyUserna
 export async function Options({ params, request }: RequestInfo) {
   const groupId = params.groupId;
 
-  // Query KudoTypes, Rewards, and Enrollments (with users)
-  const kudoTypes = await db.kudosType.findMany({
-    where: { groupId },
-    orderBy: { value: "asc" }
-  });
-
-  const rewards = await db.reward.findMany({
-    where: { groupId },
-    orderBy: { cost: "asc" }
-  });
-
-  const enrollments = await db.enrollment.findMany({
-    where: { groupId },
-    include: { user: true },
-    orderBy: [{ user: { firstName: "asc" } }]
-  });
-
-  const group = await db.group.findUnique({
+  const groupData = await db.group.findUnique({
     where: { id: groupId },
+    include: {
+      KudosType: {
+        orderBy: { value: "asc" }
+      },
+      rewards: {
+        orderBy: { cost: "asc" }
+      },
+      enrollments: {
+        include: { user: true },
+        orderBy: [{ user: { firstName: "asc" } }]
+      },
+      locations: {
+        where: {
+          isActive: true
+        }
+      }
+    }
   });
 
-  const locations = await db.location.findMany({
-    where: {
-      groupId: groupId,
-      isActive: true,
-    }
-  })
+  // Handle case where group doesn't exist
+  if (!groupData) {
+    throw new ErrorResponse(404, "Group Not Found")
+  }
+
+  // Extract the data with the same variable names
+  const kudoTypes = groupData?.KudosType;
+  const rewards = groupData?.rewards;
+  const enrollments = groupData?.enrollments;
+  const locations = groupData?.locations;
+  const group = groupData;
 
   function getUserIdsFromEnrollments(enrollments: EnrollmentWithUser[]): string[] {
     return enrollments.map(enrollment => enrollment.userId);
@@ -64,7 +69,7 @@ export async function Options({ params, request }: RequestInfo) {
     return enrollments.map(enrollment => enrollment.user.username);
   }
 
-  const userIds = getUserIdsFromEnrollments(enrollments)
+  const userIds = getUserIdsFromEnrollments(enrollments);
 
   return (
     <div className="h-screen min-w-screen flex flex-col">
