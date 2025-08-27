@@ -31,7 +31,7 @@ export function StudentAccessCodeButton({ userId }: { userId: string }) {
         <AlertDialogHeader>
           <AlertDialogTitle>"Are you absolutely sure?"</AlertDialogTitle>
           <AlertDialogDescription>
-            <span>This will generate a code you can share with your student to login.  <strong>The code will last 15 minutes.</strong></span>
+            <span>This will generate a new code you can share with your student to login.</span>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

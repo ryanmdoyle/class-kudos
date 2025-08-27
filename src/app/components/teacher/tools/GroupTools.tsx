@@ -9,8 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card"
+import { Button } from "../../ui/button";
+import { link } from "@/app/shared/links";
 
-export function GroupTools({ names }: { names: Name[] }) {
+export function GroupTools({ names, groupId }: { names: Name[], groupId: string }) {
   return (
     <Card className="w-auto bg-background neo-container">
       <CardHeader>
@@ -19,6 +21,9 @@ export function GroupTools({ names }: { names: Name[] }) {
       <CardContent className="flex flex-col gap-2">
         <RandomStudentButton names={names} />
         <RandomGroupsButton names={names} />
+        <a href={link("/teacher/:groupId/travel-log", { groupId })}>
+          <Button variant="neutral">View Travel Log</Button>
+        </a>
       </CardContent>
     </Card>
   )

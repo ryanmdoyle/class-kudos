@@ -252,7 +252,7 @@ export async function createStudentAccessCode(userId: string): Promise<{ code?: 
   try {
     // 1. Generate reset code
     const code = nanoid(6);
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000) // 5 minutes from now
+    const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000) // 5 minutes from now
 
     // 2. Remove other accessCodes
     await db.accessCode.deleteMany({

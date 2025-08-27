@@ -5,7 +5,7 @@ import { nanoid } from 'nanoid';
 
 export async function createAccessCodesForUsers(
   userIds: string[],
-  expiresInMinutes: number = 15
+  expiresInMinutes: number = 525600 // 1 year (code works for 1 school year)
 ): Promise<{ code: string; count: number }> {
   const expiresAt = new Date();
   expiresAt.setMinutes(expiresAt.getMinutes() + expiresInMinutes);

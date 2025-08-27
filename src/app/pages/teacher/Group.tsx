@@ -12,6 +12,11 @@ export async function Group({ params, request }: RequestInfo) {
       enrollments: {
         include: {
           user: true
+        },
+        orderBy: {
+          user: {
+            firstName: "asc"
+          }
         }
       },
       KudosType: {

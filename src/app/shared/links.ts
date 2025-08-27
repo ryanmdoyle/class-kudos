@@ -12,6 +12,7 @@ export const link = defineLinks([
   "/teacher/:groupId",
   "/teacher/:groupId/rewards",
   "/teacher/:groupId/options",
+  "/teacher/:groupId/travel-log",
   "/student",
   "/student/:groupId",
   "/student/:groupId/rewards",

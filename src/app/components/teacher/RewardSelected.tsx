@@ -9,6 +9,7 @@ import { GroupTools } from "./tools/GroupTools";
 import { KudosLeaderboard } from "./tools/KudosLeaderboard";
 
 export function RewardSelected({
+  groupId,
   selected,
   setSelected,
   groupKudoTypes,
@@ -16,6 +17,7 @@ export function RewardSelected({
   kudos,
   names
 }: {
+  groupId: string,
   selected: EnrollmentWithUser[],
   setSelected: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>>,
   groupKudoTypes: KudosType[],
@@ -44,7 +46,7 @@ export function RewardSelected({
         <div className="flex flex-wrap gap-6">
           <KudosLeaderboard kudos={kudos} />
           <PointsPieChart kudos={kudos} />
-          <GroupTools names={names} />
+          <GroupTools groupId={groupId} names={names} />
         </div>
       )}
     </div>
