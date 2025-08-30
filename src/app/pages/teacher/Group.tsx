@@ -13,11 +13,6 @@ export async function Group({ params, request }: RequestInfo) {
         include: {
           user: true
         },
-        orderBy: {
-          user: {
-            firstName: "asc"
-          }
-        }
       },
       KudosType: {
         orderBy: { name: "asc" }
