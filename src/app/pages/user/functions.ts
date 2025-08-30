@@ -345,9 +345,9 @@ export async function validateStudentPasskey(
       return { success: false, error: "Reset code has expired. Please request a new one." };
     }
 
-    if (codeEntry.used) {
-      return { success: false, error: "Reset code has already been used." };
-    }
+    // if (codeEntry.used) {
+    //   return { success: false, error: "Reset code has already been used." };
+    // }
 
     return {
       success: true, user: {
