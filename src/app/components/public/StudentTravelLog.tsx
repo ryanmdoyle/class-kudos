@@ -1,8 +1,34 @@
-import { Location } from '@generated/prisma';
-import { EnrollmentWithUserLocation } from '@/app/lib/types';
-import { TravelButton } from './TravelButton';
+"use client"
 
-export const StudentTravelLog = ({ enrollments, groupLocations }: { enrollments: EnrollmentWithUserLocation[], groupLocations: Location[] }) => {
+import { useState } from "react";
+import { EnrollmentWithUserLocation } from "@/app/lib/types";
+import { Location } from "@generated/prisma";
+import { TravelButton } from "./TravelButton";
+
+export const StudentTravelLog = ({
+  enrollments: initialEnrollments,
+  groupLocations,
+}: {
+  enrollments: EnrollmentWithUserLocation[];
+  groupLocations: Location[];
+}) => {
+  const [enrollments, setEnrollments] = useState(initialEnrollments);
+
+  // Optimistically update the location for a single enrollment
+  const handleLocalUpdate = (enrollmentId: string, locationId: string | null) => {
+    setEnrollments((prev) =>
+      prev.map((enrollment) =>
+        enrollment.id === enrollmentId
+          ? {
+            ...enrollment,
+            currentLocationId: locationId,
+            currentLocation: groupLocations.find((loc) => loc.id === locationId) || null,
+          }
+          : enrollment
+      )
+    );
+  };
+
   const inClass = enrollments.filter((e) => e.currentLocationId === null);
   const outOfClass = enrollments.filter((e) => e.currentLocationId !== null);
 
@@ -18,6 +44,7 @@ export const StudentTravelLog = ({ enrollments, groupLocations }: { enrollments:
                 enrollment={enrollment}
                 locations={groupLocations}
                 key={enrollment.id}
+                onLocalUpdate={handleLocalUpdate}
               />
             ))}
           </div>
@@ -35,6 +62,7 @@ export const StudentTravelLog = ({ enrollments, groupLocations }: { enrollments:
                   enrollment={enrollment}
                   locations={groupLocations}
                   key={enrollment.id}
+                  onLocalUpdate={handleLocalUpdate}
                 />
               ))}
             </div>

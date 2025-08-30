@@ -1,3 +1,5 @@
+"user server"
+
 import { RequestInfo } from "rwsdk/worker"
 import { db } from "@/db";
 import { StudentTravelLog } from "@/app/components/public/StudentTravelLog"
