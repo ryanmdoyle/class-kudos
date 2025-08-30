@@ -79,12 +79,12 @@ export function RewardSelected({
           Give {user.firstName} {user.lastName} some kudos:
         </h2>
         {/* Reward buttons go here */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap overflow-y-auto">
           {groupKudoTypes && groupKudoTypes.map(kudoType => (
             <Button
               key={kudoType.id}
               variant="gold"
-              className="m-1 flex items-center justify-between min-w-[120px]"
+              className="flex items-center justify-between min-w-[120px]"
               onClick={() => handleGiveKudos(kudoType)}
             >
               <span className="font-medium">{kudoType.name}</span>
@@ -128,6 +128,7 @@ export function RewardSelected({
               <span className="font-medium">{kudoType.name}</span>
               <span className="text-lg font-bold ml-2">+{kudoType.value}</span>
             </Button>
+
           ))}
         </div>
       </div>
