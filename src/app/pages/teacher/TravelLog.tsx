@@ -43,7 +43,7 @@ export async function TravelLog({ params, request }: RequestInfo) {
       </div>
       <div className="flex-1 overflow-auto flex flex-col gap-4 bg-green-background min-w-screen p-8">
         <div className="bg-background w-full neo-container p-6 mb-4">
-          <h2 className="text-2xl font-bold mb-2">Trip Log</h2>
+          <h2 className="text-2xl font-bold mb-2">Travel Log</h2>
           <Table>
             <TableHeader>
               <TableRow>
