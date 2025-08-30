@@ -8,17 +8,28 @@ export async function Locations({ params }: RequestInfo) {
   const publicId = params.groupPublicId;
 
   const group = await db.group.findUnique({
-    where: { publicId },
+    where: { publicId: publicId },
     select: { id: true, publicId: true }
   })
 
+  if (!group) {
+    return (
+      <div className="flex flex-col h-screen min-w-screen">
+        <h1 className="font-display text-2xl center py-6 bg-background">Student Travel Log</h1>
+        <div className="flex-1 overflow-auto bg-green-background flex items-center justify-center">
+          <span className="text-red-600">Group not found.</span>
+        </div>
+      </div>
+    );
+  }
+
   const enrollments = await db.enrollment.findMany({
-    where: { groupId: group?.id },
+    where: { groupId: group.id },
     include: { user: true, currentLocation: true }
   });
 
   const locations = await db.location.findMany({
-    where: { groupId: group?.id, isActive: true }
+    where: { groupId: group.id, isActive: true }
   })
 
   return (
