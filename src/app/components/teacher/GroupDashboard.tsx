@@ -78,17 +78,20 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, init
             )}
           </div>
           {/* Enrollments List */}
-          {enrollments.map(enrollment => (
-            <Button
-              className={`w-full mb-2 flex justify-between items-center ${selected.some(e => e.id === enrollment.id) ? "bg-main" : ""}`}
-              variant="neutral"
-              key={enrollment.id}
-              onClick={() => handleSelect(enrollment)}
-            >
-              <span>{enrollment.user.firstName} {enrollment.user.lastName}</span>
-              <span>{enrollment.points}</span>
-            </Button>
-          ))}
+          {[...enrollments]
+            .sort((a, b) => a.user.firstName.localeCompare(b.user.firstName))
+            .map(enrollment => (
+              <Button
+                className={`w-full mb-2 flex justify-between items-center ${selected.some(e => e.id === enrollment.id) ? "bg-main" : ""}`}
+                variant="neutral"
+                key={enrollment.id}
+                onClick={() => handleSelect(enrollment)}
+              >
+                <span>{enrollment.user.firstName} {enrollment.user.lastName}</span>
+                <span>{enrollment.points}</span>
+              </Button>
+            ))
+          }
         </div>
       )}
 
