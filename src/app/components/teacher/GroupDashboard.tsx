@@ -1,12 +1,14 @@
 "use client";
 
-import { Group, Kudos, KudosType } from "@generated/prisma"
+import { Group, KudosType } from "@generated/prisma"
 import { Button } from "../ui/button";
 import { useState, useEffect } from "react";
 import { RewardSelected } from "./RewardSelected";
 import { EnrollmentWithUser, KudosWithUser, Name } from "@/app/lib/types";
 import { link } from '@/app/shared/links'
 import { GroupHeader } from "./GroupHeader";
+import { Toaster } from "sonner"
+
 
 
 export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, initialKudos }: { group: Group, initialEnrollments: EnrollmentWithUser[], groupKudoTypes: KudosType[], initialKudos: KudosWithUser[] }) {
@@ -120,6 +122,7 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, init
           ) : (
             <RewardSelected groupId={group.id} selected={selected} setSelected={setSelected} groupKudoTypes={groupKudoTypes} setEnrollments={setEnrollments} kudos={initialKudos} names={names} />
           )}
+          <Toaster richColors />
         </div>
       </div>
     </div>

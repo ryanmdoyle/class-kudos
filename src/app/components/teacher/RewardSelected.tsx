@@ -7,6 +7,7 @@ import { EnrollmentWithUser, KudosWithUser, Name } from "@/app/lib/types";
 import { PointsPieChart } from "./PointsPieChart"
 import { GroupTools } from "./tools/GroupTools";
 import { KudosLeaderboard } from "./tools/KudosLeaderboard";
+import { toast } from "sonner"
 
 export function RewardSelected({
   groupId,
@@ -27,12 +28,30 @@ export function RewardSelected({
 }) {
 
   async function handleGiveKudos(kudoType: KudosType) {
-    await addKudos(kudoType, selected)
-    const result = await getUpdatedEnrollments(kudoType.groupId)
+    // Optimistically update points for selected enrollments
+    setEnrollments(prevEnrollments =>
+      prevEnrollments.map(enrollment =>
+        selected.some(sel => sel.id === enrollment.id)
+          ? { ...enrollment, points: enrollment.points + kudoType.value }
+          : enrollment
+      )
+    );
+    toast.success("Kudos Given!", {
+      classNames: {
+        toast: "bg-red-500 text-white shadow-lg"
+      }
+    });
+
+
+    // Fire off the server update in the background
+    await addKudos(kudoType, selected);
+
+    // Fetch the latest enrollments from the server and update state
+    const result = await getUpdatedEnrollments(kudoType.groupId);
     if (result.success && result.data) {
-      setEnrollments(result.data)
+      setEnrollments(result.data);
     }
-    setSelected([])
+    setSelected([]);
   }
 
   if (!selected || selected.length === 0) return (
