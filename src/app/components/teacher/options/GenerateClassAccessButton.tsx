@@ -7,6 +7,9 @@ import { RefreshCw } from "lucide-react";
 export function GenerateClassAccessButton({ userIds }: { userIds: string[] }) {
 
   const handleClick = async () => {
+    const confirmed = window.confirm("Are you sure you want to generate new access codes for this class?");
+    if (!confirmed) return;
+
     try {
       const result = await createAccessCodesForUsers(userIds);
     } catch (error) {
