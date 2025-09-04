@@ -399,7 +399,6 @@ export async function studentAccessCodeLogin(
     where: {
       userId: user.id,
       code: cleanCode,
-      used: false,
       expiresAt: { gt: new Date() },
     },
   });
@@ -408,13 +407,7 @@ export async function studentAccessCodeLogin(
     return { success: false, error: "Invalid or expired access code." };
   }
 
-  // 3. Mark the code as used
-  await db.accessCode.update({
-    where: { id: accessCode.id },
-    data: { used: true },
-  });
-
-  // 4. Save session (same as passkey login)
+  // 3. Save session (same as passkey login)
   await sessions.save(headers, {
     userId: user.id,
     challenge: null,
