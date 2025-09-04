@@ -3,6 +3,7 @@ import { TeacherNav } from "@/app/components/teacher/TeacherNav";
 import { requestInfo } from "rwsdk/worker"
 import { db, Group } from "@/db";
 import { link } from "@/app/shared/links";
+import { Button } from "@/app/components/ui/button";
 
 export async function Teacher() {
   const { request, ctx } = requestInfo;
@@ -27,7 +28,7 @@ export async function Teacher() {
             {groups && (
               groups.map((group: Group) => (
                 <a href={link("/teacher/:groupId", { groupId: group.id })} key={group.id}>
-                  <li className="text-xl font-bold mb-2">{group.name}</li>
+                  <Button variant="gold" className="text-xl font-bold mb-2">{group.name}</Button>
                 </a>
               ))
             )}

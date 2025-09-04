@@ -3,6 +3,7 @@ import { StudentNav } from "@/app/components/student/StudentNav";
 import { requestInfo } from "rwsdk/worker"
 import { db, Enrollment, Group } from "@/db";
 import { link } from "@/app/shared/links";
+import { Button } from "@/app/components/ui/button";
 
 export type EnrollmentWithGroup = Enrollment & { group: Group };
 
@@ -34,7 +35,7 @@ export async function Student() {
             {enrollments && (
               enrollments.map((enrollment: EnrollmentWithGroup) => (
                 <a href={link("/student/:groupId", { groupId: enrollment.group.id })} key={enrollment.id}>
-                  <li className="text-xl font-bold mb-2">{enrollment.group.name}</li>
+                  <Button variant="gold" className="text-xl font-bold mb-2">{enrollment.group.name}</Button>
                 </a>
               ))
             )}
