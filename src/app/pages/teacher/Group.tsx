@@ -34,11 +34,15 @@ export async function Group({ params, request }: RequestInfo) {
     throw new ErrorResponse(404, "Group Not Found")
   }
 
+  const redeemedAwaitingReview = await db.redeemed.count({
+    where: { groupId, reviewed: false }
+  });
+
   const { enrollments, KudosType: kudoTypes, kudos } = groupData;
 
   return (
     <div className="flex flex-col h-screen min-w-screen">
-      <TeacherNav url={request.url} currentGroup={groupId} />
+      <TeacherNav url={request.url} currentGroup={groupId} redeemedCount={redeemedAwaitingReview} />
 
       <div className="flex-1 overflow-auto">
         <GroupDashboard

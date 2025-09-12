@@ -41,7 +41,7 @@ export function RewardSelected({
         toast: "bg-red-500 text-white shadow-lg"
       }
     });
-
+    setSelected([]);
 
     // Fire off the server update in the background
     await addKudos(kudoType, selected);
@@ -51,7 +51,13 @@ export function RewardSelected({
     if (result.success && result.data) {
       setEnrollments(result.data);
     }
-    setSelected([]);
+    if (result.error) {
+      toast.error("Error Saving Kudos. Try Again.", {
+        classNames: {
+          toast: "bg-red-500 text-white shadow-lg"
+        }
+      });
+    }
   }
 
   if (!selected || selected.length === 0) return (

@@ -49,6 +49,10 @@ export async function Options({ params, request }: RequestInfo) {
     }
   });
 
+  const redeemedAwaitingReview = await db.redeemed.count({
+    where: { groupId, reviewed: false }
+  });
+
   // Handle case where group doesn't exist
   if (!groupData) {
     throw new ErrorResponse(404, "Group Not Found")
@@ -73,7 +77,7 @@ export async function Options({ params, request }: RequestInfo) {
 
   return (
     <div className="h-screen min-w-screen flex flex-col">
-      <TeacherNav url={request.url} currentGroup={groupId} />
+      <TeacherNav url={request.url} currentGroup={groupId} redeemedCount={redeemedAwaitingReview} />
       <div className="flex flex-col flex-1 gap-4 bg-green-background min-w-screen overflow-auto p-8">
         {group && <GroupHeader group={group} />}
         <div className="flex gap-4">

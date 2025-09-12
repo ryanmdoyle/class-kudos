@@ -4,9 +4,10 @@ import { Button } from "../ui/button";
 type TeacherNavProps = {
   url: string;
   currentGroup?: string;
+  redeemedCount?: number;
 };
 
-export function TeacherNav({ url, currentGroup }: TeacherNavProps) {
+export function TeacherNav({ url, currentGroup, redeemedCount }: TeacherNavProps) {
   const fullUrl = new URL(url);
 
   // Compute paths for comparison
@@ -30,8 +31,16 @@ export function TeacherNav({ url, currentGroup }: TeacherNavProps) {
             <a href={kudosPath}>
               <Button variant={fullUrl.pathname === kudosPath ? "green" : "default"}>Kudos</Button>
             </a>
-            <a href={rewardsPath}>
+            <a href={rewardsPath} className="relative flex items-center">
               <Button variant={fullUrl.pathname === rewardsPath ? "green" : "default"}>Rewards</Button>
+              {redeemedCount && redeemedCount > 0 && (
+                <span
+                  className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold neo-container bg-chart-3"
+                  style={{ position: "absolute", top: -8, right: -18 }}
+                >
+                  {redeemedCount}
+                </span>
+              )}
             </a>
             <a href={optionsPath}>
               <Button variant={fullUrl.pathname === optionsPath ? "green" : "default"}>Options</Button>

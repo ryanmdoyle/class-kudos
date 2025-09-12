@@ -15,7 +15,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/app/components/ui/card"
 import { AlertCircle } from "lucide-react";
 
@@ -79,7 +78,7 @@ export function Login() {
           Register
         </a>
       </div>
-      <div className="auth-form max-w-[600px] w-full mx-auto px-10">
+      <div className="auth-form max-w-[500px] w-full mx-auto px-10">
         <h1 className="text-3xl text-center mb-4">Login</h1>
         <Tabs value={tab} onValueChange={(val) => setTab(val as "student" | "teacher")}>
           <TabsList className="grid w-full grid-cols-2">
@@ -90,38 +89,47 @@ export function Login() {
           <TabsContent value="student">
             <Card className="gap-2">
               <CardHeader className="mb-4">
-                <CardTitle>Student Login</CardTitle>
                 <CardDescription>
                   <strong>Passkey login: </strong>Enter only your username.<br />
                   <strong>Access Code Login: </strong>Enter username and teacher-created access code.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid">
+              <CardContent className="flex flex-col gap-4">
                 <Input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Username"
+                  className="mb-2"
                 />
-                <Button onClick={handlePerformPasskeyLogin} disabled={isPending} className="w-full mb-6">
-                  {isPending ? <>...</> : "Login with passkey"}
+                <Button
+                  onClick={handlePerformPasskeyLogin}
+                  disabled={isPending || !username.trim()}
+                  className="w-full"
+                >
+                  {isPending ? <>...</> : "Login with Passkey"}
                 </Button>
                 <Input
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="Access Code"
+                  className="mb-2"
                 />
+                <Button
+                  onClick={handleStudentLogin}
+                  disabled={isPending || !username.trim() || !code.trim()}
+                  className="w-full"
+                >
+                  {isPending ? <>...</> : "Login with Access Code"}
+                </Button>
                 {result && (
-                  <Alert variant="error" className="mb-5">
+                  <Alert variant="error" className="mb-2">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Oops!</AlertTitle>
                     <AlertDescription>{result}</AlertDescription>
                   </Alert>
                 )}
-                <Button onClick={handleStudentLogin} disabled={isPending} className="w-full mb-6">
-                  {isPending ? <>...</> : "Login with access code"}
-                </Button>
               </CardContent>
               <CardFooter className="flex flex-col">
                 <p className="justify-center">
@@ -138,7 +146,6 @@ export function Login() {
 
             <Card className="gap-2">
               <CardHeader className="mb-4">
-                <CardTitle>Teacher Login</CardTitle>
                 <CardDescription>Enter your username below to sign-in.</CardDescription>
               </CardHeader>
               <CardContent className="grid">
@@ -159,7 +166,7 @@ export function Login() {
               </CardContent>
               <CardFooter className="flex flex-col">
 
-                <Button onClick={handlePerformPasskeyLogin} disabled={isPending} className="w-full mb-6">
+                <Button onClick={handlePerformPasskeyLogin} disabled={isPending || !username.trim()} className="w-full mb-4">
                   {isPending ? <>...</> : "Login with Passkey"}
                 </Button>
                 <p className="justify-center mb-4">
