@@ -8,6 +8,7 @@ import { PointsPieChart } from "./PointsPieChart"
 import { GroupTools } from "./tools/GroupTools";
 import { KudosLeaderboard } from "./tools/KudosLeaderboard";
 import { toast } from "sonner"
+import { useState } from "react";
 
 export function RewardSelected({
   groupId,
@@ -16,7 +17,9 @@ export function RewardSelected({
   groupKudoTypes,
   setEnrollments,
   kudos,
-  names
+  names,
+  isAwarding,
+  setIsAwarding,
 }: {
   groupId: string,
   selected: EnrollmentWithUser[],
@@ -25,9 +28,15 @@ export function RewardSelected({
   setEnrollments: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>>,
   kudos: KudosWithUser[],
   names: Name[]
+  isAwarding: boolean,
+  setIsAwarding: React.Dispatch<React.SetStateAction<boolean>>,
 }) {
+  console.log("Render Reward Selected")
 
   async function handleGiveKudos(kudoType: KudosType) {
+    if (!!isAwarding) return; //prevent concurrent awarding
+    setIsAwarding(true)
+
     // Optimistically update points for selected enrollments
     setEnrollments(prevEnrollments =>
       prevEnrollments.map(enrollment =>
@@ -58,6 +67,7 @@ export function RewardSelected({
         }
       });
     }
+    setIsAwarding(false)
   }
 
   if (!selected || selected.length === 0) return (
@@ -92,6 +102,7 @@ export function RewardSelected({
               variant="gold"
               className="flex items-center justify-between min-w-[120px]"
               onClick={() => handleGiveKudos(kudoType)}
+              disabled={!!isAwarding}
             >
               <span className="font-medium">{kudoType.name}</span>
               <span className="text-lg font-bold ml-2">+{kudoType.value}</span>

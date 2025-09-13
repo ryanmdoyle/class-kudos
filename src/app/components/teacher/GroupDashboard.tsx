@@ -15,6 +15,7 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, init
   const [enrollments, setEnrollments] = useState<EnrollmentWithUser[]>(initialEnrollments)
   const [selected, setSelected] = useState<EnrollmentWithUser[]>([])
   const [names, setNames] = useState<Name[]>([])
+  const [isAwarding, setIsAwarding] = useState<boolean>(false)
 
   useEffect(() => {
     // Update the selected enrollments to reference the latest versions from the enrollments array
@@ -31,7 +32,7 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, init
 
     const names = extractNamesAsObjects(enrollments)
     setNames(names)
-  }, [enrollments])
+  }, [enrollments, setSelected])
 
   function extractNamesAsObjects(enrolledWithUserArray: EnrollmentWithUser[]) {
     if (!enrolledWithUserArray || enrolledWithUserArray.length === 0) {
@@ -123,7 +124,7 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, init
             </div>
 
           ) : (
-            <RewardSelected groupId={group.id} selected={selected} setSelected={setSelected} groupKudoTypes={groupKudoTypes} setEnrollments={setEnrollments} kudos={initialKudos} names={names} />
+            <RewardSelected groupId={group.id} selected={selected} setSelected={setSelected} groupKudoTypes={groupKudoTypes} setEnrollments={setEnrollments} kudos={initialKudos} names={names} isAwarding={isAwarding} setIsAwarding={setIsAwarding} />
           )}
           <Toaster richColors />
         </div>
