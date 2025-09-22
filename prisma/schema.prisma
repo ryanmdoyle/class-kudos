@@ -11,8 +11,7 @@ generator client {
   generatedFileExtension = "ts"
   importFileExtension    = "ts"
 
-  output          = "../generated/prisma"
-  previewFeatures = ["queryCompiler", "driverAdapters"]
+  output = "../generated/prisma"
 }
 
 datasource db {
