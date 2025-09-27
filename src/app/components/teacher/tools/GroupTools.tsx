@@ -22,7 +22,7 @@ export function GroupTools({ names, groupId }: { names: Name[], groupId: string 
         <RandomStudentButton names={names} />
         <RandomGroupsButton names={names} />
         <a href={link("/teacher/:groupId/travel-log", { groupId })}>
-          <Button variant="neutral">View Travel Log</Button>
+          <Button variant="neutral" name="View Travel Log Button">View Travel Log</Button>
         </a>
       </CardContent>
     </Card>
