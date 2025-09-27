@@ -53,20 +53,29 @@ export async function TravelLog({ params, request }: RequestInfo) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {trips.map((trip) => (
-                <TableRow key={trip.id} className="bg-background">
-                  <TableCell>{trip.user.firstName} {trip.user.lastName}</TableCell>
-                  <TableCell>{trip.location.name}</TableCell>
-                  <TableCell className="font-base">{new Date(trip.arrivedAt).toLocaleString("en-US", {
-                    month: "short",  // Aug
-                    day: "numeric",  // 23
-                    hour: "numeric", // 12
-                    minute: "2-digit", // 32
-                    hour12: true,   // AM/PM
-                  })}</TableCell>
-                </TableRow>
+              {trips.map((trip) => {
+                const arrivedAtStr = typeof trip.arrivedAt === "string"
+                  ? trip.arrivedAt
+                  : trip.arrivedAt.toISOString();
 
-              ))}
+                const safeDate = arrivedAtStr.endsWith("Z") || arrivedAtStr.includes("+")
+                  ? arrivedAtStr
+                  : arrivedAtStr + "Z";
+
+                return (
+                  <TableRow key={trip.id} className="bg-background">
+                    <TableCell>{trip.user.firstName} {trip.user.lastName}</TableCell>
+                    <TableCell>{trip.location.name}</TableCell>
+                    <TableCell className="font-base">{new Date(safeDate).toLocaleString("en-US", {
+                      month: "short",  // Aug
+                      day: "numeric",  // 23
+                      hour: "numeric", // 12
+                      minute: "2-digit", // 32
+                      hour12: true,   // AM/PM
+                    })}</TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         </div>
