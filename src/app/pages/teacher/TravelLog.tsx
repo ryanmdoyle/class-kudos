@@ -32,9 +32,9 @@ export async function TravelLog({ params, request }: RequestInfo) {
     }
   })
 
-  const group = await db.group.findUnique({
-    where: { id: groupId }
-  })
+  // const group = await db.group.findUnique({
+  //   where: { id: groupId }
+  // })
 
   return (
     <div className="flex flex-col min-h-screen min-w-screen">

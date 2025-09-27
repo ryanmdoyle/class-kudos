@@ -31,7 +31,6 @@ export function RewardSelected({
   isAwarding: boolean,
   setIsAwarding: React.Dispatch<React.SetStateAction<boolean>>,
 }) {
-  console.log("Render Reward Selected")
 
   async function handleGiveKudos(kudoType: KudosType) {
     if (!!isAwarding) return; //prevent concurrent awarding
