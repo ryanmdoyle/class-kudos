@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/cloudflare"
 import { defineApp, ErrorResponse } from "rwsdk/worker";
 import { route, render, prefix } from "rwsdk/router";
 import { Document } from "@/app/Document";
@@ -59,7 +60,7 @@ const checkRoleAccess = ({ ctx, request }: { ctx: AppContext; request: Request }
   }
 };
 
-export default defineApp([
+const app = defineApp([
   setCommonHeaders(),
   async ({ ctx, request, headers }) => {
     await setupDb(env);
@@ -98,3 +99,13 @@ export default defineApp([
     prefix("/teacher", [isAuthenticated, checkRoleAccess, teacherRoutes]),
   ]),
 ]);
+
+export default Sentry.withSentry(
+  env => ({
+    dsn: env.SENTRY_DSN,
+    sendDefaultPii: true,
+  }),
+  {
+    fetch: app.fetch,
+  }
+)
