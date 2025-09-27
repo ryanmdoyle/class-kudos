@@ -74,13 +74,16 @@ export async function StudentGroup({ ctx, params, request }: RequestInfo) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {kudos.map((kudo) => (
-                      <TableRow key={kudo.id}>
-                        <TableCell className="font-base">{kudo.name}</TableCell>
-                        <TableCell className="text-right">{kudo.value}</TableCell>
-                        <TableCell className="text-right">{kudo.createdAt.toDateString()}</TableCell>
-                      </TableRow>
-                    ))}
+                    {[...kudos]
+                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                      .map((kudo) => (
+                        <TableRow key={kudo.id}>
+                          <TableCell className="font-base">{kudo.name}</TableCell>
+                          <TableCell className="text-right">{kudo.value}</TableCell>
+                          <TableCell className="text-right">{kudo.createdAt.toDateString()}</TableCell>
+                        </TableRow>
+                      ))
+                    }
                   </TableBody>
                 </Table>
 
