@@ -95,41 +95,47 @@ export function Login() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-4">
-                <Input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Username"
-                  className="mb-2"
-                />
-                <Button
-                  onClick={handlePerformPasskeyLogin}
-                  disabled={isPending || !username.trim()}
-                  className="w-full"
-                >
-                  {isPending ? <>...</> : "Login with Passkey"}
-                </Button>
-                <Input
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="Access Code"
-                  className="mb-2"
-                />
-                <Button
-                  onClick={handleStudentLogin}
-                  disabled={isPending || !username.trim() || !code.trim()}
-                  className="w-full"
-                >
-                  {isPending ? <>...</> : "Login with Access Code"}
-                </Button>
-                {result && (
-                  <Alert variant="error" className="mb-2">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Oops!</AlertTitle>
-                    <AlertDescription>{result}</AlertDescription>
-                  </Alert>
-                )}
+                <form autoComplete="on" onSubmit={handleStudentLogin}>
+                  <Input
+                    type="text"
+                    name="username"
+                    autoComplete="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Username"
+                    className="mb-2"
+                  />
+                  <Button
+                    onClick={handlePerformPasskeyLogin}
+                    disabled={isPending || !username.trim()}
+                    className="w-full"
+                  >
+                    {isPending ? <>...</> : "Login with Passkey"}
+                  </Button>
+                  <Input
+                    type="text"
+                    name="access_code"
+                    autoComplete="current-password"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    placeholder="Access Code"
+                    className="mb-2"
+                  />
+                  <Button
+                    onClick={handleStudentLogin}
+                    disabled={isPending || !username.trim() || !code.trim()}
+                    className="w-full"
+                  >
+                    {isPending ? <>...</> : "Login with Access Code"}
+                  </Button>
+                  {result && (
+                    <Alert variant="error" className="mb-2">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Oops!</AlertTitle>
+                      <AlertDescription>{result}</AlertDescription>
+                    </Alert>
+                  )}
+                </form>
               </CardContent>
               <CardFooter className="flex flex-col">
                 <p className="justify-center">

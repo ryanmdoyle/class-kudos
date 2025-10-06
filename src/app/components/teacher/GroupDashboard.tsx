@@ -2,20 +2,23 @@
 
 import { Group, KudosType } from "@generated/prisma"
 import { Button } from "../ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { RewardSelected } from "./RewardSelected";
 import { EnrollmentWithUser, KudosWithUser, Name } from "@/app/lib/types";
 import { link } from '@/app/shared/links'
 import { GroupHeader } from "./GroupHeader";
+import { EnrollmentButton } from "@/app/components/teacher/EnrollmentButton"
 import { Toaster } from "sonner"
-
-
 
 export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, initialKudos }: { group: Group, initialEnrollments: EnrollmentWithUser[], groupKudoTypes: KudosType[], initialKudos: KudosWithUser[] }) {
   const [enrollments, setEnrollments] = useState<EnrollmentWithUser[]>(initialEnrollments)
   const [selected, setSelected] = useState<EnrollmentWithUser[]>([])
   const [names, setNames] = useState<Name[]>([])
   const [isAwarding, setIsAwarding] = useState<boolean>(false)
+
+  const sortedEnrollments = useMemo(() => {
+    return [...enrollments].sort((a, b) => a.user.firstName.localeCompare(b.user.firstName));
+  }, [enrollments]);
 
   useEffect(() => {
     // Update the selected enrollments to reference the latest versions from the enrollments array
@@ -79,20 +82,14 @@ export function GroupDashboard({ group, initialEnrollments, groupKudoTypes, init
             )}
           </div>
           {/* Enrollments List */}
-          {[...enrollments]
-            .sort((a, b) => a.user.firstName.localeCompare(b.user.firstName))
-            .map(enrollment => (
-              <Button
-                className={`w-full mb-2 flex justify-between items-center ${selected.some(e => e.id === enrollment.id) ? "bg-main" : ""}`}
-                variant="neutral"
-                key={enrollment.id}
-                onClick={() => handleSelect(enrollment)}
-              >
-                <span>{enrollment.user.firstName} {enrollment.user.lastName}</span>
-                <span>{enrollment.points}</span>
-              </Button>
-            ))
-          }
+          {sortedEnrollments.map(enrollment => (
+            <EnrollmentButton
+              key={enrollment.id}
+              enrollment={enrollment}
+              selected={selected}
+              handleSelect={handleSelect}
+            />
+          ))}
         </div>
       )}
 
