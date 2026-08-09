@@ -11,6 +11,7 @@ export const link = defineLinks([
   "/user/login",
   "/user/logout",
   "/user/reset-password",
+  "/user/confirm",
   "/teacher",
   "/teacher/:groupId",
   "/teacher/:groupId/rewards",

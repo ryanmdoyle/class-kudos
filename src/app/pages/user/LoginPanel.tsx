@@ -17,6 +17,12 @@ import {
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
 import { CODE_ALPHABET, normalizeCode } from "@/app/lib/codes";
 import { focusRing } from "@/app/lib/utils";
 import {
@@ -24,6 +30,7 @@ import {
   studentCodeLogin,
   studentPickName,
   teacherLogin,
+  teacherSignup,
 } from "@/app/pages/user/functions";
 import { link } from "@/app/shared/links";
 
@@ -50,7 +57,9 @@ export type PendingGroupView = {
   students: RosterStudent[];
 };
 
-type View = "code" | "picker" | "teacher" | "forgot";
+type Tab = "student" | "teacher";
+type StudentView = "code" | "picker";
+type TeacherView = "login" | "forgot" | "signup" | "signup-sent";
 
 /* -------------------------------------------------------------------------- */
 /* Class-code input helpers                                                    */
@@ -192,7 +201,7 @@ function StudentPicker({
   };
 
   return (
-    <div className="auth-form mx-auto w-full max-w-[560px] px-6 sm:px-10">
+    <div className="mx-auto w-full max-w-[560px]">
       <p className="mb-1 text-center text-sm uppercase tracking-widest">
         {group.groupName}
       </p>
@@ -277,10 +286,8 @@ function StudentPicker({
 
 function CodeForm({
   onGroupCode,
-  onTeacher,
 }: {
   onGroupCode: (group: PendingGroupView) => void;
-  onTeacher: () => void;
 }) {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -322,7 +329,7 @@ function CodeForm({
   };
 
   return (
-    <div className="auth-form mx-auto w-full max-w-[520px] px-6 sm:px-10">
+    <div className="mx-auto w-full max-w-[520px]">
       <h1 className="mb-2 text-center text-4xl">Class Kudos</h1>
       <p className="mb-6 text-base!">Type your class code to sign in.</p>
 
@@ -393,19 +400,6 @@ function CodeForm({
         )}
       </form>
 
-      <div className="mt-10 border-t-2 border-border pt-5">
-        <p>
-          Are you a teacher?{" "}
-          <button
-            type="button"
-            onClick={onTeacher}
-            className={`cursor-pointer font-heading text-zinc-500 underline hover:text-black ${focusRing}`}
-          >
-            Sign in with email
-          </button>
-        </p>
-      </div>
-
       <LegalFootnote />
     </div>
   );
@@ -416,11 +410,11 @@ function CodeForm({
 /* -------------------------------------------------------------------------- */
 
 function TeacherForm({
-  onBack,
   onForgot,
+  onSignup,
 }: {
-  onBack: () => void;
   onForgot: (email: string) => void;
+  onSignup: (email: string) => void;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -448,9 +442,9 @@ function TeacherForm({
   };
 
   return (
-    <div className="auth-form mx-auto w-full max-w-[440px] px-6 sm:px-10">
+    <div className="mx-auto w-full max-w-[440px]">
       <h1 className="mb-2 text-center text-3xl">Teacher sign in</h1>
-      <p className="mb-6">Use the email address your account was set up with.</p>
+      <p className="mb-6">Sign in with your email and password.</p>
 
       <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
         <div className="flex flex-col gap-1.5">
@@ -505,22 +499,16 @@ function TeacherForm({
         </button>
       </p>
 
-      {/*
-        Public sign-up is disabled in the Supabase dashboard and there is no
-        self-signup route. Say so plainly rather than offering a button that
-        would fail.
-      */}
       <p className="mt-2">
-        New teacher accounts are created by an administrator — there is no
-        self sign-up.
+        New here?{" "}
+        <button
+          type="button"
+          onClick={() => onSignup(email)}
+          className={`cursor-pointer font-heading text-zinc-500 underline hover:text-black ${focusRing}`}
+        >
+          Create an account
+        </button>
       </p>
-
-      <div className="mt-8 flex justify-center">
-        <Button type="button" variant="noShadowNeutral" size="sm" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" />
-          Back to class code
-        </Button>
-      </div>
 
       <LegalFootnote />
     </div>
@@ -562,7 +550,7 @@ function ForgotPasswordForm({
   };
 
   return (
-    <div className="auth-form mx-auto w-full max-w-[440px] px-6 sm:px-10">
+    <div className="mx-auto w-full max-w-[440px]">
       <h1 className="mb-2 text-center text-3xl">Reset your password</h1>
 
       {sent ? (
@@ -641,58 +629,242 @@ function ForgotPasswordForm({
 
 /* -------------------------------------------------------------------------- */
 
-export function LoginPanel({
-  pendingGroup,
+function TeacherSignupForm({
+  initialEmail,
+  onBack,
+  onSent,
 }: {
-  pendingGroup: PendingGroupView | null;
+  initialEmail: string;
+  onBack: () => void;
+  onSent: (email: string) => void;
 }) {
-  const [view, setView] = useState<View>(pendingGroup ? "picker" : "code");
-  const [group, setGroup] = useState<PendingGroupView | null>(pendingGroup);
-  const [teacherEmail, setTeacherEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
-  if (view === "picker" && group) {
-    return (
-      <StudentPicker
-        group={group}
-        onStartOver={() => {
-          // The stale pending session is harmless: it grants nothing but the
-          // right to list this one roster, it expires in 10 minutes, and the
-          // next successful code entry replaces it outright.
-          setGroup(null);
-          setView("code");
-        }}
-      />
-    );
-  }
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
 
-  if (view === "teacher") {
-    return (
-      <TeacherForm
-        onBack={() => setView("code")}
-        onForgot={(email) => {
-          setTeacherEmail(email);
-          setView("forgot");
-        }}
-      />
-    );
-  }
+    if (!email.trim() || !firstName.trim()) {
+      setError("Please enter your name and email address.");
+      return;
+    }
 
-  if (view === "forgot") {
-    return (
-      <ForgotPasswordForm
-        initialEmail={teacherEmail}
-        onBack={() => setView("teacher")}
-      />
-    );
-  }
+    setError(null);
+    startTransition(async () => {
+      const result = await teacherSignup({ email, firstName, lastName });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      onSent(email.trim());
+    });
+  };
 
   return (
-    <CodeForm
-      onGroupCode={(next) => {
-        setGroup(next);
-        setView("picker");
-      }}
-      onTeacher={() => setView("teacher")}
-    />
+    <>
+      <h1 className="mb-2 text-center text-3xl">Create a teacher account</h1>
+      {/*
+        NO PASSWORD FIELD, deliberately. The password is chosen from the link we
+        email, by whoever actually controls the mailbox — see the note on
+        `signupTeacher`. Anything typed here is unverified.
+      */}
+      <p className="mb-6">
+        We&rsquo;ll email you a link to confirm your address and choose a
+        password.
+      </p>
+
+      <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="signup-email">Email</Label>
+          <Input
+            id="signup-email"
+            name="email"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="username"
+            autoFocus
+            disabled={isPending}
+            placeholder="you@school.org"
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <div className="flex flex-1 flex-col gap-1.5">
+            <Label htmlFor="signup-first">First name</Label>
+            <Input
+              id="signup-first"
+              name="firstName"
+              value={firstName}
+              onChange={(event) => setFirstName(event.target.value)}
+              autoComplete="given-name"
+              disabled={isPending}
+            />
+          </div>
+          <div className="flex flex-1 flex-col gap-1.5">
+            <Label htmlFor="signup-last">Last name</Label>
+            <Input
+              id="signup-last"
+              name="lastName"
+              value={lastName}
+              onChange={(event) => setLastName(event.target.value)}
+              autoComplete="family-name"
+              disabled={isPending}
+            />
+          </div>
+        </div>
+
+        <Button type="submit" disabled={isPending} className="mt-1 w-full">
+          {isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Sending…
+            </>
+          ) : (
+            "Email me a link"
+          )}
+        </Button>
+
+        {error && <ErrorAlert title="Couldn't sign up" message={error} />}
+      </form>
+
+      <div className="mt-8 flex justify-center">
+        <Button type="button" variant="noShadowNeutral" size="sm" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4" />
+          Back to sign in
+        </Button>
+      </div>
+
+      <LegalFootnote />
+    </>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+export function LoginPanel({
+  pendingGroup,
+  confirmProblem = false,
+}: {
+  pendingGroup: PendingGroupView | null;
+  confirmProblem?: boolean;
+}) {
+  // Student is always the default tab: the overwhelming majority of visits are
+  // children typing a code, and teachers sign in a couple of times a day.
+  const [tab, setTab] = useState<Tab>("student");
+  const [studentView, setStudentView] = useState<StudentView>(
+    pendingGroup ? "picker" : "code",
+  );
+  const [teacherView, setTeacherView] = useState<TeacherView>("login");
+  const [group, setGroup] = useState<PendingGroupView | null>(pendingGroup);
+  const [teacherEmail, setTeacherEmail] = useState("");
+  const [sentTo, setSentTo] = useState("");
+
+  return (
+    <div className="auth-form mx-auto w-full max-w-[560px] px-6 sm:px-10">
+      <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="student">Student</TabsTrigger>
+          <TabsTrigger value="teacher">Teacher</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="student" className="mt-6">
+          {studentView === "picker" && group ? (
+            <StudentPicker
+              group={group}
+              onStartOver={() => {
+                // The stale pending session is harmless: it grants nothing but
+                // the right to list this one roster, it expires in 10 minutes,
+                // and the next successful code entry replaces it outright.
+                setGroup(null);
+                setStudentView("code");
+              }}
+            />
+          ) : (
+            <CodeForm
+              onGroupCode={(next) => {
+                setGroup(next);
+                setStudentView("picker");
+              }}
+            />
+          )}
+        </TabsContent>
+
+        <TabsContent value="teacher" className="mt-6">
+          {confirmProblem && teacherView === "login" && (
+            <ErrorAlert
+              title="That link didn't work"
+              message="Your confirmation link was invalid, expired, or already used. Sign in below, or create an account again to get a fresh link."
+            />
+          )}
+
+          {teacherView === "login" && (
+            <TeacherForm
+              onForgot={(email) => {
+                setTeacherEmail(email);
+                setTeacherView("forgot");
+              }}
+              onSignup={(email) => {
+                setTeacherEmail(email);
+                setTeacherView("signup");
+              }}
+            />
+          )}
+
+          {teacherView === "forgot" && (
+            <ForgotPasswordForm
+              initialEmail={teacherEmail}
+              onBack={() => setTeacherView("login")}
+            />
+          )}
+
+          {teacherView === "signup" && (
+            <TeacherSignupForm
+              initialEmail={teacherEmail}
+              onBack={() => setTeacherView("login")}
+              onSent={(email) => {
+                setSentTo(email);
+                setTeacherView("signup-sent");
+              }}
+            />
+          )}
+
+          {teacherView === "signup-sent" && (
+            <>
+              <h1 className="mb-2 text-center text-3xl">Check your email</h1>
+              {/*
+                Identical wording whatever happened server-side. `teacherSignup`
+                resolves { ok: true } for a new address, an existing one, and a
+                send failure alike, so this text must not imply a lookup.
+              */}
+              <Alert className="mt-6" aria-live="polite">
+                <CheckCircle2 className="h-4 w-4" />
+                <AlertTitle>Check your email</AlertTitle>
+                <AlertDescription>
+                  If {sentTo} can be used for a new account, a confirmation link
+                  is on its way. It expires in 24 hours — check your spam folder
+                  if it does not arrive.
+                </AlertDescription>
+              </Alert>
+
+              <div className="mt-8 flex justify-center">
+                <Button
+                  type="button"
+                  variant="neutral"
+                  size="sm"
+                  onClick={() => setTeacherView("login")}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to sign in
+                </Button>
+              </div>
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

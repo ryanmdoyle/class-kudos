@@ -1,7 +1,7 @@
 # Supabase setup
 
 Supabase does exactly two jobs for Class Kudos: it **verifies teacher passwords** and it
-**sends teacher password-reset emails**.
+**sends teacher emails** — signup confirmations and password resets.
 
 It is not our session system and not our database. All app data lives in `rwsdk/db`
 (a SQLite Durable Object). There is no `supabase.from(...)` anywhere in this codebase, no
@@ -19,29 +19,44 @@ row.
 1. <https://supabase.com/dashboard> → **New project**.
 2. Any region. The free tier is fine — this project stores nothing but teacher auth rows.
 
-## 2. Turn OFF public signups
+## 2. Email provider settings
 
 **Authentication → Sign In / Providers → Email**
 
-- **Allow new users to sign up**: **OFF**.
+- **Allow new users to sign up**: **ON**. Teachers create their own accounts from the
+  login page.
+- **Confirm email**: **ON**. This is load-bearing, not optional — the whole signup design
+  assumes the person who opens the emailed link is the one who owns the mailbox. With it
+  off, anyone could create an account for any address.
+- **Minimum password length**: **8**, to match `MIN_PASSWORD_LENGTH` in `src/auth/index.ts`.
 
-Teachers are created by an operator running `npm run provision-teacher` (step 7) with the
-secret / service-role key.
-With signups on, anyone could create a Supabase account. It wouldn't get them into the app
-(no local `users` row means login is rejected with the same generic message as a wrong
-password) but it is noise you don't want.
+Turning signups on is safe here because a Supabase account by itself grants nothing. The app
+authorizes from its own `users` table, and `loginTeacher` rejects a Supabase-authenticated
+user with no local row using the same generic message as a wrong password. A local row is
+only ever created *after* an emailed token has been verified.
 
-- **Confirm email**: irrelevant — provisioning passes `email_confirm: true`, so seeded
-  teachers are confirmed on creation.
+### Custom SMTP is REQUIRED — signup silently does nothing without it
+
+**Authentication → Emails → SMTP Settings**
+
+Supabase's built-in mail provider **refuses to deliver to any address outside your project
+team**, and caps at 2 emails/hour. Without custom SMTP, teacher signup and password reset
+will appear to succeed and no email will ever arrive — the app deliberately cannot tell the
+difference, because reporting it would leak which addresses have accounts.
+
+Once custom SMTP is configured, raise **Authentication → Rate Limits → emails sent per
+hour** above the default.
 
 ## 3. Set the redirect URLs
 
 **Authentication → URL Configuration**
 
 - **Site URL**: `https://<your-domain>`
-- **Redirect URLs** — add **both**:
+- **Redirect URLs** — add **all four**:
   - `http://localhost:5173/user/reset-password`
   - `https://<your-domain>/user/reset-password`
+  - `http://localhost:5173/user/confirm`
+  - `https://<your-domain>/user/confirm`
 
 Supabase refuses any `redirectTo` that is not on this allow-list and silently bounces the
 reset link to the Site URL instead.
@@ -125,7 +140,9 @@ npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 
 ## 7. Create the first teacher
 
-Teacher accounts are never self-service. There are two ways in, and the difference matters.
+Teachers can sign themselves up from the login page once the steps above are done. But the
+FIRST account is a chicken-and-egg problem — and self-signup can never create an ADMIN — so
+there are two operator routes in.
 
 **For your real account — no demo data:**
 
@@ -182,6 +199,43 @@ link formats:
   `window.location.hash` on the client and posts the tokens to the action.
 
 ---
+
+## 9. REQUIRED: the confirmation email template
+
+**Authentication → Email Templates → Confirm signup**
+
+Same problem, same fix as the reset template in section 8. Supabase's default
+`{{ .ConfirmationURL }}` is verified at Supabase's own endpoint and then redirects with the
+result in the URL **fragment** — which a server never sees. This app needs a server-visible
+proof of confirmation, because that is the moment it creates the local `users` row and sets
+the password. So use the `token_hash` form:
+
+```
+{{ .SiteURL }}/user/confirm?token_hash={{ .TokenHash }}&type=signup
+```
+
+An HTML body that works:
+
+```html
+<h2>Confirm your Class Kudos account</h2>
+<p><a href="{{ .SiteURL }}/user/confirm?token_hash={{ .TokenHash }}&type=signup">Confirm my email and choose a password</a></p>
+<p>This link expires in 24 hours. If you didn't ask for this, ignore this email — nothing has been created.</p>
+```
+
+Check **Authentication → Email → Email OTP Expiration** (default 86400s) matches the
+"24 hours" wording.
+
+### Why the signup form has no password field
+
+GoTrue re-sends the confirmation email when someone signs up with an address that already
+exists but is unconfirmed — and deliberately does **not** update the stored password. If the
+signup form took a password, an attacker could pre-register a teacher's address with their
+own password; the real teacher would later "sign up", get confirmed, and never notice their
+password was discarded, while the attacker's still worked.
+
+So signup collects a name and email only, and the password is chosen from the emailed link
+by whoever actually controls the mailbox. Nothing is written to the local database until
+that token is verified — which also means nobody can squat teacher email addresses.
 
 ## What is deliberately NOT here
 

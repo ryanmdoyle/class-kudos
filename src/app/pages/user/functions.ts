@@ -3,12 +3,16 @@
 import {
   completeGroupCodeLogin,
   completePasswordReset,
+  completeTeacherSignup,
   getPendingGroupRoster,
   loginStudentByCode,
   loginTeacher,
   logoutUser,
   requestPasswordReset,
+  signupTeacher,
   type CompletePasswordResetInput,
+  type CompleteTeacherSignupInput,
+  type SignupTeacherInput,
 } from "@/auth";
 
 /**
@@ -70,4 +74,25 @@ export async function sendPasswordReset(email: string) {
 
 export async function finishPasswordReset(input: CompletePasswordResetInput) {
   return completePasswordReset(input);
+}
+
+/**
+ * Teacher self-signup, step one. Collects a NAME AND EMAIL ONLY — never a
+ * password. See the long note on `signupTeacher` for why: accepting a password
+ * here would allow an attacker to pre-register a teacher's address and keep a
+ * live password after the real teacher confirms.
+ *
+ * Always resolves `{ ok: true }` for anything that could depend on whether an
+ * account exists, so this endpoint is not an account-existence oracle.
+ */
+export async function teacherSignup(input: SignupTeacherInput) {
+  return signupTeacher(input);
+}
+
+/**
+ * Teacher self-signup, step two: the emailed token is verified, the local row is
+ * created, and the password is set by whoever controls the mailbox.
+ */
+export async function finishTeacherSignup(input: CompleteTeacherSignupInput) {
+  return completeTeacherSignup(input);
 }

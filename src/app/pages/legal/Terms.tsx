@@ -13,7 +13,7 @@ export function Terms() {
         <p className="mb-4">By using Class Kudos, you agree to abide by these Terms and any posted guidelines. If you do not agree, you must not use the Service.</p>
 
         <h2 className="text-xl font-semibold mb-3">2. Eligibility</h2>
-        <p className="mb-4">You must be authorized by your school or district to use Class Kudos. Teacher accounts are created for you by an administrator using a valid email address; there is no public sign-up. Students access the service through enrollment in teacher-created groups. If you are under 13, you must have parental/guardian consent in accordance with COPPA.</p>
+        <p className="mb-4">You must be authorized by your school or district to use Class Kudos. Teachers create their own account using a valid email address, which must be confirmed by clicking a link we email you before the account can be used. Students access the service through enrollment in teacher-created groups. If you are under 13, you must have parental/guardian consent in accordance with COPPA.</p>
 
         <h2 className="text-xl font-semibold mb-3">3. User Accounts</h2>
         <p className="mb-2"><strong>Teacher Accounts:</strong></p>

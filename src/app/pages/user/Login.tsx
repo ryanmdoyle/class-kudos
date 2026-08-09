@@ -13,15 +13,15 @@ import { isTeacherRole } from "@/auth/types";
  * Layout priority is deliberate and is the whole point of this page: the class
  * code is the primary control, because the overwhelming majority of logins are
  * children copying a six-character code off a printed card. The teacher
- * email/password form is a secondary panel behind a link — teachers sign in a
- * few times a day, students sign in thirty at a time.
+ * email/password form is the second of two tabs — teachers sign in a few times
+ * a day, students sign in thirty at a time.
  *
  * This is a SERVER component. It resolves the half-finished "shared group code"
  * state up front so that a refresh in the middle of the two-step group-code
  * login re-renders the roster picker directly, instead of flashing the code
  * form and then swapping. The interactive parts live in <LoginPanel />.
  */
-export async function Login({ ctx }: RequestInfo) {
+export async function Login({ ctx, request }: RequestInfo) {
   // "/" has `routeToDashboardByRoleOnLogin` in front of it, so only
   // "/user/login" can be reached with a live session. Don't show a sign-in form
   // to somebody who is already signed in — it just looks broken.
@@ -65,9 +65,14 @@ export async function Login({ ctx }: RequestInfo) {
     ? await getPendingGroupRoster()
     : null;
 
+  // `/user/confirm` bounces here when a signup confirmation link is unusable,
+  // so the Teacher tab can explain it rather than leaving a dead end.
+  const confirmProblem =
+    new URL(request.url).searchParams.get("confirm") === "invalid";
+
   return (
     <AuthLayout>
-      <LoginPanel pendingGroup={pendingGroup} />
+      <LoginPanel pendingGroup={pendingGroup} confirmProblem={confirmProblem} />
     </AuthLayout>
   );
 }

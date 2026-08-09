@@ -11,8 +11,9 @@ import { isSupabaseAdminConfigured } from "@/lib/supabase";
  * rewards and locations — fine for a fresh dev database, wrong for a live one.
  * Use this script to create your real account without injecting demo data.
  *
- * Self-signup is disabled in Supabase (see SUPABASE_SETUP.md), so this and the
- * seed script are the only ways a teacher account comes into existence.
+ * Teachers can also sign themselves up from the login page. This script remains
+ * the operator path — the first account, an ADMIN, or an account created without
+ * waiting on an email — and it is the only one that can do those things.
  *
  * Credentials are read from `.dev.vars` (which is gitignored) rather than from
  * argv, so the password never lands in your shell history. `rw-scripts

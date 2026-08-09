@@ -32,7 +32,11 @@ import { newId, nowIso } from "@/lib/sqlite";
  * See SUPABASE_SETUP.md for where it belongs.
  */
 
-export type RateLimitScope = "student-code" | "teacher-password";
+export type RateLimitScope =
+  | "student-code"
+  | "teacher-password"
+  | "teacher-signup"
+  | "teacher-confirm";
 
 type Budget = { max: number; windowMs: number };
 
@@ -42,6 +46,13 @@ const BUDGETS: Record<RateLimitScope, Budget> = {
   "student-code": { max: 60, windowMs: 5 * 60_000 },
   // Tight: teachers are few and type a password they know. Keyed per IP+email.
   "teacher-password": { max: 10, windowMs: 5 * 60_000 },
+  // ACCOUNT CREATION, NOT CREDENTIAL GUESSING — the one scope where SUCCESS is
+  // charged too, or account creation is unbounded. Keyed per IP only: keying on
+  // the email would let an attacker rotate addresses and never spend budget.
+  // Whole-staff onboarding should use `npm run provision-teacher`, not this form.
+  "teacher-signup": { max: 8, windowMs: 60 * 60_000 },
+  // Confirmation-token guessing. Failures only, per the usual rule.
+  "teacher-confirm": { max: 20, windowMs: 10 * 60_000 },
 };
 
 /**
@@ -89,9 +100,13 @@ export async function isRateLimited(
 }
 
 /**
- * Record one failed attempt. Never call this on success — see the NAT note above.
+ * Record one attempt against a budget, whatever its outcome.
+ *
+ * Use this ONLY for `teacher-signup`, where the thing being limited is account
+ * creation rather than credential guessing — there, a success is exactly what we
+ * are rationing. For every login-shaped scope use `recordFailedAttempt`.
  */
-export async function recordFailedAttempt(
+export async function recordAttempt(
   scope: RateLimitScope,
   suffix?: string,
 ): Promise<void> {
@@ -105,6 +120,15 @@ export async function recordFailedAttempt(
     })
     .execute();
 }
+
+/**
+ * Record one FAILED attempt.
+ *
+ * For login-shaped scopes only. NEVER call this on success: a school NATs a
+ * whole class behind one public IP, so charging successful logins would let
+ * thirty students signing in at once lock the room out.
+ */
+export const recordFailedAttempt = recordAttempt;
 
 /** Shown when a budget is exhausted. Deliberately vague about why. */
 export const RATE_LIMITED_MESSAGE =

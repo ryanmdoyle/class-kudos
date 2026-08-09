@@ -20,9 +20,17 @@ import {
 import { dashboardPathForRole, isTeacherRole } from "@/auth/types";
 import {
   isRateLimited,
+  recordAttempt,
   recordFailedAttempt,
   RATE_LIMITED_MESSAGE,
 } from "@/auth/rateLimit";
+import {
+  adoptConfirmedTeacher,
+  findUserRowByEmail,
+  normalizeEmail,
+  normalizeName,
+} from "@/auth/localUser";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 export * from "@/auth/types";
 export * from "@/auth/context";
@@ -56,6 +64,19 @@ export const MIN_PASSWORD_LENGTH = 8;
 export const PENDING_GROUP_TTL_MS = 10 * 60 * 1000;
 
 export const PASSWORD_RESET_PATH = "/user/reset-password";
+
+export const SIGNUP_CONFIRM_PATH = "/user/confirm";
+
+/** State-dependent but account-INdependent, so it is not an existence oracle. */
+const SIGNUP_UNAVAILABLE =
+  "New accounts can't be created right now. Please try again later.";
+
+const CONFIRM_LINK_INVALID =
+  "That confirmation link is invalid, expired, or has already been used.";
+
+/** One message for every conflict in `adoptConfirmedTeacher`. */
+const CONFIRM_CONFLICT =
+  "We couldn't finish setting up this account. Please contact your administrator.";
 
 /* -------------------------------------------------------------------------- */
 /* Teacher login                                                               */
@@ -520,4 +541,226 @@ export async function completePasswordReset(
   await rotateSession({ userId: user.id });
 
   return { ok: true, redirectTo: dashboardPathForRole(user.role) };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Teacher self-signup                                                         */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * WHY THERE IS NO PASSWORD FIELD HERE.
+ *
+ * GoTrue's /signup, when the address already exists but is UNCONFIRMED, re-sends
+ * the confirmation email and deliberately does NOT update the stored password
+ * ("we can't be sure of their claimed identity"). If signup took a password,
+ * that enables a pre-hijack: an attacker registers a teacher's address with
+ * password A; the real teacher later "signs up" with password B, is confirmed,
+ * and never notices B was discarded; the attacker polls until the account
+ * confirms and then signs in with A as a TEACHER. Students know their teachers'
+ * addresses, so this is a live threat here, not a theoretical one.
+ *
+ * So: signup proves nothing and creates nothing locally. The password is chosen
+ * at the confirmation step by whoever actually controls the mailbox — the same
+ * standard `completePasswordReset` already trusts.
+ */
+export type SignupTeacherInput = {
+  email: string;
+  firstName: string;
+  lastName: string;
+};
+
+export type SignupTeacherResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * A password nobody ever learns. It exists only because /signup requires one;
+ * the real password is set at confirmation.
+ */
+function generatePlaceholderPassword(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  let out = "";
+  for (const byte of bytes) out += byte.toString(36);
+  // Guarantee the character classes any Supabase password policy might demand.
+  return `Aa1!${out.slice(0, 40)}`;
+}
+
+/**
+ * Returns `{ ok: true }` for EVERY outcome that could depend on whether an
+ * account exists. `ok: false` is reserved for facts the caller already knows
+ * (their own input) or for global unavailability.
+ */
+export async function signupTeacher(
+  input: SignupTeacherInput,
+): Promise<SignupTeacherResult> {
+  const email = normalizeEmail(input.email);
+  const firstName = normalizeName(input.firstName);
+  const lastName = normalizeName(input.lastName);
+
+  if (!email.includes("@") || !firstName) {
+    return {
+      ok: false,
+      error: "Please enter your name and a valid email address.",
+    };
+  }
+
+  if (!isSupabaseConfigured()) {
+    console.error("signupTeacher: Supabase is not configured.");
+    return { ok: false, error: SIGNUP_UNAVAILABLE };
+  }
+
+  if (await isRateLimited("teacher-signup")) {
+    return { ok: false, error: RATE_LIMITED_MESSAGE };
+  }
+
+  // Charged UP FRONT, before any Supabase call, so thrown exceptions and
+  // abandoned branches still cost budget.
+  await recordAttempt("teacher-signup");
+
+  try {
+    const { request } = getRequestInfo();
+    const supabase = createAnonSupabaseClient();
+    const existing = await findUserRowByEmail(email);
+
+    // Already a live local account. `signUp` would be a silent no-op that emails
+    // nothing, so send a password-reset link instead: it is truthful, it is the
+    // thing they actually need, and it grants nothing the login page's own
+    // "forgot password" form doesn't already grant.
+    if (existing && existing.supabaseUserId && existing.role !== "STUDENT") {
+      try {
+        await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${getAppOrigin(request)}${PASSWORD_RESET_PATH}`,
+        });
+      } catch {
+        // Swallowed: the response must not vary.
+      }
+      return { ok: true };
+    }
+
+    // A student — or an unlinked ADMIN row — owns this address. Do nothing at
+    // all, and still say the same thing.
+    if (existing && (existing.role === "STUDENT" || existing.role === "ADMIN")) {
+      console.warn(`signupTeacher: refusing to touch a ${existing.role} row.`);
+      return { ok: true };
+    }
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password: generatePlaceholderPassword(),
+      options: {
+        emailRedirectTo: `${getAppOrigin(request)}${SIGNUP_CONFIRM_PATH}`,
+        data: { first_name: firstName, last_name: lastName },
+      },
+    });
+
+    if (error) {
+      console.error(`signupTeacher: ${error.code ?? "?"} ${error.message}`);
+
+      // Availability, not account existence — safe to distinguish.
+      if (
+        error.code === "signup_disabled" ||
+        error.code === "email_provider_disabled"
+      ) {
+        return { ok: false, error: SIGNUP_UNAVAILABLE };
+      }
+
+      // Everything else — above all "user already registered" — collapses.
+      return { ok: true };
+    }
+
+    // NOTHING is written locally here. `signUp` on an already-confirmed address
+    // returns a FABRICATED random user id; persisting it would permanently
+    // orphan the real owner. And a pre-confirmation row would let a stranger
+    // squat every teacher address behind the UNIQUE email constraint.
+    return { ok: true };
+  } catch (cause) {
+    // Never let requireSecret()'s message escape — it names env vars.
+    console.error("signupTeacher: unexpected failure", cause);
+    return { ok: true };
+  }
+}
+
+export type CompleteTeacherSignupInput = {
+  tokenHash: string;
+  password: string;
+};
+
+export type CompleteTeacherSignupResult =
+  | { ok: true; redirectTo: string }
+  | { ok: false; error: string; canRequestReset?: boolean };
+
+/**
+ * Verify the emailed token, create/link the local row, then set the password.
+ *
+ * Order matters: the row is written BEFORE the password, so that if the password
+ * write fails the account still exists and `requestPasswordReset` can find it.
+ */
+export async function completeTeacherSignup(
+  input: CompleteTeacherSignupInput,
+): Promise<CompleteTeacherSignupResult> {
+  const { tokenHash, password } = input;
+
+  // Checked before the token is consumed, so a too-short password is resubmittable.
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    return {
+      ok: false,
+      error: `Please choose a password of at least ${MIN_PASSWORD_LENGTH} characters.`,
+    };
+  }
+
+  if (!tokenHash) {
+    return { ok: false, error: CONFIRM_LINK_INVALID };
+  }
+
+  if (await isRateLimited("teacher-confirm")) {
+    return { ok: false, error: RATE_LIMITED_MESSAGE };
+  }
+
+  const supabase = createAnonSupabaseClient();
+
+  const { data, error } = await supabase.auth.verifyOtp({
+    type: "signup",
+    token_hash: tokenHash,
+  });
+
+  if (error || !data?.user) {
+    await recordFailedAttempt("teacher-confirm");
+    return { ok: false, error: CONFIRM_LINK_INVALID, canRequestReset: true };
+  }
+
+  // The VERIFIED address is authoritative — not anything the form supplied.
+  const email = normalizeEmail(data.user.email ?? "");
+
+  if (!email) {
+    return { ok: false, error: CONFIRM_LINK_INVALID };
+  }
+
+  // user_metadata is attacker-controlled when the account was pre-registered by
+  // someone else. Read only these two keys, never `role`, and bound them.
+  const metadata = (data.user.user_metadata ?? {}) as Record<string, unknown>;
+  const firstName = normalizeName(metadata.first_name, email.split("@")[0] ?? "Teacher");
+  const lastName = normalizeName(metadata.last_name);
+
+  const adopted = await adoptConfirmedTeacher({
+    supabaseUserId: data.user.id,
+    email,
+    firstName,
+    lastName,
+  });
+
+  if (adopted.status === "conflict") {
+    console.error(`completeTeacherSignup: conflict (${adopted.reason}) for ${email}`);
+    return { ok: false, error: CONFIRM_CONFLICT };
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({ password });
+
+  if (updateError) {
+    // Safe to surface: Supabase's own policy feedback about a password the
+    // caller just typed. The account exists and is confirmed by now, so the
+    // reset link is a genuine way out.
+    return { ok: false, error: updateError.message, canRequestReset: true };
+  }
+
+  await rotateSession({ userId: adopted.userId });
+
+  return { ok: true, redirectTo: dashboardPathForRole(adopted.role) };
 }

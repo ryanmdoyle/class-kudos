@@ -10,8 +10,8 @@ rewards, and everyone can see where the class is. Built on
 - **`rwsdk/db`** — Kysely over a SQLite Durable Object. Schema types are inferred
   from the migrations themselves; there is no schema file and no codegen step
 - **Sessions** — `rwsdk/auth`'s `defineDurableSession`, backed by a Durable Object
-- **Supabase Auth** — verifies teacher passwords and sends reset emails, and
-  nothing else (see below)
+- **Supabase Auth** — verifies teacher passwords and sends teacher emails
+  (signup confirmation, password reset), and nothing else (see below)
 - **React 19.2**, Tailwind v4, Radix primitives styled after
   [neobrutalism.dev](https://www.neobrutalism.dev/)
 - **TypeScript 7**, Vite 8, Wrangler 4
@@ -40,8 +40,18 @@ and does not contact Supabase again for the life of that session. There is no
 `supabase.from(...)` anywhere in this codebase, and students never touch Supabase
 at all.
 
-Self-signup is disabled. Teacher accounts are created with
-`npm run provision-teacher`.
+Teachers sign themselves up from the Teacher tab on the login page. Signup asks only for a
+name and email — **never a password**. Supabase emails a confirmation link, and the password
+is chosen from that link by whoever controls the mailbox. Nothing is written to the local
+database until that token is verified.
+
+That is not fussiness: Supabase re-sends confirmation for an existing-but-unconfirmed
+address *without* updating its password, so a password captured at signup could belong to
+somebody who pre-registered your address. Deferring it closes that hole, and stops strangers
+squatting teacher email addresses behind the `UNIQUE` constraint.
+
+`npm run provision-teacher` remains the operator route — the first account, an ADMIN, or an
+account created without waiting on an email.
 
 ## Getting started
 
@@ -66,11 +76,12 @@ loudly. Everything on the student side works immediately.
 
 ## Supabase
 
-Teacher login and password reset need a Supabase project. **See
-[SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** — in particular the reset email
-template, which must be changed from Supabase's default. The default emits a
-PKCE `?code=` link that this architecture cannot complete, and reset will fail
-until you change it.
+Teacher signup, login, and password reset need a Supabase project, **with custom SMTP** —
+Supabase's built-in mailer refuses to deliver to anyone outside your project team, so
+without it no teacher will ever receive an email. **See [SUPABASE_SETUP.md](./SUPABASE_SETUP.md)** — in particular the two email
+templates, **both** of which must be changed from Supabase's defaults. The defaults produce
+links this architecture cannot complete server-side, and signup confirmation and password
+reset will both fail until you change them.
 
 ## Creating a real teacher account
 

@@ -1,9 +1,15 @@
 import "server-only";
 
 import { db } from "@/db";
-import { newId, nowIso } from "@/lib/sqlite";
+import { nowIso } from "@/lib/sqlite";
 import { createAdminSupabaseClient } from "@/lib/supabase.admin";
 import { isSupabaseAdminConfigured } from "@/lib/supabase";
+import {
+  defaultUsernameFor,
+  findUserRowByEmail,
+  insertTeacherRow,
+  normalizeEmail,
+} from "@/auth/localUser";
 
 /**
  * !! OPERATOR-ONLY MODULE — SERVICE ROLE !!
@@ -19,8 +25,11 @@ import { isSupabaseAdminConfigured } from "@/lib/supabase";
  *   npm run seed              # -> src/scripts/seed.ts
  *   npm run worker:run ./src/scripts/seed.ts
  *
- * Self-signup is disabled in the Supabase dashboard (see SUPABASE_SETUP.md), so
- * this is the only way a teacher account comes into existence.
+ * Teachers can now also self-signup (`signupTeacher` in `@/auth`, which uses the
+ * ANON client and is therefore safe to reach from an action). This module stays
+ * the operator path: it is the way to create the FIRST account, to create one
+ * without an inbox round-trip, and to create an ADMIN — none of which self-signup
+ * is permitted to do.
  */
 
 export type ProvisionTeacherInput = {
@@ -56,11 +65,13 @@ export async function provisionTeacher({
   username,
   role = "TEACHER",
 }: ProvisionTeacherInput): Promise<ProvisionTeacherResult> {
-  // Emails are stored lowercase. loginTeacher() and requestPasswordReset() both
-  // query with a lowercased value, so any writer that skips this silently breaks
-  // login.
-  const normalizedEmail = email.trim().toLowerCase();
-  const normalizedUsername = (username ?? normalizedEmail).trim().toLowerCase();
+  // Normalisation lives in @/auth/localUser so the operator path and the
+  // self-signup path cannot drift on it — a writer that skips the lowercasing
+  // silently breaks login.
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedUsername = username
+    ? normalizeEmail(username)
+    : defaultUsernameFor(normalizedEmail);
 
   if (!normalizedEmail.includes("@")) {
     return { ok: false, error: `"${email}" is not a valid email address.` };
@@ -98,11 +109,7 @@ export async function provisionTeacher({
 
   const now = nowIso();
 
-  const existing = await db
-    .selectFrom("users")
-    .select(["id", "supabaseUserId"])
-    .where("email", "=", normalizedEmail)
-    .executeTakeFirst();
+  const existing = await findUserRowByEmail(normalizedEmail);
 
   if (existing) {
     await db
@@ -126,22 +133,14 @@ export async function provisionTeacher({
     };
   }
 
-  const userId = newId();
-
-  await db
-    .insertInto("users")
-    .values({
-      id: userId,
-      supabaseUserId,
-      username: normalizedUsername,
-      email: normalizedEmail,
-      firstName,
-      lastName,
-      role,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .execute();
+  const { userId } = await insertTeacherRow({
+    supabaseUserId,
+    email: normalizedEmail,
+    username: normalizedUsername,
+    firstName,
+    lastName,
+    role,
+  });
 
   return { ok: true, userId, supabaseUserId, created: true };
 }
