@@ -41,6 +41,19 @@ export const SUPABASE_CLIENT_OPTIONS = {
 function requireSupabaseUrl(): string {
   const url = requireSecret("SUPABASE_URL");
 
+  // The single most likely mistake: Supabase's Connect dialog leads with Postgres
+  // connection strings, because most projects use it as their database. This one
+  // does not — Supabase is only ever spoken to over the Auth REST API, so a
+  // postgres URI is not merely wrongly formatted, it is the wrong thing entirely.
+  if (/^postgres(ql)?:\/\//.test(url)) {
+    throw new Error(
+      "SUPABASE_URL is a Postgres connection string, but this app never connects " +
+        "to Postgres — all app data lives in rwsdk/db. Use the project's API URL " +
+        "instead: https://<project-ref>.supabase.co (Settings -> Data API, or the " +
+        '"Project URL" in the Connect dialog — not "Direct connection" or a pooler URI).',
+    );
+  }
+
   if (!/^https?:\/\//.test(url)) {
     throw new Error(
       `SUPABASE_URL must be a full URL such as https://<project-ref>.supabase.co (got "${url}").`,

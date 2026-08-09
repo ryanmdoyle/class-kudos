@@ -67,9 +67,24 @@ The env var names below do not change — only which value you paste into them.
 The publishable key carries the same low privileges as the old `anon` key, and the secret
 key the same elevated access as `service_role`, so nothing about the design below changes.
 
-The **Project URL** is easiest to get from the **Connect** dialog at the top of the project
-dashboard, which shows the URL and the matching key together. It is just
-`https://<project-ref>.supabase.co`.
+### The Project URL is NOT a database connection string
+
+`SUPABASE_URL` is the project's **API URL** — `https://<project-ref>.supabase.co`.
+
+The Connect dialog leads with Postgres connection strings, because most projects use
+Supabase as their database. This one does not: all app data lives in `rwsdk/db`, and
+Supabase is only ever spoken to over the Auth REST API. So none of these are it:
+
+| Shown as             | Looks like                                                    | Use it? |
+| -------------------- | ------------------------------------------------------------- | ------- |
+| Project URL / API URL | `https://abcdefgh.supabase.co`                                | **yes** |
+| Direct connection    | `postgresql://postgres:[PW]@db.abcdefgh.supabase.co:5432/…`    | no      |
+| Transaction pooler   | `postgresql://…pooler.supabase.com:6543/…`                     | no      |
+| Session pooler       | `postgresql://…pooler.supabase.com:5432/…`                     | no      |
+
+If the plain `https://` URL is not in the Connect dialog, it is under
+**Settings → Data API**. Pasting a `postgres://` URI fails fast at startup with an error
+that says exactly this.
 
 > **If provisioning fails with a JWT-related error:** `sb_secret_…` keys are deliberately
 > NOT JWTs, and older tooling rejects them. This project pins
