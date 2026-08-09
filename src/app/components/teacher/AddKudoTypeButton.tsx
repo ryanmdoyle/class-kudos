@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,41 +12,39 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/app/components/ui/alert-dialog'
-import { Button } from '@/app/components/ui/button'
-import { Input } from '../ui/input'
-import { addKudoType } from './functions'
+} from "@/app/components/ui/alert-dialog";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { addKudoType } from "@/app/components/teacher/functions";
 
-const handleSubmit = async (formData: FormData) => {
-  addKudoType(formData)
-}
+export function AddKudoTypeButton({ groupId }: { groupId: string }) {
+  const [error, setError] = useState<string | null>(null);
 
-interface AddKudoTypeButtonProps {
-  groupId: string;
-}
-
-export function AddKudoTypeButton({ groupId }: AddKudoTypeButtonProps) {
+  const handleSubmit = async (formData: FormData) => {
+    const result = await addKudoType(formData);
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+    window.location.reload();
+  };
 
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button className="absolute top-4 right-4" variant="green">Add Kudo Type</Button>
+        <Button className="absolute top-4 right-4" variant="green">
+          Add Kudo Type
+        </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Create a New Kudo Type Option</AlertDialogTitle>
+          <AlertDialogTitle>Create a New Kudo Type</AlertDialogTitle>
           <AlertDialogDescription>
-            Add a name for your "kudo type."
+            A short name and how many points it is worth.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <form action={handleSubmit} id="addKudoTypeForm">
-          <Input
-            id="name"
-            type="name"
-            name="name"
-            placeholder="name"
-            required
-          />
+        <form action={handleSubmit} id="addKudoTypeForm" className="space-y-2">
+          <Input id="name" type="text" name="name" placeholder="name" required />
           <Input
             id="value"
             type="number"
@@ -54,13 +54,17 @@ export function AddKudoTypeButton({ groupId }: AddKudoTypeButtonProps) {
             min={1}
             step={1}
           />
+          {/* The server re-checks that this group belongs to the current teacher. */}
           <input type="hidden" name="groupId" value={groupId} />
+          {error ? <p className="text-red-500">{error}</p> : null}
         </form>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction type="submit" form="addKudoTypeForm">Continue</AlertDialogAction>
+          <AlertDialogAction type="submit" form="addKudoTypeForm">
+            Continue
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

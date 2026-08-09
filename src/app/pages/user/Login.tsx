@@ -1,193 +1,73 @@
-"use client";
+import type { RequestInfo } from "rwsdk/worker";
 
-import { useState, useTransition } from "react";
-import { startAuthentication } from "@simplewebauthn/browser";
-import { finishPasskeyLogin, startPasskeyLogin, studentAccessCodeLogin } from "./functions";
-import { Button } from "@/app/components/ui/button";
 import { AuthLayout } from "@/app/layouts/AuthLayout";
-import { Input } from "@/app/components/ui/input";
+import { Button } from "@/app/components/ui/button";
+import { LoginPanel } from "@/app/pages/user/LoginPanel";
 import { link } from "@/app/shared/links";
-import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-} from "@/app/components/ui/card"
-import { AlertCircle } from "lucide-react";
+import { getPendingGroupRoster } from "@/auth";
+import { isTeacherRole } from "@/auth/types";
 
-export function Login() {
-  const [username, setUsername] = useState("");
-  const [code, setCode] = useState("");
-  const [result, setResult] = useState("");
-  const [isPending, startTransition] = useTransition();
-  const [tab, setTab] = useState<"student" | "teacher">("student");
+/**
+ * The one and only sign-in page. Rendered at BOTH "/" and "/user/login".
+ *
+ * Layout priority is deliberate and is the whole point of this page: the class
+ * code is the primary control, because the overwhelming majority of logins are
+ * children copying a six-character code off a printed card. The teacher
+ * email/password form is a secondary panel behind a link — teachers sign in a
+ * few times a day, students sign in thirty at a time.
+ *
+ * This is a SERVER component. It resolves the half-finished "shared group code"
+ * state up front so that a refresh in the middle of the two-step group-code
+ * login re-renders the roster picker directly, instead of flashing the code
+ * form and then swapping. The interactive parts live in <LoginPanel />.
+ */
+export async function Login({ ctx }: RequestInfo) {
+  // "/" has `routeToDashboardByRoleOnLogin` in front of it, so only
+  // "/user/login" can be reached with a live session. Don't show a sign-in form
+  // to somebody who is already signed in — it just looks broken.
+  if (ctx.user) {
+    const dashboard = isTeacherRole(ctx.user.role)
+      ? link("/teacher")
+      : link("/student");
 
+    return (
+      <AuthLayout>
+        <div className="auth-form mx-auto w-full max-w-[520px] px-8 sm:px-10">
+          <h1 className="mb-2 text-center text-3xl">
+            You&rsquo;re already signed in
+          </h1>
+          <p className="mb-6">
+            Signed in as {ctx.user.firstName} {ctx.user.lastName}.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Button asChild className="w-full">
+              <a href={dashboard}>Go to my dashboard</a>
+            </Button>
+            <Button asChild variant="neutral" className="w-full">
+              <a href={link("/user/logout")}>Sign out</a>
+            </Button>
+          </div>
+        </div>
+      </AuthLayout>
+    );
+  }
 
-  const passkeyLogin = async () => {
-    // 1. Get a challenge from the worker
-    const options = await startPasskeyLogin();
-
-    // 2. Ask the browser to sign the challenge
-    const login = await startAuthentication({ optionsJSON: options });
-
-    // 3. Give the signed challenge to the worker to finish the login process
-    const success = await finishPasskeyLogin(login);
-
-    if (!success) {
-      setResult("Login failed");
-    } else {
-      window.location.href = link("/");
-    }
-  };
-
-  const handlePerformPasskeyLogin = () => {
-    if (!username.trim()) {
-      setResult("Please provide your username.");
-      return;
-    }
-    setResult("");
-    startTransition(() => void passkeyLogin());
-  };
-
-  const handleStudentLogin = () => {
-    if (!username.trim() || !code.trim()) {
-      setResult("Please provide both username and access code.");
-      return;
-    }
-
-    setResult("");
-    startTransition(async () => {
-      const res = await studentAccessCodeLogin(username, code);
-      if (!res.success) {
-        setResult(res.error ?? "Login failed. Please try again.");
-        return;
-      }
-
-      // On success, redirect
-      window.location.href = link("/student");
-    });
-  };
+  // Non-null only when a valid shared group code was entered in the last 10
+  // minutes and the visitor has not yet picked their name. Resolving it here,
+  // rather than from an effect in the browser, is what makes step two survive a
+  // refresh without first flashing the code form.
+  //
+  // The `pendingGroupId` guard matters: `getPendingGroupRoster()` re-loads the
+  // session, which is a Durable Object round trip. `attachAuth` has already put
+  // the session on `ctx`, so checking it first keeps the ordinary login page —
+  // by far the common case — down to zero extra DO calls.
+  const pendingGroup = ctx.session?.pendingGroupId
+    ? await getPendingGroupRoster()
+    : null;
 
   return (
     <AuthLayout>
-      <div className="absolute top-0 right-0 p-10">
-        <a href={link("/user/signup")} className="font-display font-bold text-black text-sm underline underline-offset-8 hover:decoration-primary">
-          Register
-        </a>
-      </div>
-      <div className="auth-form max-w-[500px] w-full mx-auto px-10">
-        <h1 className="text-3xl text-center mb-4">Login</h1>
-        <Tabs value={tab} onValueChange={(val) => setTab(val as "student" | "teacher")}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="student">Student</TabsTrigger>
-            <TabsTrigger value="teacher">Teacher</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="student">
-            <Card className="gap-2">
-              <CardHeader className="mb-4">
-                <CardDescription>
-                  <strong>Passkey login: </strong>Enter only your username.<br />
-                  <strong>Access Code Login: </strong>Enter username and teacher-created access code.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <form autoComplete="on" onSubmit={handleStudentLogin}>
-                  <Input
-                    type="text"
-                    name="username"
-                    autoComplete="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Username"
-                    className="mb-2"
-                  />
-                  <Button
-                    onClick={handlePerformPasskeyLogin}
-                    disabled={isPending || !username.trim()}
-                    className="w-full"
-                  >
-                    {isPending ? <>...</> : "Login with Passkey"}
-                  </Button>
-                  <Input
-                    type="text"
-                    name="access_code"
-                    autoComplete="current-password"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    placeholder="Access Code"
-                    className="mb-2"
-                  />
-                  <Button
-                    onClick={handleStudentLogin}
-                    disabled={isPending || !username.trim() || !code.trim()}
-                    className="w-full"
-                  >
-                    {isPending ? <>...</> : "Login with Access Code"}
-                  </Button>
-                  {result && (
-                    <Alert variant="error" className="mb-2">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>Oops!</AlertTitle>
-                      <AlertDescription>{result}</AlertDescription>
-                    </Alert>
-                  )}
-                </form>
-              </CardContent>
-              <CardFooter className="flex flex-col">
-                <p className="justify-center">
-                  <a href={link("/user/what-are-passkeys")}>What are passkeys?</a>
-                </p>
-                <p className="justify-center">
-                  By clicking continue, you agree to our <a href={link("/legal/terms")}>Terms of Service</a> and <a href={link("/legal/privacy")}>Privacy Policy</a>.
-                </p>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="teacher">
-
-            <Card className="gap-2">
-              <CardHeader className="mb-4">
-                <CardDescription>Enter your username below to sign-in.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid">
-                <Input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Username"
-                />
-                {result && (
-                  <Alert variant="error" className="mb-5">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Oops!</AlertTitle>
-                    <AlertDescription>{result}</AlertDescription>
-                  </Alert>
-                )}
-
-              </CardContent>
-              <CardFooter className="flex flex-col">
-
-                <Button onClick={handlePerformPasskeyLogin} disabled={isPending || !username.trim()} className="w-full mb-4">
-                  {isPending ? <>...</> : "Login with Passkey"}
-                </Button>
-                <p className="justify-center mb-4">
-                  <a href={link("/user/request-passkey")}>Need a new passkey?</a>
-                </p>
-                <p className="justify-center">
-                  By clicking continue, you agree to our <a href={link("/legal/terms")}>Terms of Service</a> and <a href={link("/legal/privacy")}>Privacy Policy</a>.
-                </p>
-              </CardFooter>
-            </Card>
-
-          </TabsContent>
-        </Tabs>
-
-      </div>
+      <LoginPanel pendingGroup={pendingGroup} />
     </AuthLayout>
   );
 }

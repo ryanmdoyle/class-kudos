@@ -1,45 +1,75 @@
-"user server"
+import type { RequestInfo } from "rwsdk/worker";
 
-import { RequestInfo } from "rwsdk/worker"
-import { db } from "@/db";
-import { StudentTravelLog } from "@/app/components/public/StudentTravelLog"
+import { loadTravelBoard } from "@/app/components/public/board";
+import { StudentTravelLog } from "@/app/components/public/StudentTravelLog";
 
+/**
+ * `/travel-log/:groupPublicId` — the PUBLIC classroom display board.
+ *
+ * Mounted OUTSIDE every auth middleware (see `src/worker.tsx`), so this file
+ * must never touch `ctx.user`, `ctx.session`, or any `require*()` guard. It has
+ * to work on a projector that nobody has ever logged in to.
+ *
+ * The capability is the group's `publicId` and nothing else, so the page is
+ * looked up by `groups.publicId` — never by `groups.id` — and an unknown or
+ * archived id renders the same neutral "not available" panel as a made-up one.
+ * What crosses to the browser is only `BoardStudent` / `BoardLocation`: first
+ * name, last initial, and where they are. No user ids, no point balances, no
+ * group id. See `@/app/components/public/types`.
+ */
 export async function Locations({ params }: RequestInfo) {
-  const publicId = params.groupPublicId;
+  const publicId = String(params.groupPublicId ?? "");
+  const board = await loadTravelBoard(publicId);
 
-  const group = await db.group.findUnique({
-    where: { publicId: publicId },
-    select: { id: true, publicId: true }
-  })
-
-  if (!group) {
+  if (!board) {
     return (
-      <div className="flex flex-col h-screen min-w-screen">
-        <h1 className="font-display text-2xl center py-6 bg-background">Student Travel Log</h1>
-        <div className="flex-1 overflow-auto bg-green-background flex items-center justify-center">
-          <span className="text-red-600">Group not found.</span>
+      <BoardShell title="Student Travel Log">
+        <div className="flex flex-1 items-center justify-center p-8">
+          <div className="neo-container bg-background max-w-md p-8 text-center">
+            <h2 className="mb-2 text-2xl font-bold">
+              This travel log isn&apos;t available
+            </h2>
+            <p className="text-base">
+              Check the link with your teacher — it may have changed, or this
+              class may have been archived.
+            </p>
+          </div>
         </div>
-      </div>
+      </BoardShell>
     );
   }
 
-  const enrollments = await db.enrollment.findMany({
-    where: { groupId: group.id },
-    include: { user: true, currentLocation: true }
-  });
-
-  const locations = await db.location.findMany({
-    where: { groupId: group.id, isActive: true }
-  })
-
   return (
-    <div className="flex flex-col h-screen min-w-screen">
+    <BoardShell title={board.groupName}>
+      <StudentTravelLog
+        students={board.students}
+        locations={board.locations}
+        groupPublicId={board.groupPublicId}
+      />
+    </BoardShell>
+  );
+}
 
-      <h1 className="font-display text-2xl center py-6 bg-background">Student Travel Log</h1>
+function BoardShell({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-screen w-full flex-col">
+      <header className="bg-background flex items-center gap-3 border-b-2 border-border px-4 py-4">
+        <img src="/images/coin.png" alt="" className="h-12 w-12" />
+        <div>
+          <h1 className="font-display text-2xl font-bold leading-tight">
+            {title}
+          </h1>
+          <p className="text-sm opacity-70">Student Travel Log</p>
+        </div>
+      </header>
 
-      <div className="flex-1 overflow-auto bg-green-background">
-        <StudentTravelLog enrollments={enrollments} groupLocations={locations} />
-      </div>
+      <div className="bg-green-background flex flex-1 flex-col">{children}</div>
     </div>
   );
 }

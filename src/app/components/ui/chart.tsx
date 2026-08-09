@@ -1,8 +1,30 @@
+"use client"
+
 import * as RechartsPrimitive from "recharts"
 
 import * as React from "react"
 
 import { cn } from "@/app/lib/utils"
+
+/**
+ * shadcn's chart wrapper, rewritten for RECHARTS 3.x.
+ *
+ * What changed and why — read this before "fixing" the prop types back:
+ *
+ *  - `TooltipProps` no longer carries `payload` / `label` / `coordinate`.
+ *    Recharts 3 splits them out: those are injected into the *content* element
+ *    at render time and are described by the new `TooltipContentProps`. Typing
+ *    the content component as `ComponentProps<typeof Tooltip>` is what produced
+ *    the eight pre-existing type errors.
+ *  - `LegendProps` explicitly `Omit`s `payload`. Legend content is typed
+ *    against `LegendPayload[]` instead.
+ *  - Both content components are rendered as ELEMENTS (`content={<Foo />}`) and
+ *    recharts clones them with the data props, so every recharts-supplied prop
+ *    here must be optional — hence the `Partial<Pick<…>>`.
+ *
+ * This file also needs `"use client"`: it calls `createContext`/`useContext`/
+ * `useId`, and recharts is browser-only. It was missing the directive.
+ */
 
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: "", dark: ".dark" } as const
@@ -54,8 +76,18 @@ function ChartContainer({
         data-slot="chart"
         data-chart={chartId}
         className={cn(
-          "[&_.recharts-cartesian-axis-tick_text]:fill-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-[#80808080] [&_.recharts-curve.recharts-tooltip-cursor]:stroke-[#80808080] [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-black [&_.recharts-polar-grid_[stroke='#ccc']]:dark:stroke-white [&_.recharts-reference-line_[stroke='#ccc']]:stroke-black [&_.recharts-reference-line_[stroke='#ccc']]:dark:stroke-white flex aspect-video justify-center text-xs [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-border [&_.recharts-surface]:outline-hidden",
-          "[&_.recharts-layer_path]:[fill-opacity:1] [&_.recharts-layer_path]:[stroke-width:2] [&_.recharts-layer_path]:[stroke:var(--color-border)]",
+          "flex aspect-video justify-center text-xs",
+          "[&_.recharts-cartesian-axis-tick_text]:fill-foreground",
+          "[&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-[#80808080]",
+          "[&_.recharts-curve.recharts-tooltip-cursor]:stroke-[#80808080]",
+          "[&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border",
+          "[&_.recharts-reference-line_[stroke='#ccc']]:stroke-border",
+          "[&_.recharts-dot[stroke='#fff']]:stroke-transparent",
+          "[&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-border",
+          "[&_.recharts-surface]:outline-hidden",
+          // The neobrutalist part: every plotted shape gets the same flat fill
+          // and the same 2px black edge as the rest of the system.
+          "[&_.recharts-layer_path]:[fill-opacity:1] [&_.recharts-layer_path]:[stroke-width:2] [&_.recharts-layer_path]:[stroke:var(--border)]",
           className,
         )}
         {...props}
@@ -71,7 +103,7 @@ function ChartContainer({
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(
-    ([, config]) => config.theme || config.color,
+    ([, itemConfig]) => itemConfig.theme || itemConfig.color,
   )
 
   if (!colorConfig.length) {
@@ -104,6 +136,28 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
+/**
+ * Props recharts injects into the tooltip content element. All optional,
+ * because we are constructed as `<ChartTooltipContent hideLabel />` with none
+ * of them supplied and recharts clones us with the rest.
+ */
+type ChartTooltipContentProps = React.ComponentProps<"div"> &
+  Partial<
+    Pick<
+      RechartsPrimitive.TooltipContentProps,
+      "active" | "payload" | "label" | "labelFormatter" | "formatter"
+    >
+  > & {
+    hideLabel?: boolean
+    hideIndicator?: boolean
+    indicator?: "line" | "dot" | "dashed"
+    nameKey?: string
+    labelKey?: string
+    labelClassName?: string
+    /** Forces the indicator swatch colour, overriding the series colour. */
+    color?: string
+  }
+
 function ChartTooltipContent({
   active,
   payload,
@@ -118,14 +172,7 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-  React.ComponentProps<"div"> & {
-    hideLabel?: boolean
-    hideIndicator?: boolean
-    indicator?: "line" | "dot" | "dashed"
-    nameKey?: string
-    labelKey?: string
-  }) {
+}: ChartTooltipContentProps) {
   const { config } = useChart()
 
   const tooltipLabel = React.useMemo(() => {
@@ -173,7 +220,8 @@ function ChartTooltipContent({
   return (
     <div
       className={cn(
-        "border-border bg-background grid min-w-[8rem] items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl",
+        "grid min-w-[8rem] items-start gap-1.5 rounded-base border-2 border-border",
+        "bg-secondary-background px-2.5 py-1.5 text-xs text-foreground shadow-shadow",
         className,
       )}
     >
@@ -182,18 +230,18 @@ function ChartTooltipContent({
         {payload.map((item, index) => {
           const key = `${nameKey || item.name || item.dataKey || "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
-          const indicatorColor = color || item.payload.fill || item.color
+          const indicatorColor = color || item.payload?.fill || item.color
 
           return (
             <div
-              key={item.dataKey}
+              key={`${item.dataKey ?? item.name ?? index}`}
               className={cn(
-                "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 ",
+                "flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5 [&>svg]:text-muted-foreground",
                 indicator === "dot" && "items-center",
               )}
             >
-              {formatter && item?.value !== undefined && item.name ? (
-                formatter(item.value, item.name, item, index, item.payload)
+              {formatter && item.value !== undefined && item.name !== undefined ? (
+                formatter(item.value, item.name, item, index, payload)
               ) : (
                 <>
                   {itemConfig?.icon ? (
@@ -201,21 +249,16 @@ function ChartTooltipContent({
                   ) : (
                     !hideIndicator && (
                       <div
-                        className={cn(
-                          "shrink-0 rounded-[2px] bg-(--color-bg)",
-                          {
-                            "size-2.5 border border-border":
-                              indicator === "dot",
-                            "w-1": indicator === "line",
-                            "w-0 border-[1.5px] border-dashed bg-transparent":
-                              indicator === "dashed",
-                            "my-0.5": nestLabel && indicator === "dashed",
-                          },
-                        )}
+                        className={cn("shrink-0 bg-(--color-bg)", {
+                          "size-2.5 border-2 border-border": indicator === "dot",
+                          "w-1": indicator === "line",
+                          "w-0 border-[1.5px] border-dashed bg-transparent":
+                            indicator === "dashed",
+                          "my-0.5": nestLabel && indicator === "dashed",
+                        })}
                         style={
                           {
                             "--color-bg": indicatorColor,
-                            "--color-border": indicatorColor,
                           } as React.CSSProperties
                         }
                       />
@@ -233,8 +276,8 @@ function ChartTooltipContent({
                         {itemConfig?.label || item.name}
                       </span>
                     </div>
-                    {item.value && (
-                      <span className="text-foreground font-mono font-medium tabular-nums">
+                    {item.value !== undefined && (
+                      <span className="font-code font-medium tabular-nums text-foreground">
                         {item.value.toLocaleString()}
                       </span>
                     )}
@@ -251,17 +294,21 @@ function ChartTooltipContent({
 
 const ChartLegend = RechartsPrimitive.Legend
 
+type ChartLegendContentProps = React.ComponentProps<"div"> & {
+  /** Injected by recharts. `LegendProps` deliberately omits it. */
+  payload?: ReadonlyArray<RechartsPrimitive.LegendPayload>
+  verticalAlign?: "top" | "bottom" | "middle"
+  hideIcon?: boolean
+  nameKey?: string
+}
+
 function ChartLegendContent({
   className,
   hideIcon = false,
   payload,
   verticalAlign = "bottom",
   nameKey,
-}: React.ComponentProps<"div"> &
-  Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
-    hideIcon?: boolean
-    nameKey?: string
-  }) {
+}: ChartLegendContentProps) {
   const { config } = useChart()
 
   if (!payload?.length) {
@@ -276,25 +323,21 @@ function ChartLegendContent({
         className,
       )}
     >
-      {payload.map((item) => {
+      {payload.map((item, index) => {
         const key = `${nameKey || item.dataKey || "value"}`
         const itemConfig = getPayloadConfigFromPayload(config, item, key)
 
         return (
           <div
-            key={item.value}
-            className={cn(
-              "[&>svg]:text-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3",
-            )}
+            key={`${item.value ?? index}`}
+            className="flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-foreground"
           >
             {itemConfig?.icon && !hideIcon ? (
               <itemConfig.icon />
             ) : (
               <div
-                className="h-2 w-2 border border-border shrink-0 rounded-[2px]"
-                style={{
-                  backgroundColor: item.color,
-                }}
+                className="size-2.5 shrink-0 border-2 border-border"
+                style={{ backgroundColor: item.color }}
               />
             )}
             {itemConfig?.label}

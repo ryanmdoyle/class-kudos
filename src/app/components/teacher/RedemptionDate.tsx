@@ -1,0 +1,31 @@
+"use client";
+
+/**
+ * Render an ISO-8601 timestamp in the VIEWER's timezone.
+ *
+ * A client component on purpose: the worker's clock is UTC, so formatting on the
+ * server would show a teacher in Los Angeles the wrong day for anything
+ * requested after 4pm. The legacy code called `createdAt.toDateString()` on a
+ * Prisma `Date` — there are no Date objects any more, these columns are text.
+ *
+ * `suppressHydrationWarning` because the server-rendered pass and the browser
+ * pass legitimately produce different strings.
+ */
+export function RedemptionDate({ value }: { value: string }) {
+  const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value);
+  const date = new Date(hasZone ? value : `${value}Z`);
+
+  if (Number.isNaN(date.getTime())) {
+    return <span>{value}</span>;
+  }
+
+  return (
+    <span suppressHydrationWarning>
+      {date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })}
+    </span>
+  );
+}

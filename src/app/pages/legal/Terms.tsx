@@ -13,7 +13,7 @@ export function Terms() {
         <p className="mb-4">By using Class Kudos, you agree to abide by these Terms and any posted guidelines. If you do not agree, you must not use the Service.</p>
 
         <h2 className="text-xl font-semibold mb-3">2. Eligibility</h2>
-        <p className="mb-4">You must be authorized by your school or district to use Class Kudos. Teachers must provide valid email addresses for account creation. Students access the service through enrollment in teacher-created groups. If you are under 13, you must have parental/guardian consent in accordance with COPPA.</p>
+        <p className="mb-4">You must be authorized by your school or district to use Class Kudos. Teacher accounts are created for you by an administrator using a valid email address; there is no public sign-up. Students access the service through enrollment in teacher-created groups. If you are under 13, you must have parental/guardian consent in accordance with COPPA.</p>
 
         <h2 className="text-xl font-semibold mb-3">3. User Accounts</h2>
         <p className="mb-2"><strong>Teacher Accounts:</strong></p>
@@ -26,15 +26,16 @@ export function Terms() {
         <p className="mb-2"><strong>Student Access:</strong></p>
         <ul className="list-disc pl-6 mb-4">
           <li>Students are enrolled in groups by their teachers</li>
-          <li>Students use secure WebAuthn authentication (no passwords required)</li>
-          <li>Student accounts do not require email addresses</li>
+          <li>Students sign in with a class code issued by their teacher &mdash; either one shared code for the class, or a personal code for each student</li>
+          <li>Student accounts do not require email addresses or passwords</li>
         </ul>
 
         <p className="mb-2"><strong>Security:</strong></p>
         <ul className="list-disc pl-6 mb-4">
-          <li>You are responsible for safeguarding your authentication credentials</li>
+          <li>You are responsible for safeguarding your password or class code</li>
           <li>Notify your teacher or administrator immediately if you suspect unauthorized access</li>
-          <li>Do not share your WebAuthn credentials or attempt to access other users' accounts</li>
+          <li>Do not share your class code or attempt to access other users' accounts</li>
+          <li>Teachers may reset or reissue a class code at any time, which immediately invalidates the previous one</li>
         </ul>
 
         <h2 className="text-xl font-semibold mb-3">4. Acceptable Use</h2>
@@ -50,6 +51,7 @@ export function Terms() {
 
         <h2 className="text-xl font-semibold mb-3">5. Educational Use</h2>
         <p className="mb-4">Class Kudos is designed as an educational tool for classroom management and student engagement. The points and rewards system is intended to support learning objectives set by teachers and schools. Redemption of rewards may require written responses that will be reviewed by teachers.</p>
+        <p className="mb-4"><strong>Travel log:</strong> A teacher may enable a classroom travel log so students can sign themselves out to a location (for example, the library) and back in again. Each teacher-created group has a shareable travel-log web address intended to be displayed in the classroom. <strong>Anyone who has that address can view the first name and last initial of the students in that group, see who is currently signed out and to where, and change those entries, without logging in.</strong> Teachers are responsible for deciding whether to use this feature and where to share the address.</p>
 
         <h2 className="text-xl font-semibold mb-3">6. Data Ownership</h2>
         <p className="mb-4">Educational data created through your use of Class Kudos (including points earned, group participation, and reward redemptions) belongs to the educational institution. Teachers and school administrators have access to student data within their assigned groups for educational purposes.</p>

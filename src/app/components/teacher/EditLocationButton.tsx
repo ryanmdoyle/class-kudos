@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,68 +12,98 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/app/components/ui/alert-dialog'
-import { Button } from '@/app/components/ui/button'
-import { Input } from '../ui/input'
-import { Location } from '@generated/prisma';
-import { editLocation, deleteLocation } from './functions';
+} from "@/app/components/ui/alert-dialog";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import {
+  deleteLocation,
+  editLocation,
+} from "@/app/components/teacher/functions";
+import type { LocationRow } from "@/db";
 
-const handleSubmit = async (formData: FormData) => {
-  await editLocation(formData)
-}
+export function EditLocationButton({ location }: { location: LocationRow }) {
+  const [error, setError] = useState<string | null>(null);
 
-const handleDelete = async (locationId: string) => {
-  await deleteLocation(locationId)
-}
+  const handleSubmit = async (formData: FormData) => {
+    const result = await editLocation(formData);
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+    window.location.reload();
+  };
 
-export function EditLocationButton({ location }: { location: Location }) {
+  const handleDelete = async () => {
+    const result = await deleteLocation(location.id);
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+    window.location.reload();
+  };
 
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="neutral" size="sm" className="m-0 mr-2">Edit</Button>
+        <Button variant="neutral" size="sm" className="m-0 mr-2">
+          Edit
+        </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Edit {location.name}</AlertDialogTitle>
           <AlertDialogDescription>
-            You can edit the location here.
+            Removing a location retires it rather than deleting it, so past
+            travel-log entries still say where the student went.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <form action={handleSubmit} id="editLocationForm">
-          <div className="space-y-4">
-            <Input
-              id="name"
-              type="text"
-              name="name"
-              defaultValue={location.name}
+        <form action={handleSubmit} id="editLocationForm" className="space-y-4">
+          <Input
+            id="name"
+            type="text"
+            name="name"
+            defaultValue={location.name}
+            required
+          />
+          <Input
+            id="description"
+            type="text"
+            name="description"
+            defaultValue={location.description ?? ""}
+            placeholder="Description (optional)"
+          />
+          <div>
+            <label htmlFor="color" className="block text-sm font-medium mb-2">
+              Choose a color
+            </label>
+            <input
+              id="color"
+              type="color"
+              name="color"
+              defaultValue={location.color || "#3B82F6"}
+              className="w-full h-10 rounded border border-border cursor-pointer"
               required
             />
-            <div>
-              <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-2">
-                Choose a color
-              </label>
-              <input
-                id="color"
-                type="color"
-                name="color"
-                defaultValue={location.color || "#3B82F6"}
-                className="w-full h-10 rounded border border-gray-300 cursor-pointer"
-                required
-              />
-            </div>
           </div>
           <input type="hidden" name="id" value={location.id} />
+          {error ? <p className="text-red-500">{error}</p> : null}
         </form>
         <AlertDialogFooter className="relative">
-          <form action={() => handleDelete(location.id)} id="deleteLocationForm">
-            <Button type="submit" className='bg-red-400 absolute left-0' form="deleteLocationForm">Delete</Button>
+          <form action={handleDelete} id="deleteLocationForm">
+            <Button
+              type="submit"
+              className="bg-red-400 absolute left-0"
+              form="deleteLocationForm"
+            >
+              Remove
+            </Button>
           </form>
-
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction type="submit" form="editLocationForm">Continue</AlertDialogAction>
+          <AlertDialogAction type="submit" form="editLocationForm">
+            Continue
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

@@ -1,5 +1,6 @@
-// This component is used to create new students and instantly enroll them into a group, along with an access code to.
 "use client";
+
+import { useState } from "react";
 
 import {
   AlertDialog,
@@ -11,99 +12,135 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/app/components/ui/alert-dialog'
-import { useState } from 'react';
-import { Button } from '@/app/components/ui/button'
-import { Input } from '../ui/input'
-import { Textarea } from '../ui/textarea';
-import { addGroup, createNewStudents } from './functions'
+} from "@/app/components/ui/alert-dialog";
+import { Button } from "@/app/components/ui/button";
+import { Textarea } from "@/app/components/ui/textarea";
+import {
+  createNewStudents,
+  type NewStudentInput,
+} from "@/app/components/teacher/functions";
 
-type PreviewUser = {
-  firstName: string
-  lastName: string
-  username: string
-}
-
-
+/**
+ * Paste a class list, one student per line.
+ *
+ * v2 students have NO username and NO password — the legacy username generator
+ * is gone. They are a name plus an enrolment, and they get in with a class code.
+ * If the group is in "individual" mode the server issues each new student a code
+ * as part of the same action.
+ */
 export function AddNewStudentsButton({ groupId }: { groupId: string }) {
-  const [namesInput, setNamesInput] = useState("")
-  const [preview, setPreview] = useState<PreviewUser[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const [namesInput, setNamesInput] = useState("");
+  const [preview, setPreview] = useState<NewStudentInput[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const handleSubmit = async () => {
-    createNewStudents(preview, groupId)
-  }
+  function parse(input: string): NewStudentInput[] | null {
+    const lines = input
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
 
-  function generateUsername(first: string, last: string): string {
-    const base = (first[0] + last).toLowerCase().replace(/[^a-z0-9]/g, "")
-    const rand = Math.floor(100 + Math.random() * 900) // random 3 digit number
-    return `${base}${rand}`
+    const parsed: NewStudentInput[] = [];
+
+    for (const line of lines) {
+      // Accept "Last, First" as well as "First Last" — both come off a roster
+      // export, and getting it wrong swaps every name in the class.
+      if (line.includes(",")) {
+        const [last, first] = line.split(",");
+        if (!first?.trim() || !last?.trim()) {
+          setError(`Invalid name: "${line}". Use "Last, First" or "First Last".`);
+          return null;
+        }
+        parsed.push({ firstName: first.trim(), lastName: last.trim() });
+        continue;
+      }
+
+      const parts = line.split(/\s+/).filter(Boolean);
+      if (parts.length < 2) {
+        setError(`Invalid name: "${line}". Please give a first and last name.`);
+        return null;
+      }
+      const [first, ...rest] = parts;
+      parsed.push({ firstName: first, lastName: rest.join(" ") });
+    }
+
+    return parsed;
   }
 
   function handlePreview() {
-    setError(null)
-    const lines = namesInput.split("\n").map(line => line.trim()).filter(Boolean)
-
-    const parsed: PreviewUser[] = []
-    for (const line of lines) {
-      const parts = line.split(" ").filter(Boolean)
-      if (parts.length < 2) {
-        setError(`Invalid name: "${line}". Please provide first and last name.`)
-        return
-      }
-      const [first, ...rest] = parts
-      const last = rest.join(" ")
-      parsed.push({
-        firstName: first,
-        lastName: last,
-        username: generateUsername(first, last),
-      })
-    }
-    setPreview(parsed)
+    setError(null);
+    const parsed = parse(namesInput);
+    if (parsed) setPreview(parsed);
   }
+
+  const handleSubmit = async () => {
+    setError(null);
+
+    // Re-parse rather than relying on the user having pressed Preview.
+    const students = preview.length > 0 ? preview : parse(namesInput);
+    if (!students || students.length === 0) {
+      setError("Add at least one student.");
+      return;
+    }
+
+    setBusy(true);
+    const result = await createNewStudents(groupId, students);
+    if (!result.success) {
+      setError(result.error);
+      setBusy(false);
+      return;
+    }
+    window.location.reload();
+  };
 
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button className="absolute top-4 right-4" variant="green">Add New Students</Button>
+        <Button className="absolute top-4 right-4" variant="green">
+          Add New Students
+        </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Create New Student Accounts</AlertDialogTitle>
+          <AlertDialogTitle>Add students to this class</AlertDialogTitle>
           <AlertDialogDescription>
-            This will create new user accounts for students, and add them to your group. An access code will also be created for students to use to login to their own dashboard.
+            One per line, as “First Last” or “Last, First”. Students have no
+            username and no password — they log in with the class code.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="flex gap-4 max-h-[400px]">
-
           <Textarea
             value={namesInput}
-            onChange={e => setNamesInput(e.target.value)}
-            placeholder="Enter one student per line (First Last)"
-            rows={6}
+            onChange={(event) => setNamesInput(event.target.value)}
+            placeholder={"Ada Lovelace\nHopper, Grace"}
+            rows={8}
           />
-          {preview.length > 0 && (
-            <div className="border rounded-md p-2 overflow-y-auto">
-              <h3 className="font-semibold mb-2">Preview Users</h3>
+          {preview.length > 0 ? (
+            <div className="border-2 border-border rounded-base p-2 overflow-y-auto min-w-[180px]">
+              <h3 className="font-semibold mb-2">
+                Preview ({preview.length})
+              </h3>
               <ul className="space-y-1">
-                {preview.map((u, i) => (
-                  <li key={i} className="text-sm">
-                    <strong>{u.firstName} {u.lastName}</strong> → <code>{u.username}</code>
+                {preview.map((student, index) => (
+                  <li key={index} className="text-sm">
+                    {student.firstName} {student.lastName}
                   </li>
                 ))}
               </ul>
             </div>
-          )}
+          ) : null}
         </div>
-        {error && <p className="text-red-500">{error}</p>}
-
-        <Button onClick={handlePreview}>Preview</Button>
+        {error ? <p className="text-red-500">{error}</p> : null}
+        <Button type="button" onClick={handlePreview}>
+          Preview
+        </Button>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleSubmit}>Create Users!</AlertDialogAction>
+          <AlertDialogAction onClick={handleSubmit} disabled={busy}>
+            {busy ? "Adding…" : "Add students"}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-
-  )
+  );
 }

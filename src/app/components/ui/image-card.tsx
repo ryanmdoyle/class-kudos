@@ -5,10 +5,12 @@ import { cn } from "@/app/lib/utils"
 type Props = {
   imageUrl: string
   caption: string
+  /** Alt text. Defaults to the caption, which is almost always what you want. */
+  alt?: string
   className?: string
 }
 
-export default function ImageCard({ imageUrl, caption, className }: Props) {
+export default function ImageCard({ imageUrl, caption, alt, className }: Props) {
   return (
     <figure
       className={cn(
@@ -16,8 +18,8 @@ export default function ImageCard({ imageUrl, caption, className }: Props) {
         className,
       )}
     >
-      <img className="w-full aspect-4/3" src={imageUrl} alt="image" />
-      <figcaption className="border-t-2 text-main-foreground border-border p-4">
+      <img className="aspect-4/3 w-full" src={imageUrl} alt={alt ?? caption} />
+      <figcaption className="border-t-2 border-border p-4 text-main-foreground">
         {caption}
       </figcaption>
     </figure>

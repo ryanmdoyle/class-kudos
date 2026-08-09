@@ -15,13 +15,14 @@
     "moduleResolution": "bundler",
     /* Specify type package names to be included without being referenced in a source file. */
     "types": [
+      "@cloudflare/workers-types",
       "./worker-configuration.d.ts",
       "./types/rw.d.ts",
-      "./types/vite.d.ts"
+      "./types/vite.d.ts",
+      "./types/css.d.ts"
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@generated/*": ["./generated/*"]
+      "@/*": ["./src/*"]
     },
     /* Enable importing .json files */
     "resolveJsonModule": true,
@@ -44,5 +45,20 @@
 
     /* Skip type checking all .d.ts files. */
     "skipLibCheck": true
-  }
+  },
+  /*
+   * Only build artefacts are excluded. Every source file in `src/` is a
+   * compilation root and is type-checked.
+   *
+   * Do NOT add source directories here to make `tsc` green. Beyond hiding real
+   * errors, rwsdk's directive scan is REPO-GLOBAL and ignores this array: a file
+   * carrying "use client"/"use server" with an unresolvable import fails
+   * `runDirectivesScan` and `npm run dev` refuses to start, excluded or not.
+   */
+  "exclude": [
+    "node_modules",
+    ".tmp",
+    "dist",
+    ".wrangler"
+  ]
 }

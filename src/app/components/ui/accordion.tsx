@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react"
 
 import * as React from "react"
 
-import { cn } from "@/app/lib/utils"
+import { cn, focusRing } from "@/app/lib/utils"
 
 function Accordion({
   ...props
@@ -20,8 +20,10 @@ function AccordionItem({
   return (
     <AccordionPrimitive.Item
       data-slot="accordion-item"
+      // Was `border-2 border-b`, which quietly reset the bottom edge to 1px and
+      // made a stack of items look uneven.
       className={cn(
-        "rounded-base overflow-hidden border-2 border-b border-border shadow-shadow",
+        "rounded-base overflow-hidden border-2 border-border shadow-shadow",
         className,
       )}
       {...props}
@@ -39,7 +41,14 @@ function AccordionTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          "flex flex-1 items-center justify-between text-left text-base text-main-foreground border-border focus-visible:ring-[3px] bg-main p-4 font-heading transition-all [&[data-state=open]>svg]:rotate-180 data-[state=open]:rounded-b-none data-[state=open]:border-b-2 disabled:pointer-events-none disabled:opacity-50",
+          "flex flex-1 items-center justify-between gap-4 border-border bg-main p-4 text-left",
+          "text-base font-heading text-main-foreground transition-all",
+          "[&[data-state=open]>svg]:rotate-180 data-[state=open]:rounded-b-none data-[state=open]:border-b-2",
+          "disabled:pointer-events-none disabled:opacity-50",
+          // The original was `focus-visible:ring-[3px]` with no ring COLOUR, so
+          // it fell back to currentcolor — black on a black border, invisible.
+          focusRing,
+          "focus-visible:-outline-offset-4",
           className,
         )}
         {...props}
@@ -59,14 +68,12 @@ function AccordionContent({
   return (
     <AccordionPrimitive.Content
       data-slot="accordion-content"
-      className="overflow-hidden rounded-b-base bg-secondary-background text-sm font-base transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+      className="overflow-hidden rounded-b-base bg-secondary-background text-sm font-base text-foreground transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
       {...props}
     >
       <div className={cn("p-4", className)}>{children}</div>
     </AccordionPrimitive.Content>
   )
 }
-
-AccordionContent.displayName = AccordionPrimitive.Content.displayName
 
 export { Accordion, AccordionItem, AccordionTrigger, AccordionContent }

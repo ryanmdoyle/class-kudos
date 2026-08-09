@@ -1,13 +1,16 @@
 import { defineLinks } from "rwsdk/router";
 
+/**
+ * Typed link builder. Keep in sync with the per-area `routes.ts` modules under
+ * `src/app/pages` — this list is the source of truth for `link()`.
+ */
 export const link = defineLinks([
   "/",
-  "/user/signup",
+  // `/user` is `index(Login)` in src/app/pages/user/routes.ts.
+  "/user",
   "/user/login",
   "/user/logout",
-  "/user/request-passkey",
-  "/user/teacher-reset",
-  "/user/what-are-passkeys",
+  "/user/reset-password",
   "/teacher",
   "/teacher/:groupId",
   "/teacher/:groupId/rewards",
@@ -18,5 +21,5 @@ export const link = defineLinks([
   "/student/:groupId/rewards",
   "/legal/privacy",
   "/legal/terms",
-  "/travel-log/:groupPublicId"
+  "/travel-log/:groupPublicId",
 ]);

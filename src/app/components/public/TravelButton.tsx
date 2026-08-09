@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { EnrollmentWithUserLocation } from "@/app/lib/types";
-import { Location } from "@generated/prisma";
-import { Button } from "../ui/button";
+import { MapPin } from "lucide-react";
+
+import { Button } from "@/app/components/ui/button";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -14,95 +14,173 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/app/components/ui/alert-dialog";
-import { MapPin } from "lucide-react";
-import { updateLocation } from "./functions";
 
+import { readableTextColor, swatchBackground } from "./color";
+import { updateTravelLocation } from "./functions";
+import type { BoardLocation, BoardStudent } from "./types";
+
+/**
+ * One child's tile on the classroom board.
+ *
+ * Audience is a 9-year-old standing at a shared screen, so:
+ *  - the tile is a single large target (no nested controls to mis-tap),
+ *  - there are exactly two states — "in class" or "at <place>",
+ *  - coming back is ONE button, not a menu,
+ *  - a failure says so in words on the tile and puts the old value back, so
+ *    the screen never quietly disagrees with the room.
+ */
 export function TravelButton({
-  enrollment,
+  student,
   locations,
+  groupPublicId,
   onLocalUpdate,
 }: {
-  enrollment: EnrollmentWithUserLocation;
-  locations: Location[];
-  onLocalUpdate?: (enrollmentId: string, locationId: string | null) => void;
+  student: BoardStudent;
+  locations: BoardLocation[];
+  groupPublicId: string;
+  onLocalUpdate: (
+    enrollmentId: string,
+    location: BoardLocation | null,
+  ) => void;
 }) {
   const [isPending, setIsPending] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleUpdate = async (enrollmentId: string, locationId: string | null) => {
-    if (isPending) return; // Prevent spamming
+  const isOut = student.locationId !== null;
+
+  const handleUpdate = async (location: BoardLocation | null) => {
+    if (isPending) return;
+
     setIsPending(true);
+    setError(null);
 
-    // Optimistically update local state
-    if (onLocalUpdate) {
-      onLocalUpdate(enrollmentId, locationId);
+    // Remember enough to put the tile back exactly as it was.
+    const previous: BoardLocation | null = student.locationId
+      ? {
+          id: student.locationId,
+          name: student.locationName ?? "",
+          color: student.locationColor,
+        }
+      : null;
+
+    // Optimistic: the tile flips before the round trip, because the child is
+    // already walking away from the screen.
+    onLocalUpdate(student.enrollmentId, location);
+    setOpen(false);
+
+    try {
+      const result = await updateTravelLocation(
+        groupPublicId,
+        student.enrollmentId,
+        location?.id ?? null,
+      );
+
+      if (!result.ok) {
+        onLocalUpdate(student.enrollmentId, previous);
+        setError(result.error);
+      }
+    } catch {
+      onLocalUpdate(student.enrollmentId, previous);
+      setError("That didn't save. Please try again.");
+    } finally {
+      setIsPending(false);
     }
-
-    // Call server update
-    await updateLocation(enrollmentId, locationId);
-    setIsPending(false);
   };
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button
-          variant="neutral"
-          className="min-h-[60px] flex flex-col items-center justify-center gap-1 m-0"
-          key={enrollment.id}
-          disabled={isPending}
-        >
-          <span>{enrollment.user.firstName}</span>
-          {enrollment.currentLocationId && (
-            <span
-              className="flex items-center gap-1 text-xs text-white px-2 py-0.5 rounded-full"
-              style={{
-                backgroundColor: enrollment.currentLocation?.color || "bg-background",
-              }}
-            >
-              <MapPin className="w-3 h-3" />
-              {enrollment.currentLocation?.name}
-            </span>
-          )}
-        </Button>
-      </AlertDialogTrigger>
-
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {enrollment.currentLocationId ? "Welcome Back!" : "Where are you headed?"}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {enrollment.currentLocationId
-              ? "Confirm you are returning to class."
-              : "Select the location you are going to:"}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-
-        {enrollment.currentLocationId ? (
+    <div className="flex flex-col gap-1">
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogTrigger asChild>
           <Button
-            onClick={() => handleUpdate(enrollment.id, null)}
+            variant={isOut ? "neutral" : "default"}
+            className="h-auto min-h-[84px] w-full flex-col items-center justify-center gap-1 whitespace-normal px-3 py-3 text-lg font-bold"
             disabled={isPending}
+            aria-label={
+              isOut
+                ? `${student.firstName} is at ${student.locationName}. Tap to come back to class.`
+                : `${student.firstName} is in class. Tap to sign out.`
+            }
           >
-            I'm back!
+            <span className="leading-tight">
+              {student.firstName}
+              {student.lastInitial ? ` ${student.lastInitial}.` : ""}
+            </span>
+            {isOut ? (
+              <span
+                className="flex items-center gap-1 rounded-base border-2 border-border px-2 py-0.5 text-xs font-bold"
+                style={{
+                  backgroundColor: swatchBackground(student.locationColor),
+                  color: readableTextColor(student.locationColor),
+                }}
+              >
+                <MapPin className="h-3 w-3" />
+                {student.locationName}
+              </span>
+            ) : null}
           </Button>
-        ) : (
-          locations.map((location) => (
-            <Button
-              className="mb-0"
-              style={{ backgroundColor: location.color || "bg-background" }}
-              onClick={() => handleUpdate(enrollment.id, location.id)}
-              key={location.id}
-              disabled={isPending}
-            >
-              {location.name}
-            </Button>
-          ))
-        )}
+        </AlertDialogTrigger>
 
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl">
+              {isOut
+                ? `Welcome back, ${student.firstName}!`
+                : `Where are you going, ${student.firstName}?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              {isOut
+                ? "Tap the button to sign back into class."
+                : locations.length > 0
+                  ? "Tap the place you are going to."
+                  : "Your teacher hasn't set up any places yet."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="flex flex-col gap-3">
+            {isOut ? (
+              <Button
+                variant="green"
+                className="h-16 w-full text-xl font-bold"
+                onClick={() => void handleUpdate(null)}
+                disabled={isPending}
+              >
+                I&apos;m back!
+              </Button>
+            ) : (
+              locations.map((location) => (
+                <Button
+                  key={location.id}
+                  className="h-16 w-full text-xl font-bold"
+                  style={{
+                    backgroundColor: swatchBackground(location.color),
+                    color: readableTextColor(location.color),
+                  }}
+                  onClick={() => void handleUpdate(location)}
+                  disabled={isPending}
+                >
+                  {location.name}
+                </Button>
+              ))
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending} className="h-12 text-base">
+              Never mind
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {error ? (
+        <p
+          role="status"
+          className="rounded-base border-2 border-border bg-error px-2 py-1 text-center text-xs font-bold text-main-foreground"
+        >
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }

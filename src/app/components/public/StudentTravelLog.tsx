@@ -1,74 +1,98 @@
-"use client"
+"use client";
 
 import { useState } from "react";
-import { EnrollmentWithUserLocation } from "@/app/lib/types";
-import { Location } from "@generated/prisma";
+
 import { TravelButton } from "./TravelButton";
+import type { BoardLocation, BoardStudent } from "./types";
 
+/**
+ * The classroom board itself: everyone who is here on the left, everyone who is
+ * out on the right.
+ *
+ * State lives here rather than in each tile so that an optimistic move
+ * immediately relocates the child between the two columns — the whole point of
+ * the board is that a glance answers "who is out of the room?".
+ */
 export const StudentTravelLog = ({
-  enrollments: initialEnrollments,
-  groupLocations,
+  students: initialStudents,
+  locations,
+  groupPublicId,
 }: {
-  enrollments: EnrollmentWithUserLocation[];
-  groupLocations: Location[];
+  students: BoardStudent[];
+  locations: BoardLocation[];
+  groupPublicId: string;
 }) => {
-  const [enrollments, setEnrollments] = useState(initialEnrollments);
+  const [students, setStudents] = useState(initialStudents);
 
-  // Optimistically update the location for a single enrollment
-  const handleLocalUpdate = (enrollmentId: string, locationId: string | null) => {
-    setEnrollments((prev) =>
-      prev.map((enrollment) =>
-        enrollment.id === enrollmentId
+  const handleLocalUpdate = (
+    enrollmentId: string,
+    location: BoardLocation | null,
+  ) => {
+    setStudents((previous) =>
+      previous.map((student) =>
+        student.enrollmentId === enrollmentId
           ? {
-            ...enrollment,
-            currentLocationId: locationId,
-            currentLocation: groupLocations.find((loc) => loc.id === locationId) || null,
-          }
-          : enrollment
-      )
+              ...student,
+              locationId: location?.id ?? null,
+              locationName: location?.name ?? null,
+              locationColor: location?.color ?? null,
+            }
+          : student,
+      ),
     );
   };
 
-  const inClass = enrollments.filter((e) => e.currentLocationId === null);
-  const outOfClass = enrollments.filter((e) => e.currentLocationId !== null);
+  const inClass = students.filter((student) => student.locationId === null);
+  const outOfClass = students.filter((student) => student.locationId !== null);
+
+  if (students.length === 0) {
+    return (
+      <div className="flex min-h-full items-center justify-center p-8">
+        <p className="neo-container bg-background p-8 text-center text-lg">
+          Nobody is enrolled in this class yet.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4 min-h-full flex gap-6">
-      {/* Main grid for in-class students */}
-      <div className="flex-1 flex flex-col">
-        <h2 className="text-xl font-semibold mb-4">In Class ({inClass.length})</h2>
-        <div className="flex-1 overflow-y-auto pr-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 auto-rows-max pb-4">
-            {inClass.map(enrollment => (
+    <div className="flex min-h-full flex-col gap-6 p-4 lg:flex-row">
+      <section className="flex flex-1 flex-col">
+        <h2 className="mb-4 text-2xl font-bold">In Class ({inClass.length})</h2>
+        <div className="grid auto-rows-max grid-cols-2 gap-4 pb-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+          {inClass.map((student) => (
+            <TravelButton
+              key={student.enrollmentId}
+              student={student}
+              locations={locations}
+              groupPublicId={groupPublicId}
+              onLocalUpdate={handleLocalUpdate}
+            />
+          ))}
+        </div>
+        {inClass.length === 0 ? (
+          <p className="text-base opacity-70">Everybody is out of the room.</p>
+        ) : null}
+      </section>
+
+      {outOfClass.length > 0 ? (
+        <section className="flex w-full flex-col border-border lg:w-72 lg:border-l-2 lg:pl-6">
+          <h2 className="mb-4 text-2xl font-bold">
+            Out of Class ({outOfClass.length})
+          </h2>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+            {outOfClass.map((student) => (
               <TravelButton
-                enrollment={enrollment}
-                locations={groupLocations}
-                key={enrollment.id}
+                key={student.enrollmentId}
+                student={student}
+                locations={locations}
+                groupPublicId={groupPublicId}
                 onLocalUpdate={handleLocalUpdate}
               />
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Side column for out-of-class students - only show if there are students out */}
-      {outOfClass.length > 0 && (
-        <div className="w-64 border-l border-gray-200 pl-6 flex flex-col">
-          <h2 className="text-xl font-semibold mb-4">Out of Class ({outOfClass.length})</h2>
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="flex flex-col gap-3">
-              {outOfClass.map(enrollment => (
-                <TravelButton
-                  enrollment={enrollment}
-                  locations={groupLocations}
-                  key={enrollment.id}
-                  onLocalUpdate={handleLocalUpdate}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+        </section>
+      ) : null}
     </div>
   );
 };

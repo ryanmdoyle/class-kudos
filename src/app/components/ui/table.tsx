@@ -4,9 +4,15 @@ import * as React from "react"
 
 import { cn } from "@/app/lib/utils"
 
+/**
+ * The scroll container below is `overflow-auto` so wide rosters can scroll
+ * horizontally. Be aware that this CLIPS the focus outline of controls sitting
+ * flush against the table edge — give action buttons in the last column a
+ * little inline padding rather than removing the scroller.
+ */
 function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
-    <div className="relative w-full overflow-auto">
+    <div data-slot="table-container" className="relative w-full overflow-auto">
       <table
         data-slot="table"
         className={cn(
@@ -57,7 +63,8 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b-2 border-border transition-colors text-main-foreground bg-main font-base data-[state=selected]:bg-secondary-background data-[state=selected]:text-main-foreground",
+        "border-b-2 border-border bg-main font-base text-main-foreground transition-colors",
+        "data-[state=selected]:bg-secondary-background data-[state=selected]:text-foreground",
         className,
       )}
       {...props}
@@ -82,10 +89,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
   return (
     <td
       data-slot="table-cell"
-      className={cn(
-        "p-4 align-middle [&:has([role=checkbox])]:pr-0",
-        className,
-      )}
+      className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)}
       {...props}
     />
   )
@@ -98,7 +102,7 @@ function TableCaption({
   return (
     <caption
       data-slot="table-caption"
-      className={cn("mt-4 text-sm text-foreground font-base", className)}
+      className={cn("mt-4 text-sm font-base text-muted-foreground", className)}
       {...props}
     />
   )

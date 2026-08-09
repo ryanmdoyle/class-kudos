@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,63 +12,75 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/app/components/ui/alert-dialog'
-import { Button } from '@/app/components/ui/button'
-import { Input } from '../ui/input'
-import { addLocation } from './functions'
+} from "@/app/components/ui/alert-dialog";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { addLocation } from "@/app/components/teacher/functions";
 
-const handleSubmit = async (formData: FormData) => {
-  addLocation(formData)
-}
+export function AddLocationButton({ groupId }: { groupId: string }) {
+  const [error, setError] = useState<string | null>(null);
 
-interface AddLocationButtonProps {
-  groupId: string;
-}
-
-export function AddLocationButton({ groupId }: AddLocationButtonProps) {
+  const handleSubmit = async (formData: FormData) => {
+    const result = await addLocation(formData);
+    if (!result.success) {
+      setError(result.error);
+      return;
+    }
+    window.location.reload();
+  };
 
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button className="absolute top-4 right-4" variant="green">Add Location</Button>
+        <Button className="absolute top-4 right-4" variant="green">
+          Add Location
+        </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Create a New Location</AlertDialogTitle>
           <AlertDialogDescription>
-            Add a name and color for where students can travel.
+            Somewhere students can sign out to. The colour is what shows on the
+            public travel-log board.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <form action={handleSubmit} id="addLocationForm">
-          <div className="space-y-4">
-            <Input
-              id="name"
-              type="text"
-              name="name"
-              placeholder="Location name (e.g., Library, Cafeteria)"
+        <form action={handleSubmit} id="addLocationForm" className="space-y-4">
+          <Input
+            id="name"
+            type="text"
+            name="name"
+            placeholder="Location name (e.g. Library, Cafeteria)"
+            required
+          />
+          <Input
+            id="description"
+            type="text"
+            name="description"
+            placeholder="Description (optional)"
+          />
+          <div>
+            <label htmlFor="color" className="block text-sm font-medium mb-2">
+              Choose a color
+            </label>
+            <input
+              id="color"
+              type="color"
+              name="color"
+              defaultValue="#3B82F6"
+              className="w-full h-10 rounded border border-border cursor-pointer"
               required
             />
-            <div>
-              <label htmlFor="color" className="block text-sm font-medium text-gray-700 mb-2">
-                Choose a color
-              </label>
-              <input
-                id="color"
-                type="color"
-                name="color"
-                defaultValue="#3B82F6"
-                className="w-full h-10 rounded border border-gray-300 cursor-pointer"
-                required
-              />
-            </div>
           </div>
           <input type="hidden" name="groupId" value={groupId} />
+          {error ? <p className="text-red-500">{error}</p> : null}
         </form>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction type="submit" form="addLocationForm">Create Location</AlertDialogAction>
+          <AlertDialogAction type="submit" form="addLocationForm">
+            Create Location
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }

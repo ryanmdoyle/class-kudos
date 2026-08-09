@@ -1,112 +1,137 @@
-import { StudentNav } from "@/app/components/student/StudentNav"
-import { RequestInfo } from "rwsdk/worker"
-import { db } from "@/db";
+import type { RequestInfo } from "rwsdk/worker";
+
+import { assertStudentEnrolled } from "@/auth";
+import { link } from "@/app/shared/links";
+import { Button } from "@/app/components/ui/button";
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/app/components/ui/table"
+} from "@/app/components/ui/table";
+import { PointsHeader } from "@/app/components/student/PointsHeader";
 import { RequestRewardButtons } from "@/app/components/student/RequestRewardButtons";
+import { StudentNav } from "@/app/components/student/StudentNav";
+import { formatShortDate } from "@/app/components/student/format";
 
-export async function StudentRewards({ ctx, params, request }: RequestInfo) {
+import {
+  loadGroupRewards,
+  loadStudentEnrollment,
+  loadStudentRedemptions,
+} from "./data";
 
-  const groupId = params.groupId;
+/**
+ * `/student/:groupId/rewards` — spend kudos, and see what I've asked for.
+ *
+ * Same authorization shape as the group page: `assertStudentEnrolled` first,
+ * then every read scoped to `user.id`. The reward CATALOGUE is group-scoped
+ * rather than user-scoped, which is correct — it is the same list for the whole
+ * class — but the balance and the redemption history are not.
+ */
+export async function StudentRewards({ params, request }: RequestInfo) {
+  const groupId = String(params.groupId ?? "");
+  const user = await assertStudentEnrolled(groupId);
 
-  if (!ctx.user) {
-    throw new Error("User not found in context");
+  const enrollment = await loadStudentEnrollment(user.id, groupId);
+
+  if (!enrollment) {
+    return (
+      <div className="bg-green-background flex min-h-screen w-full flex-col">
+        <StudentNav url={request.url} firstName={user.firstName} />
+        <main className="flex flex-1 items-center justify-center p-4">
+          <div className="neo-container bg-background max-w-md p-8 text-center">
+            <h1 className="text-2xl font-bold">This class isn&apos;t open</h1>
+            <a href={link("/student")} className="mt-6 inline-block">
+              <Button variant="green" className="h-14 px-6 text-lg font-bold">
+                Back to My Classes
+              </Button>
+            </a>
+          </div>
+        </main>
+      </div>
+    );
   }
 
-  const enrollment = await db.enrollment.findUnique({
-    where: {
-      userId_groupId: {
-        userId: ctx.user.id,
-        groupId: groupId,
-      },
-    },
-    include: { user: true }
-  })
-
-  const rewards = await db.reward.findMany({
-    where: { groupId: groupId },
-    orderBy: { cost: "asc" }
-  })
-
-  const redeemed = await db.redeemed.findMany({
-    where: {
-      userId: ctx.user.id,
-      groupId: groupId,
-    },
-    orderBy: { createdAt: "desc" }
-  })
+  const [rewards, redemptions] = await Promise.all([
+    loadGroupRewards(groupId),
+    loadStudentRedemptions(user.id, groupId),
+  ]);
 
   return (
-    <div className="flex flex-col h-screen min-w-screen">
+    <div className="bg-green-background flex min-h-screen w-full flex-col">
+      <StudentNav
+        url={request.url}
+        firstName={user.firstName}
+        currentGroupId={groupId}
+      />
 
-      <StudentNav url={request.url} currentGroup={groupId} />
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-4 p-4">
+        <PointsHeader
+          firstName={user.firstName}
+          lastName={user.lastName}
+          groupName={enrollment.groupName}
+          points={enrollment.points}
+        />
 
-      <div className="flex-1 overflow-auto bg-green-background relative p-4">
-        <div className="w-full min-h-full gap-4 flex flex-col">
-          {/* Student Name & Points */}
-          <div className="p-4 w-[800px] h-[100px] bg-background neo-container flex justify-between items-center m-auto">
-            <h1 className="text-3xl w-full">
-              {enrollment?.user.firstName} {enrollment?.user.lastName}
-            </h1>
-            <div className="flex items-center gap-2 w-full justify-end">
-              <span className="text-4xl text-end">
-                {enrollment?.points}
-              </span>
-              <img src="/images/coin.png" className="h-[65px]" />
-            </div>
-          </div>
-          {/* Buttons to redeem awards */}
-          <div className="p-4 w-[800px] bg-background neo-container flex flex-col overflow-y-auto m-auto">
-            <h2 className="text-2xl w-full mb-4">
-              Request a Reward with Your Kudos
-            </h2>
-            <div className="flex gap-4 w-full flex-wrap overflow-y-auto">
-              {enrollment && <RequestRewardButtons rewards={rewards} enrollment={enrollment} />}
-            </div>
-          </div>
-          {/* Recent Redeemed */}
-          <div className="p-4 w-[800px] min-h-[400px] flex-1 bg-background neo-container flex flex-col overflow-y-auto m-auto">
-            <h2 className="text-2xl w-full mb-4">
-              Recent rewards Requested
-            </h2>
-            <div className="flex gap-2 w-full">
-              {redeemed && (
-                <Table>
-                  <TableCaption className="text-foreground">
-                    That's all!
-                  </TableCaption>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[500px]">Kudo Type</TableHead>
-                      <TableHead className="text-right">Cost</TableHead>
-                      <TableHead className="text-right">Status</TableHead>
-                      <TableHead className="text-right">Date Recieved</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {redeemed.map((redeemed) => (
-                      <TableRow key={redeemed.id} className={redeemed.reviewed === true ? "bg-green-300" : "bg-background"}>
-                        <TableCell className="font-base">{redeemed.name}</TableCell>
-                        <TableCell className="text-right">{redeemed.cost}</TableCell>
-                        <TableCell className="text-right">{redeemed.reviewed === true ? "Approved" : "Pending Approval"}</TableCell>
-                        <TableCell className="text-right">{redeemed.createdAt.toDateString()}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+        <section className="neo-container bg-background p-6">
+          <h2 className="mb-4 text-2xl font-bold">Spend My Kudos</h2>
+          <RequestRewardButtons
+            groupId={groupId}
+            rewards={rewards}
+            points={enrollment.points}
+          />
+        </section>
 
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+        <section className="neo-container bg-background flex flex-1 flex-col p-6">
+          <h2 className="mb-4 text-2xl font-bold">What I&apos;ve Asked For</h2>
+
+          {redemptions.length === 0 ? (
+            <p className="text-base opacity-70">
+              You haven&apos;t asked for a reward yet.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-1/2">Reward</TableHead>
+                  <TableHead className="text-right">Cost</TableHead>
+                  <TableHead className="text-right">Status</TableHead>
+                  <TableHead className="text-right">When</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {redemptions.map((redemption) => (
+                  <TableRow
+                    key={redemption.id}
+                    className={redemption.reviewed ? "bg-chart-2" : undefined}
+                  >
+                    <TableCell className="text-base font-base">
+                      {redemption.name}
+                    </TableCell>
+                    <TableCell className="text-right text-base">
+                      {redemption.cost}
+                    </TableCell>
+                    <TableCell className="text-right text-base font-bold">
+                      {redemption.reviewed ? "Approved" : "Waiting"}
+                    </TableCell>
+                    <TableCell className="text-right text-base">
+                      {formatShortDate(redemption.createdAt)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </section>
+
+        <a href={link("/student/:groupId", { groupId })}>
+          <Button variant="default" className="h-16 w-full text-xl font-bold">
+            Back to my kudos
+          </Button>
+        </a>
+      </main>
     </div>
   );
 }

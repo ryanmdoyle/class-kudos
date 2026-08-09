@@ -1,29 +1,24 @@
-import { initClient } from "rwsdk/client";
+import { initClient, initClientNavigation } from "rwsdk/client";
 import * as Sentry from "@sentry/browser";
 
+// RedwoodSDK uses RSC RPC to emulate client-side navigation.
+// https://docs.rwsdk.com/guides/frontend/client-side-nav/
+const { handleResponse, onHydrated } = initClientNavigation();
+
+const captureReactError =
+  (errorType: "uncaught" | "caught") =>
+  (error: unknown, errorInfo: { componentStack?: string }) => {
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: errorInfo.componentStack } },
+      tags: { errorType },
+    });
+  };
+
 initClient({
+  handleResponse,
+  onHydrated,
   hydrateRootOptions: {
-    onUncaughtError: (error, errorInfo) => {
-      Sentry.captureException(error, {
-        contexts: {
-          react: {
-            componentStack: errorInfo.componentStack,
-            errorBoundary: errorInfo.errorBoundary?.constructor.name,
-          },
-        },
-        tags: { errorType: "uncaught" },
-      });
-    },
-    onCaughtError: (error, errorInfo) => {
-      Sentry.captureException(error, {
-        contexts: {
-          react: {
-            componentStack: errorInfo.componentStack,
-            errorBoundary: errorInfo.errorBoundary?.constructor.name,
-          },
-        },
-        tags: { errorType: "caught" },
-      });
-    },
+    onUncaughtError: captureReactError("uncaught"),
+    onCaughtError: captureReactError("caught"),
   },
 });

@@ -12,7 +12,7 @@ import {
 } from '@/app/components/ui/alert-dialog'
 import { Button } from '@/app/components/ui/button'
 import { useState } from "react";
-import { Name } from "@/app/lib/types";
+import type { Name } from "@/app/components/teacher/types";
 
 export function RandomStudentButton({ names }: { names: Name[] }) {
   const [student, setStudent] = useState<string>("")

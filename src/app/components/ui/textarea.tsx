@@ -1,13 +1,21 @@
+"use client"
+
 import * as React from "react"
 
-import { cn } from "@/app/lib/utils"
+import { cn, focusRing } from "@/app/lib/utils"
 
 function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
   return (
     <textarea
       data-slot="textarea"
       className={cn(
-        "flex min-h-[80px] w-full rounded-base border-2 border-border bg-secondary-background selection:bg-main selection:text-main-foreground px-3 py-2 text-sm font-base text-foreground placeholder:text-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "flex min-h-[80px] w-full rounded-base border-2 border-border bg-secondary-background px-3 py-2",
+        "text-sm font-base text-foreground",
+        "selection:bg-main selection:text-main-foreground",
+        "placeholder:text-muted-foreground",
+        "aria-invalid:border-error aria-invalid:outline-error",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        focusRing,
         className,
       )}
       {...props}
