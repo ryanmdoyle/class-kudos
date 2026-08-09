@@ -1,6 +1,6 @@
 import { ErrorResponse, type RequestInfo } from "rwsdk/worker";
 
-import { db, parseCodeMode } from "@/db";
+import { db } from "@/db";
 import { assertTeacherOwnsGroup } from "@/auth";
 import { GroupDashboard } from "@/app/components/teacher/GroupDashboard";
 import { TeacherNav } from "@/app/components/teacher/TeacherNav";
@@ -72,7 +72,7 @@ export async function Group({ params, request }: RequestInfo) {
             rewardedPoints: group.rewardedPoints,
             // Parse, don't cast: this value drives which branch of the header
             // and the empty-state instructions render.
-            codeMode: parseCodeMode(group.codeMode),
+            codeMode: group.codeMode,
             classCode: sharedCode?.code ?? null,
           }}
           initialEnrollments={enrollments}

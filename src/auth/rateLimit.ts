@@ -3,7 +3,7 @@ import "server-only";
 import { getRequestInfo } from "rwsdk/worker";
 
 import { db } from "@/db";
-import { newId, nowIso } from "@/lib/sqlite";
+import { newId, nowIso } from "@/lib/dbValues";
 
 /**
  * Failed-login throttling.
@@ -81,7 +81,11 @@ export async function isRateLimited(
 ): Promise<boolean> {
   const { max, windowMs } = BUDGETS[scope];
   const key = clientKey(suffix);
-  const cutoff = new Date(Date.now() - windowMs).toISOString();
+  // A real Date against a real `timestamptz`. This used to be an ISO STRING
+  // compared lexicographically, which worked only because ISO-8601 happens to
+  // sort correctly — and would have broken silently the day anything wrote a
+  // timestamp without the `Z` suffix or with unpadded fields.
+  const cutoff = new Date(Date.now() - windowMs);
 
   // Prune globally, not just for this key: any read is a fine moment to drop
   // everyone's expired rows, and it keeps the table bounded.

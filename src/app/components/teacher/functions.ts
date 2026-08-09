@@ -4,7 +4,7 @@ import { nanoid } from "nanoid";
 import { ErrorResponse } from "rwsdk/worker";
 
 import { db } from "@/db";
-import { fromBool, newId, nowIso } from "@/lib/sqlite";
+import { newId, nowIso } from "@/lib/dbValues";
 import {
   assertTeacherOwnsGroup,
   ensureGroupCode,
@@ -150,7 +150,7 @@ export async function addGroup(
             name,
             description: "",
             ownerId: user.id,
-            archived: fromBool(false),
+            archived: false,
             rewardedPoints: 0,
             publicId: nanoid(6),
             codeMode: "shared",
@@ -190,7 +190,7 @@ export async function archiveGroup(groupId: string): Promise<ActionResult> {
 
     await db
       .updateTable("groups")
-      .set({ archived: fromBool(true), updatedAt: nowIso() })
+      .set({ archived: true, updatedAt: nowIso() })
       .where("id", "=", groupId)
       .execute();
 
@@ -283,7 +283,7 @@ export async function addReward(formData: FormData): Promise<ActionResult> {
         id: newId(),
         name,
         cost,
-        responseRequired: fromBool(responseRequired),
+        responseRequired: responseRequired,
         responsePrompt: responseRequired ? responsePrompt : null,
         groupId,
       })
@@ -315,7 +315,7 @@ export async function editReward(formData: FormData): Promise<ActionResult> {
       .set({
         name,
         cost,
-        responseRequired: fromBool(responseRequired),
+        responseRequired: responseRequired,
         responsePrompt: responseRequired ? responsePrompt : null,
       })
       .where("id", "=", id)
@@ -493,12 +493,11 @@ export async function createNewStudents(
 
     const userRows = cleaned.map((student) => ({
       id: newId(),
-      supabaseUserId: null,
       username: null,
       email: null,
       firstName: student.firstName,
       lastName: student.lastName,
-      role: "STUDENT",
+      role: "STUDENT" as const,
       createdAt: timestamp,
       updatedAt: timestamp,
     }));
@@ -645,7 +644,7 @@ export async function approveRedeemed(
 
     await db
       .updateTable("redeemed")
-      .set({ reviewed: fromBool(true), reviewedAt: nowIso() })
+      .set({ reviewed: true, reviewedAt: nowIso() })
       .where("id", "=", redeemedId)
       .execute();
 
@@ -750,7 +749,7 @@ export async function addLocation(formData: FormData): Promise<ActionResult> {
         name,
         description,
         color,
-        isActive: fromBool(true),
+        isActive: true,
         groupId,
         createdAt: timestamp,
         updatedAt: timestamp,
@@ -802,7 +801,7 @@ export async function deleteLocation(id: string): Promise<ActionResult> {
 
     await db
       .updateTable("locations")
-      .set({ isActive: fromBool(false), updatedAt: nowIso() })
+      .set({ isActive: false, updatedAt: nowIso() })
       .where("id", "=", id)
       .execute();
 

@@ -16,14 +16,13 @@ import {
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { deleteReward, editReward } from "@/app/components/teacher/functions";
-import { toBool } from "@/lib/sqlite";
 import type { RewardRow } from "@/db";
 
 export function EditRewardButton({ reward }: { reward: RewardRow }) {
   const [error, setError] = useState<string | null>(null);
   // `responseRequired` is an integer 0/1 in SQLite — converted once, here.
   const [responseRequired, setResponseRequired] = useState(
-    toBool(reward.responseRequired),
+    reward.responseRequired,
   );
 
   const handleSubmit = async (formData: FormData) => {

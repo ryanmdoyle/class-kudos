@@ -1,7 +1,7 @@
 import "server-only";
 
 import { db } from "@/db";
-import { newId, nowIso } from "@/lib/sqlite";
+import { newId, nowIso } from "@/lib/dbValues";
 
 /**
  * The ONE implementation of "this student moved".
@@ -80,7 +80,7 @@ export async function applyLocationChange({
       .where("id", "=", locationId)
       // Containment check #2: you may only travel to your own group's places.
       .where("groupId", "=", groupId)
-      .where("isActive", "=", 1)
+      .where("isActive", "=", true)
       .executeTakeFirst();
 
     if (!row) {

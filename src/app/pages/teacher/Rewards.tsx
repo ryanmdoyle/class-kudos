@@ -1,6 +1,6 @@
 import { ErrorResponse, type RequestInfo } from "rwsdk/worker";
 
-import { db, parseCodeMode } from "@/db";
+import { db } from "@/db";
 import { assertTeacherOwnsGroup } from "@/auth";
 import {
   Table,
@@ -43,10 +43,8 @@ export async function Rewards({ params, request }: RequestInfo) {
       .executeTakeFirst(),
   ]);
 
-  // `reviewed` is a SQLite integer, not a boolean — `r.reviewed === false` (the
-  // legacy test) would be false for every row here.
-  const pending = redemptions.filter((row) => row.reviewed === 0);
-  const reviewed = redemptions.filter((row) => row.reviewed !== 0);
+  const pending = redemptions.filter((row) => !row.reviewed);
+  const reviewed = redemptions.filter((row) => row.reviewed);
 
   return (
     <div className="flex flex-col min-h-screen min-w-screen">
@@ -61,7 +59,7 @@ export async function Rewards({ params, request }: RequestInfo) {
       <div className="flex-1 overflow-auto flex flex-col gap-4 bg-green-background min-w-screen p-8">
         <GroupHeader
           group={group}
-          codeMode={parseCodeMode(group.codeMode)}
+          codeMode={group.codeMode}
           classCode={sharedCode?.code ?? null}
         />
 

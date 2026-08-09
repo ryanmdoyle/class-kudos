@@ -20,7 +20,7 @@ export async function Teacher({ request }: RequestInfo) {
     .selectFrom("groups")
     .select(["id", "name", "rewardedPoints"])
     .where("ownerId", "=", user.id)
-    .where("archived", "=", 0)
+    .where("archived", "=", false)
     .orderBy("name", "asc")
     .execute();
 

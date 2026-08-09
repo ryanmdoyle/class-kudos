@@ -20,18 +20,18 @@ export type Name = {
 /**
  * A reward redemption joined to the student who requested it.
  *
- * `reviewed` is the raw SQLite integer (0/1) — convert with `toBool` from
- * `@/lib/sqlite` at the point of use. `createdAt` / `reviewedAt` are ISO-8601
- * text and are formatted on the CLIENT so they render in the teacher's timezone.
+ * Postgres returns a real `boolean` and real `Date`s — there is no conversion at
+ * the boundary any more. Dates are still formatted on the CLIENT so they render
+ * in the teacher's own timezone rather than the server's.
  */
 export type RedemptionRow = {
   id: string;
   name: string;
   cost: number;
   response: string | null;
-  reviewed: number;
-  reviewedAt: string | null;
-  createdAt: string;
+  reviewed: boolean;
+  reviewedAt: Date | null;
+  createdAt: Date;
   firstName: string;
   lastName: string;
 };
@@ -62,8 +62,8 @@ export type GroupCodesViewModel = {
 /** One travel-log entry joined to its student and location. */
 export type TravelLogRow = {
   id: string;
-  arrivedAt: string;
-  leftAt: string | null;
+  arrivedAt: Date;
+  leftAt: Date | null;
   duration: number | null;
   firstName: string;
   lastName: string;

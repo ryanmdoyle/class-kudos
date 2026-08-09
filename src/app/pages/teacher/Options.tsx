@@ -1,6 +1,6 @@
 import { ErrorResponse, type RequestInfo } from "rwsdk/worker";
 
-import { db, parseCodeMode } from "@/db";
+import { db } from "@/db";
 import { assertTeacherOwnsGroup, getGroupCodes } from "@/auth";
 import {
   Table,
@@ -27,7 +27,6 @@ import {
   countPendingRedemptions,
   loadEnrollmentsWithUser,
 } from "@/app/components/teacher/queries";
-import { toBool } from "@/lib/sqlite";
 import { link } from "@/app/shared/links";
 
 /** Everything about a group that is not "give out kudos": setup and admin. */
@@ -66,7 +65,7 @@ export async function Options({ params, request }: RequestInfo) {
         .where("groupId", "=", groupId)
         // Retired locations are kept so old travel-log rows still resolve to a
         // name, but they are not offered here.
-        .where("isActive", "=", 1)
+        .where("isActive", "=", true)
         .orderBy("name", "asc")
         .execute(),
       getGroupCodes(groupId),
@@ -88,7 +87,7 @@ export async function Options({ params, request }: RequestInfo) {
       <div className="flex flex-col flex-1 gap-4 bg-green-background min-w-screen overflow-auto p-8">
         <GroupHeader
           group={group}
-          codeMode={parseCodeMode(group.codeMode)}
+          codeMode={group.codeMode}
           classCode={codes.groupCode}
         />
 
@@ -151,7 +150,7 @@ export async function Options({ params, request }: RequestInfo) {
                     <TableCell>{reward.cost}</TableCell>
                     <TableCell>
                       {/* integer 0/1 -> boolean, converted at the boundary */}
-                      {toBool(reward.responseRequired) ? "Yes" : "No"}
+                      {reward.responseRequired ? "Yes" : "No"}
                     </TableCell>
                     <TableCell className="text-right p-0">
                       <EditRewardButton reward={reward} />

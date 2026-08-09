@@ -1,7 +1,6 @@
 import "server-only";
 
 import { db } from "@/db";
-import { toBool } from "@/lib/sqlite";
 
 import type {
   StudentEnrollment,
@@ -41,7 +40,7 @@ export async function loadStudentGroups(
       "enrollments.points as points",
     ])
     .where("enrollments.userId", "=", userId)
-    .where("groups.archived", "=", 0)
+    .where("groups.archived", "=", false)
     .orderBy("groups.name", "asc")
     .execute();
 
@@ -74,7 +73,7 @@ export async function loadStudentEnrollment(
     ])
     .where("enrollments.userId", "=", userId)
     .where("enrollments.groupId", "=", groupId)
-    .where("groups.archived", "=", 0)
+    .where("groups.archived", "=", false)
     .executeTakeFirst();
 
   return row ?? null;
@@ -113,7 +112,7 @@ export async function loadGroupRewards(
     name: row.name,
     cost: row.cost,
     // integer 0/1 -> boolean, converted once, here at the query boundary.
-    responseRequired: toBool(row.responseRequired),
+    responseRequired: row.responseRequired,
     responsePrompt: row.responsePrompt,
   }));
 }
@@ -136,7 +135,7 @@ export async function loadStudentRedemptions(
     id: row.id,
     name: row.name,
     cost: row.cost,
-    reviewed: toBool(row.reviewed),
+    reviewed: row.reviewed,
     response: row.response,
     createdAt: row.createdAt,
   }));

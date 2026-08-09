@@ -2,7 +2,7 @@ import "server-only";
 
 import { ErrorResponse, getRequestInfo } from "rwsdk/worker";
 
-import { db, parseUserRole } from "@/db";
+import { db, type UserRole } from "@/db";
 import { sessions } from "@/session/store";
 import type { Session, SessionInput } from "@/session/durableObject";
 import {
@@ -36,7 +36,7 @@ type UserRowProjection = {
   email: string | null;
   firstName: string;
   lastName: string;
-  role: string;
+  role: UserRole;
 };
 
 function toAuthUser(row: UserRowProjection): AuthUser {
@@ -46,7 +46,7 @@ function toAuthUser(row: UserRowProjection): AuthUser {
     email: row.email,
     firstName: row.firstName,
     lastName: row.lastName,
-    role: parseUserRole(row.role),
+    role: row.role,
   };
 }
 
@@ -60,17 +60,16 @@ export async function findAuthUserById(id: string): Promise<AuthUser | null> {
   return row ? toAuthUser(row) : null;
 }
 
-export async function findAuthUserBySupabaseId(
-  supabaseUserId: string,
-): Promise<AuthUser | null> {
-  const row = await db
-    .selectFrom("users")
-    .select(AUTH_USER_COLUMNS)
-    .where("supabaseUserId", "=", supabaseUserId)
-    .executeTakeFirst();
-
-  return row ? toAuthUser(row) : null;
-}
+/**
+ * Look up the local row for a Supabase auth user.
+ *
+ * `users.id` IS the `auth.users.id` for teachers and admins, so this is just
+ * `findAuthUserById` — kept as a named alias because the CALL SITES mean
+ * something specific by it: "I hold a Supabase user id, give me the local row."
+ * That equality is the auth model, and naming it here is where a reader learns
+ * it.
+ */
+export const findAuthUserBySupabaseId = findAuthUserById;
 
 /**
  * Load session + user for the global worker middleware.

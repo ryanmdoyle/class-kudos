@@ -1,7 +1,7 @@
 import "server-only";
 
 import { db } from "@/db";
-import { nowIso } from "@/lib/sqlite";
+import { nowIso } from "@/lib/dbValues";
 import { createAdminSupabaseClient } from "@/lib/supabase.admin";
 import { isSupabaseAdminConfigured } from "@/lib/supabase";
 import {
@@ -42,21 +42,53 @@ export type ProvisionTeacherInput = {
 };
 
 export type ProvisionTeacherResult =
-  | { ok: true; userId: string; supabaseUserId: string | null; created: boolean }
+  | { ok: true; userId: string; created: boolean }
   | { ok: false; error: string };
 
 /**
- * Create (or re-link) a teacher.
+ * Create a teacher.
  *
- * When the service-role key is configured this creates the Supabase auth user
- * and stores its id as `users.supabaseUserId`. When it is NOT configured the
- * local row is still created — with `supabaseUserId = null` — so a developer can
- * seed a usable database before wiring up a Supabase project. Such a teacher
- * CANNOT log in (login requires a `supabaseUserId` match); re-run this once the
- * keys are in place and the existing row is linked in place.
+ * Creates the Supabase auth user and then the local row, using the SAME id for
+ * both — `users.id` IS the `auth.users.id`. There is no link column to keep in
+ * step and therefore no way for the two to disagree.
  *
- * Idempotent: a local row is matched by email and updated rather than duplicated.
+ * SUPABASE IS NOW MANDATORY HERE. This used to fall back to writing a local-only
+ * row with `supabaseUserId = null` so a developer could seed before wiring up a
+ * project; there is no longer an id to write, and that promise was void anyway
+ * once the DATABASE itself moved to Supabase.
+ *
+ * Idempotent: an existing row is matched by email and updated rather than
+ * duplicated.
  */
+
+/**
+ * Find an existing Supabase auth user by email.
+ *
+ * The admin API has `getUserById` but no lookup by address, so this pages
+ * `listUsers`. Fine at this scale — a school has tens of teachers, not
+ * thousands — and it is only reached when `createUser` reports a duplicate.
+ */
+async function findAuthUserIdByEmail(
+  supabase: ReturnType<typeof createAdminSupabaseClient>,
+  email: string,
+): Promise<string | null> {
+  const perPage = 200;
+
+  for (let page = 1; page <= 25; page++) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error || !data?.users?.length) return null;
+
+    const match = data.users.find(
+      (user) => (user.email ?? "").toLowerCase() === email,
+    );
+    if (match) return match.id;
+
+    if (data.users.length < perPage) return null;
+  }
+
+  return null;
+}
+
 export async function provisionTeacher({
   email,
   password,
@@ -81,60 +113,92 @@ export async function provisionTeacher({
     return { ok: false, error: "Password must be at least 8 characters." };
   }
 
-  let supabaseUserId: string | null = null;
+  if (!isSupabaseAdminConfigured()) {
+    return {
+      ok: false,
+      error:
+        "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must both be set. A teacher " +
+        "account is a Supabase auth user; there is nothing meaningful to create " +
+        "without them. See SUPABASE_SETUP.md.",
+    };
+  }
 
-  if (isSupabaseAdminConfigured()) {
-    const supabase = createAdminSupabaseClient();
+  const supabase = createAdminSupabaseClient();
 
-    const { data, error } = await supabase.auth.admin.createUser({
-      email: normalizedEmail,
-      password,
-      // No inbox round-trip: the operator is creating this account deliberately.
-      email_confirm: true,
-    });
+  const { data, error } = await supabase.auth.admin.createUser({
+    email: normalizedEmail,
+    password,
+    // No inbox round-trip: the operator is creating this account deliberately.
+    email_confirm: true,
+  });
 
-    if (error || !data?.user) {
+  let authUserId: string;
+
+  if (error || !data?.user) {
+    // An existing auth user is NOT a failure for an operator tool — provisioning
+    // is meant to be idempotent. Adopt it and reset the password to the one that
+    // was just supplied, which is what "provision this teacher with this
+    // password" has to mean if re-running it is to be useful.
+    const existingAuthId = await findAuthUserIdByEmail(supabase, normalizedEmail);
+
+    if (!existingAuthId) {
       // Operator-facing, not user-facing — being specific here is correct.
       return {
         ok: false,
         error:
-          `Supabase could not create ${normalizedEmail}: ${error?.message ?? "unknown error"}. ` +
-          `If the account already exists, delete it under Authentication -> Users, ` +
-          `or link the existing id manually.`,
+          `Supabase could not create ${normalizedEmail}: ${error?.message ?? "unknown error"}.`,
       };
     }
 
-    supabaseUserId = data.user.id;
+    const { error: updateError } = await supabase.auth.admin.updateUserById(
+      existingAuthId,
+      { password, email_confirm: true },
+    );
+
+    if (updateError) {
+      return {
+        ok: false,
+        error:
+          `${normalizedEmail} already exists in Supabase (${existingAuthId}) but its ` +
+          `password could not be reset: ${updateError.message}`,
+      };
+    }
+
+    console.log(
+      `ℹ️  ${normalizedEmail} already existed in Supabase — adopted ${existingAuthId} and reset its password.`,
+    );
+    authUserId = existingAuthId;
+  } else {
+    authUserId = data.user.id;
   }
-
   const now = nowIso();
-
   const existing = await findUserRowByEmail(normalizedEmail);
 
   if (existing) {
+    // The address already has a local row. It cannot be re-pointed at the new
+    // auth user: `id` is the primary key AND the link, so "relinking" would mean
+    // rewriting every foreign key that references this teacher's groups.
+    if (existing.id !== authUserId) {
+      return {
+        ok: false,
+        error:
+          `${normalizedEmail} already has a local account (${existing.id}) that is ` +
+          `not this Supabase user. Delete one of them and re-run; they cannot be ` +
+          `merged, because groups and kudos reference the id.`,
+      };
+    }
+
     await db
       .updateTable("users")
-      .set({
-        // Never null out an existing link just because the key is missing today.
-        supabaseUserId: supabaseUserId ?? existing.supabaseUserId,
-        role,
-        firstName,
-        lastName,
-        updatedAt: now,
-      })
+      .set({ role, firstName, lastName, updatedAt: now })
       .where("id", "=", existing.id)
       .execute();
 
-    return {
-      ok: true,
-      userId: existing.id,
-      supabaseUserId: supabaseUserId ?? existing.supabaseUserId,
-      created: false,
-    };
+    return { ok: true, userId: existing.id, created: false };
   }
 
   const { userId } = await insertTeacherRow({
-    supabaseUserId,
+    id: authUserId,
     email: normalizedEmail,
     username: normalizedUsername,
     firstName,
@@ -142,5 +206,5 @@ export async function provisionTeacher({
     role,
   });
 
-  return { ok: true, userId, supabaseUserId, created: true };
+  return { ok: true, userId, created: true };
 }

@@ -18,7 +18,7 @@ const MONTHS = [
 ] as const;
 
 /**
- * ISO-8601 -> "Aug 8, 2026".
+ * A Date (or ISO-8601 string) -> "Aug 8, 2026".
  *
  * Formatted from the UTC parts ON PURPOSE. `toLocaleDateString()` would render
  * against the worker's timezone during the server render and the child's
@@ -30,10 +30,12 @@ const MONTHS = [
  * schema does not have; the legacy app had the same behaviour
  * (`Date.toDateString()` on a UTC worker).
  */
-export function formatShortDate(iso: string | null | undefined): string {
-  if (!iso) return "";
+export function formatShortDate(
+  value: Date | string | null | undefined,
+): string {
+  if (!value) return "";
 
-  const date = new Date(iso);
+  const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "";
 
   return `${MONTHS[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;

@@ -37,7 +37,7 @@ export type StudentKudos = {
   name: string;
   value: number;
   /** ISO-8601. */
-  createdAt: string;
+  createdAt: Date;
 };
 
 export type StudentReward = {
@@ -55,5 +55,5 @@ export type StudentRedemption = {
   reviewed: boolean;
   response: string | null;
   /** ISO-8601. */
-  createdAt: string;
+  createdAt: Date;
 };

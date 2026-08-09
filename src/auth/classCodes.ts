@@ -1,7 +1,7 @@
 import "server-only";
 
 import { db, type CodeKind, type CodeMode } from "@/db";
-import { newId, nowIso } from "@/lib/sqlite";
+import { newId, nowIso } from "@/lib/dbValues";
 import {
   GROUP_CODE_LENGTH,
   STUDENT_CODE_LENGTH,

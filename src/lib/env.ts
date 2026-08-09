@@ -15,6 +15,13 @@ import { env as cloudflareEnv } from "cloudflare:workers";
 type AppSecrets = {
   /** Signs the session cookie. rwsdk falls back to a dev key under `vite dev`. */
   AUTH_SECRET_KEY?: string;
+  /**
+   * Supabase Postgres, via the SUPAVISOR POOLER (…pooler.supabase.com:6543).
+   *
+   * NOT the direct connection: `db.<ref>.supabase.co:5432` resolves to IPv6
+   * only, and Cloudflare Workers cannot open outbound IPv6 connections.
+   */
+  DATABASE_URL?: string;
   /** Supabase project URL, e.g. https://abcd.supabase.co */
   SUPABASE_URL?: string;
   /** Supabase anon/public key. Used for password verification + reset email. */

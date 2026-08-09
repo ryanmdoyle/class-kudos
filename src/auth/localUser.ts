@@ -1,7 +1,7 @@
 import "server-only";
 
-import { db, parseUserRole, type UserRole } from "@/db";
-import { newId, nowIso } from "@/lib/sqlite";
+import { db, type UserRole } from "@/db";
+import { newId, nowIso } from "@/lib/dbValues";
 
 /**
  * Local `users` row primitives, shared by the operator path (`@/auth/provision`)
@@ -22,8 +22,7 @@ import { newId, nowIso } from "@/lib/sqlite";
 
 export type UserRow = {
   id: string;
-  role: string;
-  supabaseUserId: string | null;
+  role: UserRole;
   email: string | null;
   firstName: string;
   lastName: string;
@@ -52,15 +51,22 @@ export function normalizeName(raw: unknown, fallback = ""): string {
 export async function findUserRowByEmail(email: string): Promise<UserRow | null> {
   const row = await db
     .selectFrom("users")
-    .select(["id", "role", "supabaseUserId", "email", "firstName", "lastName"])
+    .select(["id", "role", "email", "firstName", "lastName"])
     .where("email", "=", normalizeEmail(email))
     .executeTakeFirst();
 
   return row ?? null;
 }
 
+/**
+ * Insert a teacher/admin row.
+ *
+ * `id` is REQUIRED and must be the Supabase `auth.users.id`. That equality is
+ * the whole auth model: there is no separate link column, so a teacher's local
+ * row and their Supabase user cannot drift apart or point at each other wrongly.
+ */
 export async function insertTeacherRow(input: {
-  supabaseUserId: string | null;
+  id: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -69,49 +75,37 @@ export async function insertTeacherRow(input: {
 }): Promise<{ userId: string }> {
   const now = nowIso();
   const email = normalizeEmail(input.email);
-  const userId = newId();
 
   const values = {
-    id: userId,
-    supabaseUserId: input.supabaseUserId,
+    id: input.id,
     email,
     firstName: input.firstName,
     lastName: input.lastName,
     role: input.role ?? "TEACHER",
     createdAt: now,
     updatedAt: now,
-  };
+  } as const;
 
   try {
     await db
       .insertInto("users")
       .values({
         ...values,
-        username: input.username === undefined ? defaultUsernameFor(email) : input.username,
-      } as never)
+        username:
+          input.username === undefined ? defaultUsernameFor(email) : input.username,
+      })
       .execute();
   } catch {
-    // `username` is UNIQUE but nullable, and SQLite treats NULLs as distinct.
-    // A collision on the derived username must not block account creation —
-    // username is no longer a credential, only a display leftover.
+    // `username` is UNIQUE but nullable, and Postgres — like SQLite — treats
+    // NULLs as distinct in a unique index. A collision on the derived username
+    // must not block account creation; username is no longer a credential.
     await db
       .insertInto("users")
-      .values({ ...values, username: null } as never)
+      .values({ ...values, username: null })
       .execute();
   }
 
-  return { userId };
-}
-
-export async function linkSupabaseUserId(
-  userId: string,
-  supabaseUserId: string,
-): Promise<void> {
-  await db
-    .updateTable("users")
-    .set({ supabaseUserId, updatedAt: nowIso() })
-    .where("id", "=", userId)
-    .execute();
+  return { userId: input.id };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -119,76 +113,68 @@ export async function linkSupabaseUserId(
 /* -------------------------------------------------------------------------- */
 
 export type AdoptResult =
-  | { status: "created" | "linked" | "already"; userId: string; role: UserRole }
-  | {
-      status: "conflict";
-      reason: "linked-elsewhere" | "student-row" | "admin-row";
-    };
+  | { status: "created" | "already"; userId: string; role: UserRole }
+  | { status: "conflict"; reason: "student-row" | "email-taken" };
 
 /**
  * Turn a MAILBOX-VERIFIED Supabase user into a local teacher row.
  *
  * Only ever called after `verifyOtp` has succeeded, so the caller has proved
- * control of the address. That is the same standard `completePasswordReset`
- * already trusts.
+ * control of the address — the same standard `completePasswordReset` trusts.
  *
- * Every refusal below exists because this path is reachable by anyone on the
- * internet. Self-signup must never overwrite a role, re-point an existing
- * Supabase link, or promote a student.
+ * THIS USED TO BE A SIX-CASE MATRIX. It collapsed when `users.id` became the
+ * `auth.users.id` rather than a nullable `supabaseUserId` pointing at a separate
+ * system. Three of those cases are now UNREPRESENTABLE rather than merely
+ * checked:
+ *
+ *   - "linked to a DIFFERENT Supabase account" cannot occur: the id IS the link,
+ *     so a row either is this user's or belongs to a different id entirely.
+ *   - "already linked to this account" is a primary-key conflict, handled by the
+ *     database rather than a branch.
+ *   - "an unlinked TEACHER row to adopt" cannot exist, because a teacher row is
+ *     only ever created with an auth id in hand.
+ *
+ * That also retired the heal-on-login idea: there is no longer a state where a
+ * confirmed Supabase user has no reachable local row.
  */
 export async function adoptConfirmedTeacher(input: {
-  supabaseUserId: string;
+  authUserId: string;
   email: string;
   firstName: string;
   lastName: string;
 }): Promise<AdoptResult> {
   const email = normalizeEmail(input.email);
-  const existing = await findUserRowByEmail(email);
 
-  if (!existing) {
-    const { userId } = await insertTeacherRow({
-      supabaseUserId: input.supabaseUserId,
-      email,
-      firstName: input.firstName,
-      lastName: input.lastName,
-    });
-    return { status: "created", userId, role: "TEACHER" };
-  }
+  // Keyed on the auth id, which is now the primary key.
+  const own = await db
+    .selectFrom("users")
+    .select(["id", "role"])
+    .where("id", "=", input.authUserId)
+    .executeTakeFirst();
 
-  if (existing.role === "STUDENT") {
-    // A student and a teacher sharing one address would collapse two very
-    // different privilege levels onto one row. Never.
-    return { status: "conflict", reason: "student-row" };
-  }
-
-  if (existing.supabaseUserId === input.supabaseUserId) {
+  if (own) {
     // Idempotent: a double-submitted confirmation lands here.
+    return { status: "already", userId: own.id, role: own.role };
+  }
+
+  const byEmail = await findUserRowByEmail(email);
+
+  if (byEmail) {
+    // Same address, different id. A student sharing a teacher's address would
+    // collapse two very different privilege levels onto one row; any other
+    // holder means the unique email constraint would reject the insert anyway.
     return {
-      status: "already",
-      userId: existing.id,
-      role: parseUserRole(existing.role),
+      status: "conflict",
+      reason: byEmail.role === "STUDENT" ? "student-row" : "email-taken",
     };
   }
 
-  if (existing.supabaseUserId !== null) {
-    // Already bound to a DIFFERENT Supabase account. Re-pointing it from an
-    // anonymous path would be an account takeover.
-    return { status: "conflict", reason: "linked-elsewhere" };
-  }
+  const { userId } = await insertTeacherRow({
+    id: input.authUserId,
+    email,
+    firstName: input.firstName,
+    lastName: input.lastName,
+  });
 
-  if (existing.role === "ADMIN") {
-    // Claiming an unlinked ADMIN row from the public form would escalate
-    // privilege. Operator territory — use `npm run provision-teacher`.
-    return { status: "conflict", reason: "admin-row" };
-  }
-
-  // Unlinked TEACHER row: the recovery path for a row created by
-  // `provisionTeacher` before Supabase keys were configured. Link it in place
-  // and keep its existing role and names.
-  await linkSupabaseUserId(existing.id, input.supabaseUserId);
-  return {
-    status: "linked",
-    userId: existing.id,
-    role: parseUserRole(existing.role),
-  };
+  return { status: "created", userId, role: "TEACHER" };
 }

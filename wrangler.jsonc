@@ -17,17 +17,17 @@
     "enabled": true
   },
 
-  // Both the application database and the session store are SQLite-backed
-  // Durable Objects. There is no D1 database any more: `rwsdk/db` runs its own
-  // migrations inside the DATABASE Durable Object at first use (dev-server
-  // startup and the first production request), NOT via
-  // `wrangler d1 migrations apply`.
+  // Sessions are a SQLite-backed Durable Object — small, hot, and worth keeping
+  // co-located with the edge rather than a network round trip away.
+  //
+  // Application data is NOT here any more. It lives in Supabase Postgres,
+  // reached over DATABASE_URL via the Supavisor pooler, and its schema is
+  // applied with `supabase db push` rather than migrating itself at first use.
+  // The `v1` migration tag is retained: Cloudflare migration tags are an
+  // append-only history, so the original entry stays and `v2` records the
+  // removal of the Database class.
   "durable_objects": {
     "bindings": [
-      {
-        "name": "DATABASE",
-        "class_name": "Database"
-      },
       {
         "name": "SESSION_DURABLE_OBJECT",
         "class_name": "SessionDurableObject"
@@ -39,6 +39,10 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["Database", "SessionDurableObject"]
+    },
+    {
+      "tag": "v2",
+      "deleted_classes": ["Database"]
     }
   ],
 

@@ -21,14 +21,20 @@ import type { TravelLogRow } from "@/app/components/teacher/types";
  * because a bare "2026-01-01 09:00:00" is parsed as LOCAL time and would shift
  * the whole log by the teacher's UTC offset.
  */
-function parseIso(value: string): Date {
+/**
+ * Postgres returns a Date. The string branch stays because this is a client
+ * component: a bare ISO string without a zone is assumed UTC, which is how the
+ * database always stored it.
+ */
+function parseIso(value: Date | string): Date {
+  if (value instanceof Date) return value;
   const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value);
   return new Date(hasZone ? value : `${value}Z`);
 }
 
-function formatTime(value: string): string {
+function formatTime(value: Date | string): string {
   const date = parseIso(value);
-  if (Number.isNaN(date.getTime())) return value;
+  if (Number.isNaN(date.getTime())) return String(value);
   return date.toLocaleString("en-US", {
     month: "short",
     day: "numeric",

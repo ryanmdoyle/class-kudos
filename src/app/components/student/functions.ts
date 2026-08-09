@@ -2,7 +2,7 @@
 
 import { assertStudentEnrolled, requireStudent } from "@/auth";
 import { db } from "@/db";
-import { newId, nowIso, toBool } from "@/lib/sqlite";
+import { newId, nowIso } from "@/lib/dbValues";
 import {
   applyLocationChange,
   type LocationChangeResult,
@@ -77,7 +77,7 @@ export async function requestReward(input: {
 
   const response = (input.response ?? "").trim().slice(0, 1000);
 
-  if (toBool(reward.responseRequired) && response.length === 0) {
+  if (reward.responseRequired && response.length === 0) {
     return {
       ok: false,
       error:
@@ -115,7 +115,7 @@ export async function requestReward(input: {
         name: reward.name,
         cost: reward.cost,
         response: response.length > 0 ? response : null,
-        reviewed: 0,
+        reviewed: false,
         reviewedAt: null,
         createdAt: nowIso(),
       })

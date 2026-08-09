@@ -110,7 +110,7 @@ export async function countPendingRedemptions(
     .selectFrom("redeemed")
     .select((eb) => eb.fn.count<number>("id").as("pending"))
     .where("groupId", "=", groupId)
-    .where("reviewed", "=", 0)
+    .where("reviewed", "=", false)
     .executeTakeFirst();
 
   return Number(row?.pending ?? 0);

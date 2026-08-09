@@ -3,7 +3,7 @@ import "server-only";
 import { getRequestInfo } from "rwsdk/worker";
 
 import { db, type CodeKind, type CodeMode } from "@/db";
-import { nowIso } from "@/lib/sqlite";
+import { nowIso } from "@/lib/dbValues";
 import {
   constantTimeEqualString,
   hashCode,
@@ -204,7 +204,7 @@ export async function resolveCode(
     return null;
   }
 
-  if (row.archived === 1) {
+  if (row.archived) {
     return null;
   }
 
@@ -359,7 +359,7 @@ export async function getPendingGroupRoster(): Promise<PendingGroup | null> {
     .where("id", "=", session.pendingGroupId)
     .executeTakeFirst();
 
-  if (!group || group.archived === 1 || group.codeMode !== "shared") {
+  if (!group || group.archived || group.codeMode !== "shared") {
     return null;
   }
 
@@ -403,7 +403,7 @@ export async function completeGroupCodeLogin(
     .select(["users.id as id", "users.role as role"])
     .where("enrollments.groupId", "=", groupId)
     .where("enrollments.userId", "=", studentUserId)
-    .where("groups.archived", "=", 0)
+    .where("groups.archived", "=", false)
     .where("groups.codeMode", "=", "shared")
     .executeTakeFirst();
 
@@ -439,15 +439,14 @@ export async function requestPasswordReset(
 
   const user = await db
     .selectFrom("users")
-    .select(["id", "role", "supabaseUserId"])
+    .select(["id", "role"])
     .where("email", "=", email)
     .executeTakeFirst();
 
-  if (
-    !user ||
-    !user.supabaseUserId ||
-    (user.role !== "TEACHER" && user.role !== "ADMIN")
-  ) {
+  // A teacher row can only exist with an auth user behind it — its `id` IS the
+  // auth id — so existence is the whole check. There is no longer an
+  // "unlinked local row" state to exclude.
+  if (!user || (user.role !== "TEACHER" && user.role !== "ADMIN")) {
     return { ok: true };
   }
 
@@ -624,7 +623,7 @@ export async function signupTeacher(
     // nothing, so send a password-reset link instead: it is truthful, it is the
     // thing they actually need, and it grants nothing the login page's own
     // "forgot password" form doesn't already grant.
-    if (existing && existing.supabaseUserId && existing.role !== "STUDENT") {
+    if (existing && existing.role !== "STUDENT") {
       try {
         await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${getAppOrigin(request)}${PASSWORD_RESET_PATH}`,
@@ -740,7 +739,7 @@ export async function completeTeacherSignup(
   const lastName = normalizeName(metadata.last_name);
 
   const adopted = await adoptConfirmedTeacher({
-    supabaseUserId: data.user.id,
+    authUserId: data.user.id,
     email,
     firstName,
     lastName,

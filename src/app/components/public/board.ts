@@ -31,7 +31,7 @@ export async function findPublicGroupByPublicId(publicId: string) {
 
   // An archived class is a retired class. Its board stops responding rather
   // than silently accepting travel updates nobody is watching.
-  if (!group || group.archived === 1) return null;
+  if (!group || group.archived) return null;
 
   return { id: group.id, name: group.name, publicId: group.publicId };
 }
@@ -43,7 +43,7 @@ export async function loadGroupLocations(
     .selectFrom("locations")
     .select(["id", "name", "color"])
     .where("groupId", "=", groupId)
-    .where("isActive", "=", 1)
+    .where("isActive", "=", true)
     .orderBy("name", "asc")
     .execute();
 }

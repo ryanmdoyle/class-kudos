@@ -12,15 +12,20 @@ import { Login } from "@/app/pages/user/Login";
 import { userRoutes } from "@/app/pages/user/routes";
 import { legalRoutes } from "@/app/pages/legal/routes";
 import { publicRoutes } from "@/app/pages/public/routes";
+import { closeRequestDb } from "@/db";
 import { studentRoutes } from "@/app/pages/student/routes";
 import { teacherRoutes } from "@/app/pages/teacher/routes";
 
 /**
  * Durable Object classes MUST be exported from the worker entry point, or
- * workerd cannot instantiate them. Both are declared in wrangler.jsonc under
+ * workerd cannot instantiate them. Declared in wrangler.jsonc under
  * `durable_objects.bindings` and `migrations[].new_sqlite_classes`.
+ *
+ * The `Database` DO is gone: application data now lives in Supabase Postgres.
+ * Sessions remain a Durable Object, which is the right home for them — they are
+ * small, hot, and want to be co-located with the edge rather than a round trip
+ * away.
  */
-export { Database } from "@/db/durableObject";
 export { SessionDurableObject } from "@/session/durableObject";
 
 /**
@@ -169,5 +174,24 @@ export default Sentry.withSentry(
     const dsn = (env as unknown as { SENTRY_DSN?: string }).SENTRY_DSN;
     return dsn ? { dsn, sendDefaultPii: true } : undefined;
   },
-  { fetch: app.fetch },
+  {
+    /**
+     * Close this request's Postgres connection once the response is done.
+     *
+     * The runtime would tear the socket down anyway when the request ends —
+     * that is the same ownership rule that forces `db` to be request-scoped in
+     * the first place — but closing deliberately lets Supavisor reclaim the
+     * slot instead of seeing an abrupt disconnect. `waitUntil` keeps the
+     * isolate alive for the close WITHOUT delaying the response.
+     *
+     * `finally`, not `then`: a failed request still holds a connection.
+     */
+    async fetch(request: Request, env: Env, cf: ExecutionContext) {
+      try {
+        return await app.fetch(request, env, cf);
+      } finally {
+        closeRequestDb(request, cf);
+      }
+    },
+  },
 ) as unknown as typeof app;
