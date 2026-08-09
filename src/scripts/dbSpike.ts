@@ -91,11 +91,9 @@ export default defineScript(async ({ env }) => {
     // ---- 1. Can we connect and round-trip at all? ------------------------
     try {
       const result = await sql<{ one: number }>`select 1 as one`.execute(db);
-      record(
-        "connect + round-trip",
-        result.rows[0]?.one === 1,
-        `pg ${pg.native ? "native" : "js"} via pooler`,
-      );
+      // Deliberately NOT reporting `pg.native` here — reading that property is
+      // a getter that lazily requires pg-native, which is stubbed to throw.
+      record("connect + round-trip", result.rows[0]?.one === 1, "via pooler");
     } catch (error) {
       record("connect + round-trip", false, String(error));
       console.error(
