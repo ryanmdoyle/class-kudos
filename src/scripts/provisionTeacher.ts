@@ -1,0 +1,84 @@
+import { defineScript } from "rwsdk/worker";
+
+import { provisionTeacher } from "@/auth/provision";
+import { isSupabaseAdminConfigured } from "@/lib/supabase";
+
+/**
+ * Create ONE teacher account and nothing else.
+ *
+ * This is the production-safe counterpart to `npm run seed`. Seeding also
+ * creates the "Period 1" demo group, five fictional students, kudos types,
+ * rewards and locations — fine for a fresh dev database, wrong for a live one.
+ * Use this script to create your real account without injecting demo data.
+ *
+ * Self-signup is disabled in Supabase (see SUPABASE_SETUP.md), so this and the
+ * seed script are the only ways a teacher account comes into existence.
+ *
+ * Credentials are read from `.dev.vars` (which is gitignored) rather than from
+ * argv, so the password never lands in your shell history. `rw-scripts
+ * worker-run` executes inside workerd and receives no command-line arguments.
+ *
+ * Usage — add to .dev.vars, run, then DELETE the two lines again:
+ *
+ *   TEACHER_EMAIL=you@school.org
+ *   TEACHER_PASSWORD=a-real-password
+ *   TEACHER_FIRST_NAME=Ryan       # optional
+ *   TEACHER_LAST_NAME=Doyle       # optional
+ *
+ *   npm run provision-teacher
+ *
+ * Idempotent: re-running with the same email updates the existing row instead
+ * of duplicating it. If you run it before Supabase is configured it creates a
+ * local-only row that CANNOT log in; re-run it once the keys are in place and
+ * the existing row is linked in place.
+ */
+
+export default defineScript(async ({ env }) => {
+  const secrets = env as unknown as Record<string, string | undefined>;
+
+  const email = secrets.TEACHER_EMAIL?.trim();
+  const password = secrets.TEACHER_PASSWORD;
+  const firstName = secrets.TEACHER_FIRST_NAME?.trim() || "Teacher";
+  const lastName = secrets.TEACHER_LAST_NAME?.trim() || "";
+
+  if (!email || !password) {
+    console.error(
+      "\n❌ TEACHER_EMAIL and TEACHER_PASSWORD must both be set in .dev.vars.\n\n" +
+        "   Add them, run `npm run provision-teacher`, then remove them again:\n\n" +
+        "     TEACHER_EMAIL=you@school.org\n" +
+        "     TEACHER_PASSWORD=a-real-password\n",
+    );
+    return;
+  }
+
+  if (!isSupabaseAdminConfigured()) {
+    console.warn(
+      "\n⚠️  SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not set.\n" +
+        "    A LOCAL-ONLY teacher row will be written with supabaseUserId = null.\n" +
+        "    That teacher CANNOT log in — login requires a Supabase user to match.\n" +
+        "    Configure the keys and re-run this script to link the row in place.\n" +
+        "    See SUPABASE_SETUP.md.\n",
+    );
+  }
+
+  const result = await provisionTeacher({ email, password, firstName, lastName });
+
+  if (!result.ok) {
+    console.error(`\n❌ ${result.error}\n`);
+    return;
+  }
+
+  console.log(
+    `\n✅ Teacher ${result.created ? "created" : "updated"}: ${email}\n` +
+      `   local user id: ${result.userId}\n` +
+      `   supabaseUserId: ${result.supabaseUserId ?? "null — cannot log in yet"}\n`,
+  );
+
+  console.log(
+    result.supabaseUserId
+      ? "   You can now sign in at / with this email and password.\n"
+      : "   Configure Supabase, then re-run this script before trying to sign in.\n",
+  );
+
+  console.log("🧹 Remember to remove TEACHER_EMAIL / TEACHER_PASSWORD from .dev.vars.\n");
+});

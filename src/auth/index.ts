@@ -18,6 +18,11 @@ import {
   rotateSession,
 } from "@/auth/context";
 import { dashboardPathForRole, isTeacherRole } from "@/auth/types";
+import {
+  isRateLimited,
+  recordFailedAttempt,
+  RATE_LIMITED_MESSAGE,
+} from "@/auth/rateLimit";
 
 export * from "@/auth/types";
 export * from "@/auth/context";
@@ -83,6 +88,12 @@ export async function loginTeacher({
     return { ok: false, error: TEACHER_LOGIN_FAILED };
   }
 
+  // Keyed per IP+email so one attacker cannot exhaust an unrelated teacher's
+  // budget from the same school IP.
+  if (await isRateLimited("teacher-password", normalizedEmail)) {
+    return { ok: false, error: RATE_LIMITED_MESSAGE };
+  }
+
   const supabase = createAnonSupabaseClient();
 
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -93,6 +104,7 @@ export async function loginTeacher({
   // Never differentiate. "Invalid login credentials", "Email not confirmed" and
   // rate-limit errors all collapse to the same string.
   if (error || !data?.user) {
+    await recordFailedAttempt("teacher-password", normalizedEmail);
     return { ok: false, error: TEACHER_LOGIN_FAILED };
   }
 
@@ -101,6 +113,7 @@ export async function loginTeacher({
   // Authenticated with Supabase but not provisioned for THIS app. Same message:
   // that a Supabase account exists is not something we should confirm.
   if (!user || !isTeacherRole(user.role)) {
+    await recordFailedAttempt("teacher-password", normalizedEmail);
     return { ok: false, error: TEACHER_LOGIN_FAILED };
   }
 
@@ -256,9 +269,14 @@ async function listGroupStudents(groupId: string): Promise<RosterStudent[]> {
 export async function loginStudentByCode(
   rawCode: string,
 ): Promise<StudentLoginResult> {
+  if (await isRateLimited("student-code")) {
+    return { ok: false, error: RATE_LIMITED_MESSAGE };
+  }
+
   const match = await resolveCode(rawCode);
 
   if (!match) {
+    await recordFailedAttempt("student-code");
     return { ok: false, error: CODE_LOGIN_FAILED };
   }
 
@@ -266,6 +284,7 @@ export async function loginStudentByCode(
     const user = await findAuthUserById(match.userId);
 
     if (!user || user.role !== "STUDENT") {
+      await recordFailedAttempt("student-code");
       return { ok: false, error: CODE_LOGIN_FAILED };
     }
 
@@ -277,6 +296,7 @@ export async function loginStudentByCode(
   const students = await listGroupStudents(match.groupId);
 
   if (students.length === 0) {
+    await recordFailedAttempt("student-code");
     return { ok: false, error: CODE_LOGIN_FAILED };
   }
 

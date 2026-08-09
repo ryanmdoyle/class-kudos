@@ -423,4 +423,43 @@ export const migrations = {
       await db.schema.dropTable("users").ifExists().execute();
     },
   },
+
+  // --------------------------------------------------------------------------
+  // 002 — failed-login throttling.
+  //
+  // Only FAILURES are recorded. That distinction is load-bearing: a school NATs
+  // an entire class behind one public IP, so counting successes would let 30
+  // students logging in at once exhaust a per-IP budget and lock out the room.
+  // Rows are pruned on read, so this table stays small without a cron.
+  // --------------------------------------------------------------------------
+  "002_login_attempts": {
+    async up(db) {
+      const tables = [
+        await db.schema
+          .createTable("loginAttempts")
+          .addColumn("id", "text", (col) => col.primaryKey())
+          // "student-code" | "teacher-password" — separate budgets, since the
+          // two have very different legitimate traffic shapes.
+          .addColumn("scope", "text", (col) => col.notNull())
+          // Client IP, optionally suffixed with an identifier (e.g. the email
+          // for teacher login) so one attacker cannot spend another user's budget.
+          .addColumn("key", "text", (col) => col.notNull())
+          .addColumn("createdAt", "text", (col) => col.notNull())
+          .execute(),
+      ];
+
+      await db.schema
+        .createIndex("idx_loginAttempts_scope_key_createdAt")
+        .on("loginAttempts")
+        .columns(["scope", "key", "createdAt"])
+        .execute();
+
+      // DO NOT REMOVE OR REORDER: the schema type is derived from this value.
+      return tables;
+    },
+
+    async down(db) {
+      await db.schema.dropTable("loginAttempts").ifExists().execute();
+    },
+  },
 } satisfies Migrations;

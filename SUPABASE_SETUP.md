@@ -25,7 +25,8 @@ row.
 
 - **Allow new users to sign up**: **OFF**.
 
-Teachers are created by an operator running the seed script with the service-role key.
+Teachers are created by an operator running `npm run provision-teacher` (step 7) with the
+secret / service-role key.
 With signups on, anyone could create a Supabase account. It wouldn't get them into the app
 (no local `users` row means login is rejected with the same generic message as a wrong
 password) but it is noise you don't want.
@@ -47,13 +48,33 @@ reset link to the Site URL instead.
 
 ## 4. Copy the keys
 
-**Project Settings → API**
+**Settings → API Keys** — note this is "API Keys", not the older "API" page.
 
-| Dashboard label      | Env var                     | Secret?                                              |
-| -------------------- | --------------------------- | ---------------------------------------------------- |
-| Project URL          | `SUPABASE_URL`              | no                                                    |
-| `anon` / `public` key | `SUPABASE_ANON_KEY`         | no (safe in a browser — we still only use it server-side) |
-| `service_role` key   | `SUPABASE_SERVICE_ROLE_KEY` | **YES — never commit, never send to a browser**       |
+That screen has TWO TABS, which is the thing that trips people up:
+
+- **API Keys** — the modern keys, `sb_publishable_…` and `sb_secret_…`
+- **Legacy API Keys** — the original JWT-format `anon` and `service_role` keys
+
+Use the modern ones. Legacy keys still work but are deprecated by the end of 2026.
+The env var names below do not change — only which value you paste into them.
+
+| Where                             | Paste into                  | Secret?                                                   |
+| --------------------------------- | --------------------------- | --------------------------------------------------------- |
+| Connect dialog → Project URL      | `SUPABASE_URL`              | no                                                        |
+| API Keys tab → **publishable** key | `SUPABASE_ANON_KEY`         | no (safe in a browser — we still only use it server-side)  |
+| API Keys tab → **secret** key      | `SUPABASE_SERVICE_ROLE_KEY` | **YES — never commit, never send to a browser**            |
+
+The publishable key carries the same low privileges as the old `anon` key, and the secret
+key the same elevated access as `service_role`, so nothing about the design below changes.
+
+The **Project URL** is easiest to get from the **Connect** dialog at the top of the project
+dashboard, which shows the URL and the matching key together. It is just
+`https://<project-ref>.supabase.co`.
+
+> **If provisioning fails with a JWT-related error:** `sb_secret_…` keys are deliberately
+> NOT JWTs, and older tooling rejects them. This project pins
+> `@supabase/supabase-js@2.112.2`, which handles them — but if you hit that error, fall back
+> to the `service_role` key from the **Legacy API Keys** tab. It goes in the same env var.
 
 The `service_role` key bypasses every authorization rule in the project. In this codebase it
 is confined to `src/lib/supabase.admin.ts`, which begins with `import "server-only"` and is
@@ -89,19 +110,32 @@ npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 
 ## 7. Create the first teacher
 
-Teacher accounts are never self-service.
+Teacher accounts are never self-service. There are two ways in, and the difference matters.
+
+**For your real account — no demo data:**
+
+```sh
+# add to .dev.vars, run, then DELETE these two lines again
+TEACHER_EMAIL=you@school.org
+TEACHER_PASSWORD=a-real-password
+
+npm run provision-teacher
+```
+
+This creates one teacher and nothing else. Credentials come from `.dev.vars` rather than
+the command line so the password stays out of your shell history. Use this one against
+anything you care about.
+
+**For a throwaway dev database — teacher plus demo data:**
 
 ```sh
 npm run seed
-# or: npm run worker:run ./src/scripts/seed.ts
-```
-
-That calls `provisionTeacher()`, which creates the Supabase auth user **and** the local
-`users` row carrying `supabaseUserId`. Override the defaults with env vars:
-
-```sh
 SEED_TEACHER_EMAIL=me@example.com SEED_TEACHER_PASSWORD='a-real-password' npm run seed
 ```
+
+`npm run seed` also creates the "Period 1" group, five fictional students, kudos types,
+rewards and locations. Do not run it against production unless you want Ada Lovelace in
+your database.
 
 If the Supabase keys are absent the script still seeds a group, students and class codes,
 and creates the teacher row with `supabaseUserId = null` — clearly logged. That teacher

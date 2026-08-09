@@ -49,12 +49,35 @@
   --muted: oklch(88.5% 0.022 300.19);
   --muted-foreground: oklch(40% 0.02 300.19);
 
+  /* Brand accents. These are NOT a data palette — --chart-2 and --chart-3 are
+     load-bearing UI colours (success surfaces, warning badges, the neutral
+     button). Do not retune them for a chart's benefit. */
   --chart-1: #A985FF;
   --chart-2: #00D696;
   --chart-3: #FACC00;
   --chart-4: #FF4D50;
   --chart-5: #0099FF;
   --error: #FF4D50;
+
+  /* Categorical DATA palette — used only to paint chart marks.
+     Assigned in fixed order and never cycled: an 8th series folds into
+     --cat-other rather than reusing --cat-1.
+
+     Validated (light, surface #EAE0F7): lightness band, chroma floor,
+     colour-vision separation, normal-vision floor and >=3:1 contrast all pass.
+     The ORDER is part of the validation — the four hues that collapse together
+     under deuteranopia (red, green, gold, orange) are deliberately separated by
+     the three cool ones. Re-run the validator before changing a value or a
+     position. */
+  --cat-1: #C62828; /* red    */
+  --cat-2: #5B3FD9; /* violet */
+  --cat-3: #007A5E; /* green  */
+  --cat-4: #0B6BC4; /* blue   */
+  --cat-5: #8A6A00; /* gold   */
+  --cat-6: #B0338F; /* magenta*/
+  --cat-7: #D2600A; /* orange */
+  /* Deliberately recessive: "everyone else" is context, not a competing series. */
+  --cat-other: #5F5B6B;
 }
 
 .dark {
@@ -77,6 +100,18 @@
   --chart-4: #FF4D50;
   --chart-5: #0099FF;
   --error: #FF4D50;
+
+  /* Dark steps are CHOSEN, not a flip of the light ones: the dark surface needs
+     a different lightness band entirely. Same hue in each slot so the legend
+     stays stable across modes. Validated against surface #3A2E5C. */
+  --cat-1: #E05252; /* red    */
+  --cat-2: #8B6FE8; /* violet */
+  --cat-3: #12A47A; /* green  */
+  --cat-4: #3B8FE0; /* blue   */
+  --cat-5: #B08512; /* gold   */
+  --cat-6: #C95AA8; /* magenta*/
+  --cat-7: #D0701C; /* orange */
+  --cat-other: #9A96A8;
 }
 
 @theme inline {
