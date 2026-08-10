@@ -51,6 +51,17 @@ function toAuthUser(row: UserRowProjection): AuthUser {
   };
 }
 
+/**
+ * Look up a local user row by id.
+ *
+ * Worth knowing what that id IS, because it is the whole auth model: for
+ * TEACHERS and ADMINS, `users.id` is the Supabase `auth.users.id`. So a caller
+ * holding a Supabase user id — after `signInWithPassword`, `verifyOtp` or
+ * `setSession` — passes it straight in here. There is no join column to
+ * translate through and therefore no way for the two systems to disagree.
+ *
+ * STUDENTS have no Supabase counterpart at all; their id is a plain uuid.
+ */
 export async function findAuthUserById(id: string): Promise<AuthUser | null> {
   const row = await db
     .selectFrom("users")
@@ -60,17 +71,6 @@ export async function findAuthUserById(id: string): Promise<AuthUser | null> {
 
   return row ? toAuthUser(row) : null;
 }
-
-/**
- * Look up the local row for a Supabase auth user.
- *
- * `users.id` IS the `auth.users.id` for teachers and admins, so this is just
- * `findAuthUserById` — kept as a named alias because the CALL SITES mean
- * something specific by it: "I hold a Supabase user id, give me the local row."
- * That equality is the auth model, and naming it here is where a reader learns
- * it.
- */
-export const findAuthUserBySupabaseId = findAuthUserById;
 
 /**
  * Load session + user for the global worker middleware.

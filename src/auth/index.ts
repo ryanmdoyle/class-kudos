@@ -13,7 +13,6 @@ import {
 import { createAnonSupabaseClient, getAppOrigin } from "@/lib/supabase";
 import {
   findAuthUserById,
-  findAuthUserBySupabaseId,
   loadRawSession,
   rotateSession,
 } from "@/auth/context";
@@ -129,7 +128,7 @@ export async function loginTeacher({
     return { ok: false, error: TEACHER_LOGIN_FAILED };
   }
 
-  const user = await findAuthUserBySupabaseId(data.user.id);
+  const user = await findAuthUserById(data.user.id);
 
   // Authenticated with Supabase but not provisioned for THIS app. Same message:
   // that a Supabase account exists is not something we should confirm.
@@ -497,7 +496,7 @@ export async function completePasswordReset(
 
   const supabase = createAnonSupabaseClient();
 
-  let supabaseUserId: string;
+  let authUserId: string;
 
   if ("tokenHash" in input) {
     const { data, error } = await supabase.auth.verifyOtp({
@@ -507,7 +506,7 @@ export async function completePasswordReset(
     if (error || !data?.user) {
       return { ok: false, error: RESET_LINK_INVALID };
     }
-    supabaseUserId = data.user.id;
+    authUserId = data.user.id;
   } else {
     const { data, error } = await supabase.auth.setSession({
       access_token: input.accessToken,
@@ -516,7 +515,7 @@ export async function completePasswordReset(
     if (error || !data?.user) {
       return { ok: false, error: RESET_LINK_INVALID };
     }
-    supabaseUserId = data.user.id;
+    authUserId = data.user.id;
   }
 
   const { error: updateError } = await supabase.auth.updateUser({
@@ -531,7 +530,7 @@ export async function completePasswordReset(
 
   // The recovery token proved control of the mailbox, so minting our session
   // here is legitimate and saves the teacher an immediate second login.
-  const user = await findAuthUserBySupabaseId(supabaseUserId);
+  const user = await findAuthUserById(authUserId);
 
   if (!user || !isTeacherRole(user.role)) {
     return { ok: true, redirectTo: "/" };
