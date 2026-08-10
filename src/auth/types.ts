@@ -6,7 +6,7 @@ export type { CodeKind, CodeMode, UserRole };
 /**
  * The authenticated user as carried on `ctx`. Deliberately a NARROW projection —
  * never put a raw row here, so nothing sensitive is ever one spread away from a
- * client component's props. In particular `supabaseUserId` is not on it.
+ * client component's props.
  */
 export type AuthUser = {
   id: string;

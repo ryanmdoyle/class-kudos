@@ -4,14 +4,20 @@ A classroom points-and-rewards app. Teachers award kudos, students spend them on
 rewards, and everyone can see where the class is. Built on
 [RedwoodSDK](https://docs.rwsdk.com/) and deployed to Cloudflare Workers.
 
+Before changing anything non-trivial, read **[STACK.md](./STACK.md)** — why each
+architectural choice was made, what was rejected, and the traps that are
+invisible until they bite.
+
 ## Stack
 
 - **RedwoodSDK 1.7** — RSC, server actions, server-driven routing
-- **`rwsdk/db`** — Kysely over a SQLite Durable Object. Schema types are inferred
-  from the migrations themselves; there is no schema file and no codegen step
+- **Supabase Postgres** — the application database, reached with Kysely over the
+  Supavisor transaction pooler. The schema lives in `supabase/migrations/*.sql`
+  and the row types in `src/db/types.ts` are hand-written to match it; there is
+  no codegen step
 - **Sessions** — `rwsdk/auth`'s `defineDurableSession`, backed by a Durable Object
 - **Supabase Auth** — verifies teacher passwords and sends teacher emails
-  (signup confirmation, password reset), and nothing else (see below)
+  (signup confirmation, password reset). It is not the session layer (see below)
 - **React 19.2**, Tailwind v4, Radix primitives styled after
   [neobrutalism.dev](https://www.neobrutalism.dev/)
 - **TypeScript 7**, Vite 8, Wrangler 4
@@ -29,16 +35,22 @@ two modes, chosen by the teacher:
 - **individual** — every student gets their own code, which signs them straight
   in. Teachers can bulk-generate, print, and reset codes individually.
 
-Codes avoid the characters `0 O 1 I l`, since children copy them off a printed
-sheet, and are compared in constant time.
+Codes use a 30-symbol alphabet that drops `0 O 1 I L` (misread off a printed
+sheet) and `U` (Crockford's convention, to avoid generating accidental words —
+which matters when the audience is nine-year-olds). They are compared in constant
+time.
 
-**Teachers sign in with email and password, verified by Supabase.** Supabase is
-used *only* to check the password and to send reset emails — it is not the
-identity store, not the session layer, and never a data source. Once it confirms
-the password, the app mints its own durable session keyed to the local user row
-and does not contact Supabase again for the life of that session. There is no
-`supabase.from(...)` anywhere in this codebase, and students never touch Supabase
-at all.
+**Teachers sign in with email and password, verified by Supabase.** Supabase Auth
+checks the password and sends the emails; it is not the session layer. Once it
+confirms the password, the app mints its own durable session keyed to the local
+user row and does not contact Supabase again for the life of that session. For a
+teacher or admin, `users.id` IS the Supabase `auth.users.id` — the same uuid on
+both sides, so there is no link column to keep in step. Students get a plain uuid
+and have no Supabase counterpart; they never touch Supabase at all.
+
+The app database is Supabase Postgres, but it is reached with Kysely over the
+pooler, never through the Supabase client: there is no `supabase.from(...)`
+anywhere in this codebase.
 
 Teachers sign themselves up from the Teacher tab on the login page. Signup asks only for a
 name and email — **never a password**. Supabase emails a confirmation link, and the password
@@ -61,8 +73,9 @@ cp .env.example .dev.vars   # then fill it in
 npm run dev
 ```
 
-Migrations run automatically on dev-server startup, and on the first request in
-production. There is no separate migrate command.
+Migrations are plain SQL in `supabase/migrations/` and are applied explicitly
+with `npm run migrate` (`supabase db push --linked`). Nothing migrates itself at
+startup or on first request.
 
 Seed a working local database — one teacher, one group, five students, and class
 codes for both modes:
@@ -71,8 +84,8 @@ codes for both modes:
 npm run seed
 ```
 
-The seeded teacher cannot log in until Supabase is configured; the script says so
-loudly. Everything on the student side works immediately.
+Configure Supabase first: the seeded teacher IS a Supabase auth user, so without
+the keys the script stops before writing anything.
 
 ## Supabase
 
@@ -136,12 +149,15 @@ putting the site to sleep.
 
 ## Things worth knowing before you change something
 
-- **`rwsdk/db` has no transactions.** `db.transaction().execute()` typechecks but
-  throws at runtime. Multi-write flows use atomic expression updates
-  (`set((eb) => ({ points: eb('points', '-', n) }))`) and guard clauses instead of
-  read-modify-write. Do not introduce a read-then-write on points.
-- **SQLite has no booleans and no dates.** Booleans are integers, datetimes are
-  ISO-8601 text. Convert in one place per table, not at each call site.
+- **Transactions work.** Multi-write flows wrap in
+  `db.transaction().execute(async (trx) => …)` and pass `trx` all the way down.
+  Points are still adjusted with atomic expression updates
+  (`set((eb) => ({ points: eb('points', '-', n) }))`) rather than
+  read-modify-write, because that is correct under concurrency regardless of the
+  transaction.
+- **The connection is request-scoped.** The Workers runtime binds a socket to the
+  request that opened it, so `db` is a per-request proxy and there is no
+  module-scope pool. Scripts have no request: wrap them in `withDb()`.
 - **Server actions run through global middleware.** Redirect-style middleware
   must not 302 an action — the login action fires from `/`, and a redirect would
   swallow it. Guards reject unauthenticated actions with a 401 instead. Letting
@@ -149,8 +165,10 @@ putting the site to sleep.
   which never terminates and hangs the worker.
 - **`src/auth/provision.ts` carries the service-role key.** It must never be
   imported from anything under `src/app/`, and must never become an action.
-- Migrations are append-only, and the schema type is derived from what `up()`
-  returns. Always `return` the array of awaited `.execute()` results.
+- Migrations are append-only SQL files in `supabase/migrations/`, and nothing
+  infers types from them. Every schema change needs a matching edit to
+  `src/db/types.ts`, or Kysely will happily typecheck a query the database
+  rejects.
 
 ## Deploying
 

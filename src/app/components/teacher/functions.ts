@@ -637,7 +637,8 @@ export async function editEnrolled(formData: FormData): Promise<ActionResult> {
  * If this was their only enrolment the `users` row goes too, so we do not
  * accumulate orphan students that no teacher can see or clean up. Deleting the
  * user cascades to their enrolments, kudos, redemptions, class codes and travel
- * history (verified against the real DO SQLite), so there is no manual cleanup.
+ * history — every one of those tables declares `on delete cascade` (class codes
+ * via `enrollmentId`), so there is no manual cleanup.
  */
 export async function removeEnrollment(
   groupId: string,

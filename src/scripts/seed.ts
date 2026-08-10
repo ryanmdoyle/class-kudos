@@ -23,10 +23,10 @@ import type { CodeKind } from "@/db";
  *   npm run seed
  *   SEED_TEACHER_EMAIL=me@example.com SEED_TEACHER_PASSWORD='...' npm run seed
  *
- * Supabase is OPTIONAL here. With the service-role key present the teacher gets
- * a real Supabase auth user and can log in. Without it the script still seeds
- * everything, logs loudly that the teacher cannot log in yet, and re-running it
- * later links the existing row in place.
+ * Supabase is REQUIRED here. A teacher IS a Supabase auth user — `users.id` is
+ * the `auth.users.id` — so without the service-role key there is no teacher to
+ * own the group and the script stops before writing anything. Configure
+ * Supabase and re-run; seeding is idempotent.
  *
  * NOTE: `@/auth/provision` is imported HERE and nowhere under `src/app/`. It
  * carries the service-role key and must never become an RSC action.

@@ -111,7 +111,6 @@ export async function loadGroupRewards(
     id: row.id,
     name: row.name,
     cost: row.cost,
-    // integer 0/1 -> boolean, converted once, here at the query boundary.
     responseRequired: row.responseRequired,
     responsePrompt: row.responsePrompt,
   }));

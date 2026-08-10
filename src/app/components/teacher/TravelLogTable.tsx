@@ -15,16 +15,13 @@ import type { TravelLogRow } from "@/app/components/teacher/types";
  * Client component so the timestamps render in the VIEWER's timezone. Formatting
  * them on the server would use the worker's clock (UTC), which is wrong for
  * every teacher on earth.
- *
- * `arrivedAt` is a SQLite text column holding an ISO-8601 string. Rows written
- * by this app always carry the `Z`; the fallback below covers rows that do not,
- * because a bare "2026-01-01 09:00:00" is parsed as LOCAL time and would shift
- * the whole log by the teacher's UTC offset.
  */
 /**
  * Postgres returns a Date. The string branch stays because this is a client
  * component: a bare ISO string without a zone is assumed UTC, which is how the
- * database always stored it.
+ * database always stored it. Without that fallback a bare
+ * "2026-01-01 09:00:00" would be parsed as LOCAL time and shift the whole log
+ * by the teacher's UTC offset.
  */
 function parseIso(value: Date | string): Date {
   if (value instanceof Date) return value;

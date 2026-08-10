@@ -1,12 +1,11 @@
 "use client";
 
 /**
- * Render an ISO-8601 timestamp in the VIEWER's timezone.
+ * Render a timestamp in the VIEWER's timezone.
  *
  * A client component on purpose: the worker's clock is UTC, so formatting on the
  * server would show a teacher in Los Angeles the wrong day for anything
- * requested after 4pm. The legacy code called `createdAt.toDateString()` on a
- * Prisma `Date` — there are no Date objects any more, these columns are text.
+ * requested after 4pm.
  *
  * `suppressHydrationWarning` because the server-rendered pass and the browser
  * pass legitimately produce different strings.

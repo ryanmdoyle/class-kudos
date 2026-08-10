@@ -89,12 +89,12 @@ export type TeacherLoginResult =
 /**
  * Teacher login.
  *
- * Supabase verifies the password and NOTHING ELSE. We take `data.user.id`, find
- * the LOCAL user row by `supabaseUserId`, mint OUR OWN durable session with the
- * LOCAL id, and throw the Supabase JWT away with the client instance. Supabase
- * is never contacted again for the life of that session — every subsequent
- * request is authorized from the durable session plus the local `users` row,
- * exactly like a student's.
+ * Supabase verifies the password and NOTHING ELSE. We take `data.user.id` —
+ * which IS `users.id` for a teacher — load that local row, mint OUR OWN durable
+ * session from it, and throw the Supabase JWT away with the client instance.
+ * Supabase is never contacted again for the life of that session — every
+ * subsequent request is authorized from the durable session plus the local
+ * `users` row, exactly like a student's.
  */
 export async function loginTeacher({
   email,
@@ -674,8 +674,8 @@ export async function signupTeacher(
       return { ok: true };
     }
 
-    // A student — or an unlinked ADMIN row — owns this address. Do nothing at
-    // all, and still say the same thing.
+    // A student — or an ADMIN row — owns this address. Do nothing at all, and
+    // still say the same thing.
     if (existing && (existing.role === "STUDENT" || existing.role === "ADMIN")) {
       console.warn(`signupTeacher: refusing to touch a ${existing.role} row.`);
       return { ok: true };

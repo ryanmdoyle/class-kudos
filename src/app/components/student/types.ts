@@ -9,9 +9,10 @@
  * user by id, they read `ctx.user.id` from the session, so there is no id for a
  * crafted request to swap out.
  *
- * SQLite representations are already converted here: `reviewed` is a real
- * boolean, timestamps are still ISO-8601 strings (formatted by
- * `./format`, once, on the server).
+ * Nothing is converted at this boundary: Postgres hands back a real `boolean`
+ * for `reviewed` and a real `Date` for every `timestamptz`, so these types are
+ * the row shapes as they arrive. Dates are turned into text by `./format`,
+ * once, on the server.
  */
 
 /** One row of "my classes" on `/student`. */
@@ -36,7 +37,7 @@ export type StudentKudos = {
   id: string;
   name: string;
   value: number;
-  /** ISO-8601. */
+  /** A real `Date`, straight off a `timestamptz` column. */
   createdAt: Date;
 };
 
@@ -54,6 +55,6 @@ export type StudentRedemption = {
   cost: number;
   reviewed: boolean;
   response: string | null;
-  /** ISO-8601. */
+  /** A real `Date`, straight off a `timestamptz` column. */
   createdAt: Date;
 };

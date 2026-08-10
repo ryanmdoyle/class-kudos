@@ -21,9 +21,9 @@ export type { RedemptionRow, TravelLogRow };
  * responsible for `await assertTeacherOwnsGroup(groupId)` first. Nothing in this
  * file re-checks ownership, so do not call it before asserting.
  *
- * rwsdk/db is Kysely, so Prisma's `include:` is replaced by explicit joins with
- * `as` aliases — without the aliases `users.id` and `enrollments.id` collide and
- * one silently wins.
+ * Kysely has no Prisma-style `include:`, so the relations are explicit joins
+ * with `as` aliases — without the aliases `users.id` and `enrollments.id`
+ * collide and one silently wins.
  */
 
 /** Replaces `db.enrollment.findMany({ include: { user: true } })`. */

@@ -15,8 +15,8 @@ import { newId, nowIso } from "@/lib/dbValues";
  *   grep -rE "^\s*import .*(supabase\.admin|auth/provision)" src/app src/auth/localUser.ts
  *
  * The two callers deliberately do NOT share one "upsert" function. They need
- * different policy: the operator may overwrite a role and re-point a Supabase
- * link because they typed the command themselves; self-signup may do neither.
+ * different policy: the operator may overwrite an existing row's role and name
+ * because they typed the command themselves; self-signup may do neither.
  * What they share is normalisation — which is where the real bugs live.
  */
 

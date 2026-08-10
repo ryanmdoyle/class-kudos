@@ -29,7 +29,11 @@ import { assertTeacherOwnsGroup } from "@/auth/context";
  *
  * Every function here takes a trailing
  *
- *     executor: Kysely<AppDatabase> | Transaction<AppDatabase> = db
+ *     executor: Executor = db        (joins a trx, or runs standalone)
+ *     executor?: Executor            (no default: lets the function DETECT the
+ *                                     absence of a trx and open its own — used by
+ *                                     the delete-then-insert functions, which must
+ *                                     never run unwrapped)
  *
  * so it can either run on its own (the default, unchanged for every existing
  * call site) or JOIN A CALLER'S TRANSACTION — `addGroup` inserts the group and

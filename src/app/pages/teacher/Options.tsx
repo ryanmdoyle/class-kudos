@@ -149,7 +149,6 @@ export async function Options({ params, request }: RequestInfo) {
                     <TableCell className="font-base">{reward.name}</TableCell>
                     <TableCell>{reward.cost}</TableCell>
                     <TableCell>
-                      {/* integer 0/1 -> boolean, converted at the boundary */}
                       {reward.responseRequired ? "Yes" : "No"}
                     </TableCell>
                     <TableCell className="text-right p-0">

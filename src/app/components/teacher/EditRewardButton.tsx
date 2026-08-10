@@ -20,7 +20,6 @@ import type { RewardRow } from "@/db";
 
 export function EditRewardButton({ reward }: { reward: RewardRow }) {
   const [error, setError] = useState<string | null>(null);
-  // `responseRequired` is an integer 0/1 in SQLite — converted once, here.
   const [responseRequired, setResponseRequired] = useState(
     reward.responseRequired,
   );

@@ -28,7 +28,7 @@ export function Privacy() {
 
         <p className="mb-2"><strong>Authentication Data:</strong></p>
         <ul className="list-disc pl-6 mb-4">
-          <li><strong>Teachers and administrators:</strong> passwords are handled entirely by our authentication provider, Supabase. Class Kudos never receives, sees, or stores a teacher password, and never stores password reset codes. We store only the identifier that links your Class Kudos account to your Supabase account.</li>
+          <li><strong>Teachers and administrators:</strong> passwords are stored and verified by our authentication provider, Supabase. A password you type is sent over an encrypted connection and passed straight through to Supabase to be checked; Class Kudos never writes it to our database or our logs, and never stores password reset codes. Your Class Kudos account is identified by the same account identifier Supabase issues.</li>
           <li><strong>Students:</strong> a class code issued by the teacher, stored alongside a one-way hash used to look it up. Class codes are stored in a readable form on purpose, because teachers need to print and re-issue them; they are classroom sign-in codes, not personal passwords, and should not be reused anywhere else.</li>
           <li>A session cookie is set when you sign in, so you stay signed in between pages.</li>
         </ul>
@@ -69,7 +69,7 @@ export function Privacy() {
           <li>Group enrollment and activity data is accessible to group owners (teachers)</li>
         </ul>
 
-        <p className="mb-2"><strong>Publicly Accessible Travel Log:</strong> If a teacher enables the classroom travel log, each group has a shareable web address meant to be displayed in the classroom. Anyone with that address can see the first name and last initial of the students in that group and who is currently signed out, and can change those entries, without signing in. No points, email addresses, or account identifiers are shown on that page. Teachers control whether to use this feature and where to share the address.</p>
+        <p className="mb-2"><strong>Publicly Accessible Travel Log:</strong> Every teacher-created group has a shareable travel-log web address, meant to be displayed in the classroom. Anyone with that address can see the first name and last initial of the students in that group and who is currently signed out, and can change those entries, without signing in. No points, email addresses, or account identifiers are shown on that page. Teachers control whether to use this feature and where to share the address.</p>
 
         <p className="mb-2"><strong>Service Providers:</strong> We may engage third-party hosting or technical service providers under strict confidentiality agreements. Teacher authentication (password storage, verification, and reset emails) is provided by Supabase; the service runs on Cloudflare infrastructure.</p>
 
@@ -79,7 +79,7 @@ export function Privacy() {
         <p className="mb-4">Class Kudos is designed for educational use. Students under 13 may use the service only with verifiable parental/guardian consent obtained through their school. We do not collect email addresses from students. We do not sell personal data. To review, correct, or delete your child's information, please contact your child's teacher or school administrator.</p>
 
         <h2 className="text-xl font-semibold mb-3">5. Data Security</h2>
-        <p className="mb-4">Teacher passwords are stored and verified by Supabase and never reach our systems. Student class codes are looked up by a one-way hash and compared in constant time. Session cookies are cryptographically signed. We use administrative, technical, and physical safeguards to protect data. However, no system is 100% secure; we cannot guarantee absolute security, and a class code is only as private as the paper it is printed on.</p>
+        <p className="mb-4">Teacher passwords are stored and verified by Supabase. They travel through our servers only in transit, over an encrypted connection, on their way to Supabase to be checked, and are never stored or logged by us. Student class codes are looked up by a one-way hash and compared in constant time. Session cookies are cryptographically signed. We use administrative, technical, and physical safeguards to protect data. However, no system is 100% secure; we cannot guarantee absolute security, and a class code is only as private as the paper it is printed on.</p>
 
         <h2 className="text-xl font-semibold mb-3">6. Data Retention</h2>
         <p className="mb-4">We retain personal information as long as accounts are active or as needed to provide educational services. When an account is deleted, its enrollments, kudos records, redemption history, class codes, and travel log entries are deleted with it. When a group is deleted, all of that group's data is deleted with it. Sign-in sessions expire automatically.</p>

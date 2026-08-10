@@ -5,11 +5,12 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { appEnv, requireSecret } from "@/lib/env";
 
 /**
- * SUPABASE IS A CREDENTIAL-VERIFICATION AND RESET-EMAIL SERVICE. NOTHING ELSE.
+ * THIS MODULE IS A CREDENTIAL-VERIFICATION AND RESET-EMAIL CLIENT. NOTHING ELSE.
  *
- * It is not our identity system, not our session system, and not our database.
- * All app data lives in `rwsdk/db`. If you are about to write `supabase.from(...)`
- * anywhere in this codebase, stop — you are out of scope.
+ * Supabase is not our identity system and not our session system. It IS our
+ * database — but app data is reached with Kysely over the Supavisor pooler (see
+ * `@/db`), never through this client. If you are about to write
+ * `supabase.from(...)` anywhere in this codebase, stop — you are out of scope.
  *
  * The only permitted calls on the anon client are:
  *   - auth.signInWithPassword
@@ -41,15 +42,16 @@ export const SUPABASE_CLIENT_OPTIONS = {
 function requireSupabaseUrl(): string {
   const url = requireSecret("SUPABASE_URL");
 
-  // The single most likely mistake: Supabase's Connect dialog leads with Postgres
-  // connection strings, because most projects use it as their database. This one
-  // does not — Supabase is only ever spoken to over the Auth REST API, so a
-  // postgres URI is not merely wrongly formatted, it is the wrong thing entirely.
+  // The single most likely mistake, and MORE likely now that the app really does
+  // have a Postgres connection string: Supabase's Connect dialog leads with one.
+  // But that belongs in DATABASE_URL. SUPABASE_URL is spoken to over the Auth
+  // REST API only, so a postgres URI here is not merely wrongly formatted, it is
+  // the wrong value in the wrong variable.
   if (/^postgres(ql)?:\/\//.test(url)) {
     throw new Error(
-      "SUPABASE_URL is a Postgres connection string, but this app never connects " +
-        "to Postgres — all app data lives in rwsdk/db. Use the project's API URL " +
-        "instead: https://<project-ref>.supabase.co (Settings -> Data API, or the " +
+      "SUPABASE_URL is a Postgres connection string. That value belongs in " +
+        "DATABASE_URL; SUPABASE_URL is the project's API URL, used for auth calls " +
+        "only. Use https://<project-ref>.supabase.co (Settings -> Data API, or the " +
         '"Project URL" in the Connect dialog — not "Direct connection" or a pooler URI).',
     );
   }

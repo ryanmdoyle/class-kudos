@@ -31,9 +31,9 @@ import { isSupabaseAdminConfigured } from "@/lib/supabase";
  *   npm run provision-teacher
  *
  * Idempotent: re-running with the same email updates the existing row instead
- * of duplicating it. If you run it before Supabase is configured it creates a
- * local-only row that CANNOT log in; re-run it once the keys are in place and
- * the existing row is linked in place.
+ * of duplicating it. Supabase must be configured before you run it at all — a
+ * teacher's `users.id` IS the `auth.users.id`, so there is no local-only row to
+ * create and nothing to link up afterwards.
  */
 
 export default defineScript(async ({ env }) => {

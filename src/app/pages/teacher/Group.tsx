@@ -18,7 +18,7 @@ import {
  * comes straight off the URL. It throws 404 (not 403) so group ids stay
  * unenumerable.
  *
- * Prisma's single `include:`-heavy `findUnique` is now four explicit queries.
+ * Prisma's single `include:`-heavy `findUnique` is now several explicit queries.
  * That is not a regression — `include:` was issuing separate statements anyway;
  * this just makes them visible and lets each one select only what it needs.
  */
@@ -70,8 +70,8 @@ export async function Group({ params, request }: RequestInfo) {
             id: group.id,
             name: group.name,
             rewardedPoints: group.rewardedPoints,
-            // Parse, don't cast: this value drives which branch of the header
-            // and the empty-state instructions render.
+            // A real Postgres enum, so this arrives already typed as CodeMode —
+            // there is nothing to parse or cast at the boundary.
             codeMode: group.codeMode,
             classCode: sharedCode?.code ?? null,
           }}

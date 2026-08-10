@@ -9,9 +9,6 @@ import type { ColumnType, Generated } from "kysely";
  * did not justify adding a codegen step to the build; if that ever changes,
  * `kysely-codegen --print` in CI is the drift check.
  *
- * NOTHING IMPORTS THIS YET. It is written ahead of the swap so the schema can
- * be reviewed on its own, while the app still runs on the Durable Object.
- *
  * Reading the column types:
  *   Generated<T>   — has a database default, so it is OPTIONAL on insert.
  *                    You may still pass a value, which the app currently does
@@ -32,11 +29,10 @@ type TimestampNull = ColumnType<
 /* -------------------------------------------------------------------------- */
 /* Enum types.                                                                 */
 /*                                                                             */
-/* These are the canonical definitions now — they mirror the Postgres enums in  */
-/* 0001_initial_schema.sql. `src/db/index.ts` should re-export them from here   */
-/* rather than declaring its own copies, and its parseUserRole/parseCodeMode/   */
-/* parseCodeKind guards can be deleted: their justification was "nothing in the */
-/* database enforces these values", which is no longer true.                    */
+/* These are the canonical definitions — they mirror the Postgres enums in      */
+/* 0001_initial_schema.sql, and `src/db/index.ts` re-exports them from here.    */
+/* Because the database enforces the values, a role or mode read from a row     */
+/* cannot be anything outside these unions and needs no runtime guard.          */
 /* -------------------------------------------------------------------------- */
 
 export type UserRole = "ADMIN" | "TEACHER" | "STUDENT";

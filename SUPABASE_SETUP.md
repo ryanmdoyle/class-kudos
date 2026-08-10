@@ -1,23 +1,28 @@
 # Supabase setup
 
-Supabase does exactly two jobs for Class Kudos: it **verifies teacher passwords** and it
-**sends teacher emails** — signup confirmations and password resets.
+Supabase does three jobs for Class Kudos: it **hosts the Postgres database**, it
+**verifies teacher passwords**, and it **sends teacher emails** — signup confirmations and
+password resets.
 
-It is not our session system and not our database. All app data lives in `rwsdk/db`
-(a SQLite Durable Object). There is no `supabase.from(...)` anywhere in this codebase, no
-Postgres tables, and no RLS policies. **Students never touch Supabase at all** — they log
-in with a class code checked against our own database.
+It is not our session system. Sessions are a SQLite-backed Durable Object of our own, and
+no Supabase JWT is ever stored or verified per request. The database is reached with Kysely
+over the Supavisor pooler, never through the Supabase client: there is no
+`supabase.from(...)` anywhere in this codebase, and no RLS policies, because the app
+connects as the database owner and does all authorization in application code.
+**Students never touch Supabase Auth at all** — they log in with a class code checked
+against our own tables.
 
-You can develop the whole app without a Supabase project. Everything except teacher login
-and password reset works; `npm run seed` will say so loudly and create a local-only teacher
-row.
+A Supabase project is therefore required to run the app at all: without `DATABASE_URL`
+there is nothing to read or write.
 
 ---
 
 ## 1. Create the project
 
 1. <https://supabase.com/dashboard> → **New project**.
-2. Any region. The free tier is fine — this project stores nothing but teacher auth rows.
+2. Pick the region closest to your users — every request opens a connection to it. The free
+   tier is fine for a school's worth of data, but note it has no automatic backups (see the
+   Backups section of the README).
 
 ## 2. Email provider settings
 
@@ -86,16 +91,16 @@ key the same elevated access as `service_role`, so nothing about the design belo
 
 `SUPABASE_URL` is the project's **API URL** — `https://<project-ref>.supabase.co`.
 
-The Connect dialog leads with Postgres connection strings, because most projects use
-Supabase as their database. This one does not: all app data lives in `rwsdk/db`, and
-Supabase is only ever spoken to over the Auth REST API. So none of these are it:
+The Connect dialog leads with Postgres connection strings. Those belong in a **different**
+variable: `SUPABASE_URL` is spoken to over the Auth REST API only, and the connection string
+goes in `DATABASE_URL` (section 5a). So of the things that dialog offers:
 
-| Shown as             | Looks like                                                    | Use it? |
-| -------------------- | ------------------------------------------------------------- | ------- |
-| Project URL / API URL | `https://abcdefgh.supabase.co`                                | **yes** |
-| Direct connection    | `postgresql://postgres:[PW]@db.abcdefgh.supabase.co:5432/…`    | no      |
-| Transaction pooler   | `postgresql://…pooler.supabase.com:6543/…`                     | no      |
-| Session pooler       | `postgresql://…pooler.supabase.com:5432/…`                     | no      |
+| Shown as             | Looks like                                                    | Goes in           |
+| -------------------- | ------------------------------------------------------------- | ----------------- |
+| Project URL / API URL | `https://abcdefgh.supabase.co`                                | `SUPABASE_URL`    |
+| Direct connection    | `postgresql://postgres:[PW]@db.abcdefgh.supabase.co:5432/…`    | nothing — IPv6-only |
+| Transaction pooler   | `postgresql://…pooler.supabase.com:6543/…`                     | `DATABASE_URL`    |
+| Session pooler       | `postgresql://…pooler.supabase.com:5432/…`                     | `SUPABASE_DB_URL` (backups only) |
 
 If the plain `https://` URL is not in the Connect dialog, it is under
 **Settings → Data API**. Pasting a `postgres://` URI fails fast at startup with an error
@@ -125,17 +130,37 @@ AUTH_SECRET_KEY=<openssl rand -base64 32>
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_ANON_KEY=<anon key>
 SUPABASE_SERVICE_ROLE_KEY=<service role key>
+DATABASE_URL=postgres://postgres.<ref>:<pw>@aws-<region>.pooler.supabase.com:6543/postgres
 # Optional: only needed when the request Host differs from the public URL
 # APP_URL=https://<your-domain>
 ```
+
+`DATABASE_URL` **must** be the transaction pooler on port 6543. The direct connection
+(`db.<ref>.supabase.co:5432`) is IPv6-only and Cloudflare Workers cannot open outbound IPv6,
+so this is a hard requirement rather than a preference. Percent-encode the password.
+
+## 5a. Apply the schema
+
+The tables do not create themselves. Link the CLI once, then push:
+
+```sh
+supabase link --project-ref <ref>
+npm run migrate            # supabase db push --linked
+```
+
+`supabase/migrations/*.sql` is the schema, and `src/db/types.ts` is a hand-written mirror of
+it — change one and you must change the other. `npm run release` runs `migrate` between the
+build and the deploy, so production picks new migrations up on its own.
 
 ## 6. Production secrets
 
 ```sh
 npx wrangler secret put AUTH_SECRET_KEY
+npx wrangler secret put DATABASE_URL
 npx wrangler secret put SUPABASE_URL
 npx wrangler secret put SUPABASE_ANON_KEY
 npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+npx wrangler secret put APP_URL          # https://classkudos.com
 ```
 
 ## 7. Create the first teacher
@@ -169,10 +194,10 @@ SEED_TEACHER_EMAIL=me@example.com SEED_TEACHER_PASSWORD='a-real-password' npm ru
 rewards and locations. Do not run it against production unless you want Ada Lovelace in
 your database.
 
-If the Supabase keys are absent the script still seeds a group, students and class codes,
-and creates the teacher row with `supabaseUserId = null` — clearly logged. That teacher
-**cannot log in** until you re-run the script with the keys present, which links the
-existing row in place rather than duplicating it.
+Both scripts need the Supabase keys. A teacher's `users.id` IS the `auth.users.id`, so
+there is no local-only teacher row to create without them — the script stops and says what
+is missing rather than writing half a database. Re-running once the keys are in place is
+safe: both are idempotent and update the existing row rather than duplicating it.
 
 ## 8. REQUIRED: the reset email template
 
@@ -239,8 +264,10 @@ that token is verified — which also means nobody can squat teacher email addre
 
 ## What is deliberately NOT here
 
-- **No Postgres tables, no RLS, no `supabase.from(...)`.** If you are writing one, you have
-  left the intended scope — stop.
+- **No RLS, and no `supabase.from(...)`.** The tables are ours, but they are reached with
+  Kysely over the pooler as the owning role; authorization lives in application code
+  (`requireTeacher`, `assertTeacherOwnsGroup`). If you are about to write a policy or a
+  `supabase.from(...)` call, you have left the intended scope — stop.
 - **No student accounts.** Supabase Auth cannot express a class code: `user_metadata` is
   attached *after* authentication and is not a credential, and anonymous users explicitly
   cannot sign back in as the same user once signed out — which is exactly what a class code

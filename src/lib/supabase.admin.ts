@@ -26,8 +26,11 @@ import { SUPABASE_CLIENT_OPTIONS, supabaseUrlForAdmin } from "@/lib/supabase";
  *  5. Auditable in one command:
  *        grep -rE "^\\s*import .*(supabase\\.admin|auth/provision)" src/app   # must be empty
  *
- * The ONLY permitted call on this client is `auth.admin.createUser`. Never
- * `supabase.from(...)` — this app has no Postgres data.
+ * The only permitted calls on this client are under `auth.admin` —
+ * `createUser`, `listUsers` and `updateUserById`, all from `@/auth/provision`.
+ * Never `supabase.from(...)`: app data is Postgres reached with Kysely over the
+ * pooler (`@/db`), and going through PostgREST with the service role would
+ * bypass every check this codebase makes.
  */
 export function createAdminSupabaseClient(): SupabaseClient {
   return createClient(
