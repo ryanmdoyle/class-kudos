@@ -562,6 +562,46 @@ export async function completePasswordReset(
  * at the confirmation step by whoever actually controls the mailbox — the same
  * standard `completePasswordReset` already trusts.
  */
+
+/**
+ * Cap how long a Supabase auth call may block a user-facing action.
+ *
+ * `signUp` with "Confirm email" ON does the SMTP send INLINE, so a misconfigured
+ * mail provider does not fail fast — it hangs until the provider's own timeout.
+ * Observed: 36 seconds, long enough for a gateway to give up first, which
+ * presents to the user as a broken app rather than a slow one.
+ *
+ * The timeout does NOT change what we tell the caller — the response is
+ * deliberately generic either way — it just stops a button click hanging. The
+ * server-side log is where the real cause lives.
+ */
+async function withTimeout<T>(
+  operation: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<{ timedOut: true } | { timedOut: false; value: T }> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const timeout = new Promise<{ timedOut: true }>((resolve) => {
+    timer = setTimeout(() => {
+      console.error(
+        `${label}: timed out after ${ms}ms. If email is involved this is almost ` +
+          `always SMTP — check the Supabase auth logs.`,
+      );
+      resolve({ timedOut: true });
+    }, ms);
+  });
+
+  try {
+    return await Promise.race([
+      operation.then((value) => ({ timedOut: false as const, value })),
+      timeout,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export type SignupTeacherInput = {
   email: string;
   firstName: string;
@@ -641,14 +681,28 @@ export async function signupTeacher(
       return { ok: true };
     }
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password: generatePlaceholderPassword(),
-      options: {
-        emailRedirectTo: `${getAppOrigin(request)}${SIGNUP_CONFIRM_PATH}`,
-        data: { first_name: firstName, last_name: lastName },
-      },
-    });
+    const outcome = await withTimeout(
+      supabase.auth.signUp({
+        email,
+        password: generatePlaceholderPassword(),
+        options: {
+          emailRedirectTo: `${getAppOrigin(request)}${SIGNUP_CONFIRM_PATH}`,
+          data: { first_name: firstName, last_name: lastName },
+        },
+      }),
+      10_000,
+      "signupTeacher",
+    );
+
+    if (outcome.timedOut) {
+      // Generic, like every other outcome. The user is told to check their
+      // email; if the send genuinely failed they will simply not receive one,
+      // which is the same experience as a wrong address — and the same
+      // information, which is the point.
+      return { ok: true };
+    }
+
+    const { error } = outcome.value;
 
     if (error) {
       console.error(`signupTeacher: ${error.code ?? "?"} ${error.message}`);
