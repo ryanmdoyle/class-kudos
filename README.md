@@ -112,6 +112,28 @@ of your shell history. The script is idempotent.
 | `npm run migrate` | Apply `supabase/migrations/*.sql` to the linked project |
 | `npm run release` | Build, migrate, then deploy to Cloudflare |
 
+## Backups
+
+Supabase does **not** back up free-tier projects — daily backups begin at Pro. Until
+then `.github/workflows/backup.yml` is the only copy of the data outside the live
+database. It dumps schema and data nightly and uploads them as a workflow
+artifact.
+
+Two things about it are easy to get wrong:
+
+- It needs a repository secret **`SUPABASE_DB_URL`**, and it is NOT the same
+  string as the runtime `DATABASE_URL`. `pg_dump` needs session-level features
+  the transaction pooler (port 6543) does not provide, so use the **session
+  pooler on port 5432** — same host, different port.
+- GitHub only runs scheduled workflows from the **default branch**. On a feature
+  branch it will never fire; run it once by hand from the Actions tab after
+  merging, rather than assuming it works.
+
+Artifacts are deleted after 90 days, so this is recent-recovery, not an archive.
+It has one happy side effect: a free project pauses after ~7 days idle, and the
+nightly connection counts as activity — which is what stops a half-term holiday
+putting the site to sleep.
+
 ## Things worth knowing before you change something
 
 - **`rwsdk/db` has no transactions.** `db.transaction().execute()` typechecks but
