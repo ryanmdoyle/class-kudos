@@ -13,6 +13,34 @@
     "binding": "ASSETS"
   },
 
+  /*
+   * Serve the app on the apex domain.
+   *
+   * `custom_domain: true` makes Cloudflare create and manage the DNS record for
+   * classkudos.com and point it at this Worker. It requires the domain to be an
+   * active zone in the same Cloudflare account — adding it here does not
+   * register or transfer the domain, and `wrangler deploy` fails with a clear
+   * error if the zone is missing.
+   *
+   * This host must stay in step with two other places, or emailed links break:
+   *   - the APP_URL secret          (npx wrangler secret put APP_URL)
+   *   - Supabase's Site URL and redirect allow-list
+   * Every confirmation and reset link is built from APP_URL, so a mismatch sends
+   * teachers to a host the app does not answer on.
+   *
+   * NOTE: www is deliberately NOT routed. Links are always built from APP_URL
+   * (the apex), so www never appears in one. If you want www.classkudos.com to
+   * resolve for people who type it, add a Cloudflare Redirect Rule sending it to
+   * the apex — that is cheaper than a second Worker route and keeps exactly one
+   * canonical origin.
+   */
+  "routes": [
+    {
+      "pattern": "classkudos.com",
+      "custom_domain": true
+    }
+  ],
+
   "observability": {
     "enabled": true
   },
