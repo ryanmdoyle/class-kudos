@@ -117,6 +117,9 @@ function requiredInt(formData: FormData, key: string): number {
 /* Groups                                                                      */
 /* -------------------------------------------------------------------------- */
 
+/** How many fresh `publicId` nanoids to try before giving up on a collision. */
+const PUBLIC_ID_ATTEMPTS = 5;
+
 /**
  * Create a group for the CURRENT teacher.
  *
@@ -125,8 +128,33 @@ function requiredInt(formData: FormData, key: string): number {
  *
  * A brand-new group starts in "shared" code mode with a shared code already
  * generated, so a teacher can put a code on the board before doing anything
- * else. `publicId` is the nanoid used in the public /travel-log URL and is
- * retried on the (astronomically unlikely) unique-constraint collision.
+ * else.
+ *
+ * ==========================================================================
+ * THE GROUP AND ITS CODE ARE ONE TRANSACTION.
+ *
+ * A group without a class code is a group NO STUDENT CAN JOIN, so the INSERT
+ * and `ensureGroupCode` commit together or not at all. `ensureGroupCode` is
+ * handed the `trx` deliberately: on the ambient `db` it would ask the pool
+ * (`max: 1`) for a second connection that this very transaction is holding and
+ * the request would HANG, not merely run outside the transaction.
+ *
+ * `ensureGroupCode` is also the one function in `@/auth` that does not call
+ * `assertTeacherOwnsGroup`, precisely so it can be used here — the group row is
+ * still uncommitted, so an ownership SELECT would be looking for a row only
+ * this transaction can see. `requireTeacher()` above is the check that matters:
+ * the group is being created as the requesting teacher.
+ *
+ * THE RETRY WRAPS THE TRANSACTION, IT IS NOT INSIDE IT. A failed statement
+ * aborts the entire Postgres transaction, so a `publicId` collision caught
+ * in-place could not be retried — the next statement would die with "current
+ * transaction is aborted" and take the group and its code with it.
+ *
+ * And only the COLLISION is retried. The old loop caught every error and tried
+ * five times, so a genuine failure (a not-null violation, a dead connection)
+ * was retried pointlessly and then reported as a publicId problem. Anything
+ * thrown out of the callback here rolls back and propagates on the first try.
+ * ==========================================================================
  */
 export async function addGroup(
   formData: FormData,
@@ -135,18 +163,14 @@ export async function addGroup(
     const user = requireTeacher();
     const name = requiredText(formData, "name");
 
-    const id = newId();
-    const timestamp = nowIso();
+    for (let attempt = 0; attempt < PUBLIC_ID_ATTEMPTS; attempt++) {
+      const timestamp = nowIso();
 
-    let inserted = false;
-    let lastError: unknown;
-
-    for (let attempt = 0; attempt < 5 && !inserted; attempt++) {
-      try {
-        await db
+      const groupId = await db.transaction().execute(async (trx) => {
+        const inserted = await trx
           .insertInto("groups")
           .values({
-            id,
+            id: newId(),
             name,
             description: "",
             ownerId: user.id,
@@ -157,23 +181,41 @@ export async function addGroup(
             createdAt: timestamp,
             updatedAt: timestamp,
           })
-          .execute();
-        inserted = true;
-      } catch (error) {
-        lastError = error;
-      }
+          // `on conflict do nothing` rather than letting the unique violation
+          // raise: a raised error would abort the transaction, and we want a
+          // retryable "that nanoid was taken" signal instead of a 500.
+          //
+          // The conflict target is `("publicId")` and NOT a bare `do nothing`.
+          // A bare form would swallow a conflict on ANY unique index on
+          // `groups` — including the primary key — and silently report an id
+          // clash as a publicId clash, burning all five attempts on the wrong
+          // problem.
+          .onConflict((oc) => oc.column("publicId").doNothing())
+          .returning("id")
+          .executeTakeFirst();
+
+        // Collision. Returning null COMMITS this transaction, which is normally
+        // the trap in this codebase (Kysely rolls back ONLY on a thrown error,
+        // so a `return { ok: false }` quietly commits). It is correct here and
+        // only here: `do nothing` wrote nothing, so there is an empty
+        // transaction to commit and no work to undo. Any path below this line
+        // that has to refuse MUST throw instead.
+        if (!inserted) return null;
+
+        // Same handle, so this sees the uncommitted group row and rolls back
+        // with it if issuing the code fails.
+        await ensureGroupCode(inserted.id, trx);
+
+        return inserted.id;
+      });
+
+      if (groupId) return ok({ id: groupId });
     }
 
-    if (!inserted) {
-      throw new Error(`Could not create the group: ${String(lastError)}`);
-    }
-
-    // No transactions in rwsdk/db 1.7.0, so this is a second statement. If it
-    // fails the group still exists and the Options page will generate the code
-    // on demand — the failure mode is "no code yet", not a broken group.
-    await ensureGroupCode(id);
-
-    return ok({ id });
+    throw new Error(
+      `Could not create the group: ${PUBLIC_ID_ATTEMPTS} generated public ids ` +
+        `all collided with an existing group.`,
+    );
   } catch (error) {
     return fail(error);
   }
@@ -353,14 +395,15 @@ export async function deleteReward(id: string): Promise<ActionResult> {
  * enrollment set is re-filtered by `groupId` so ids belonging to another group
  * are silently dropped rather than credited.
  *
- * !! NO TRANSACTIONS !! `db.transaction()` throws at runtime in rwsdk/db 1.7.0.
- * This is therefore three statements, ordered so a partial failure is
- * recoverable and visible:
+ * All three writes are ONE transaction:
  *   1. insert the kudos ledger rows   (the record of what was given)
  *   2. bump enrollment point balances (one atomic `points + value` UPDATE)
- *   3. bump the group's rewardedPoints total (a display counter only)
- * A failure after (1) leaves ledger rows whose points were not applied — which
- * is auditable — rather than points with no ledger entry.
+ *   3. bump the group's rewardedPoints total (a display counter)
+ *
+ * They have to be. This is the most-used write in the app, and the ledger is
+ * what a teacher points at when a child asks why their total is what it is — so
+ * ledger rows whose points were never applied are not "auditable", they are a
+ * disagreement between two things the child can see.
  */
 export async function awardKudos(
   groupId: string,
@@ -399,43 +442,45 @@ export async function awardKudos(
 
     const createdAt = nowIso();
 
-    await db
-      .insertInto("kudos")
-      .values(
-        enrollments.map((enrollment) => ({
-          id: newId(),
-          createdAt,
-          name: kudosType.name,
-          value: kudosType.value,
-          userId: enrollment.userId,
-          groupId,
-        })),
-      )
-      .execute();
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .insertInto("kudos")
+        .values(
+          enrollments.map((enrollment) => ({
+            id: newId(),
+            createdAt,
+            name: kudosType.name,
+            value: kudosType.value,
+            userId: enrollment.userId,
+            groupId,
+          })),
+        )
+        .execute();
 
-    await db
-      .updateTable("enrollments")
-      .set((eb) => ({ points: eb("points", "+", kudosType.value) }))
-      .where("groupId", "=", groupId)
-      .where(
-        "id",
-        "in",
-        enrollments.map((enrollment) => enrollment.id),
-      )
-      .execute();
+      await trx
+        .updateTable("enrollments")
+        .set((eb) => ({ points: eb("points", "+", kudosType.value) }))
+        .where("groupId", "=", groupId)
+        .where(
+          "id",
+          "in",
+          enrollments.map((enrollment) => enrollment.id),
+        )
+        .execute();
 
-    await db
-      .updateTable("groups")
-      .set((eb) => ({
-        rewardedPoints: eb(
-          "rewardedPoints",
-          "+",
-          kudosType.value * enrollments.length,
-        ),
-        updatedAt: nowIso(),
-      }))
-      .where("id", "=", groupId)
-      .execute();
+      await trx
+        .updateTable("groups")
+        .set((eb) => ({
+          rewardedPoints: eb(
+            "rewardedPoints",
+            "+",
+            kudosType.value * enrollments.length,
+          ),
+          updatedAt: nowIso(),
+        }))
+        .where("id", "=", groupId)
+        .execute();
+    });
 
     return ok({ awarded: enrollments.length });
   } catch (error) {
@@ -657,25 +702,29 @@ export async function approveRedeemed(
 /**
  * Cancel a redemption and refund the student's points.
  *
- * Two statements, no transaction (unavailable — see the header), so the DELETE
- * itself is made the concurrency control:
+ * The delete and the refund are ONE TRANSACTION. They are the two halves of a
+ * single fact — "this reward was never actually taken" — and a database that
+ * has done one without the other is a database that has stolen a child's
+ * points or minted them for free.
  *
- *   1. `DELETE ... RETURNING` — this is a compare-and-swap. Exactly one caller
- *      can ever get a row back for a given redemption id, because SQLite applies
- *      the delete atomically. The refund in step 2 is therefore gated on having
- *      WON the delete, not on a prior SELECT.
- *   2. Refund the points with an atomic `points + cost` expression update.
+ * `requireTeacher()` and `assertTeacherOwnsGroup()` stay OUTSIDE the
+ * transaction on purpose. They are reads that throw before anything is written,
+ * so holding a transaction open across them buys no atomicity and only extends
+ * how long this request sits on the pool's single connection.
  *
- * The earlier shape here was SELECT -> DELETE (unguarded) -> refund. That reads
- * as safe but is not: two teachers (or one double-click) both SELECT the row,
- * both DELETE — the second deleting zero rows without noticing — and both
- * refund, minting the child a free `cost` worth of points. Reading the deleted
- * row out of the DELETE closes that window entirely.
+ * THE `DELETE ... RETURNING` COMPARE-AND-SWAP STAYS. It is not made redundant
+ * by the transaction and must not be "simplified" into a plain delete now that
+ * one exists — the two solve different problems. The transaction makes the pair
+ * all-or-nothing; the CAS decides WHO gets to refund. Under READ COMMITTED two
+ * concurrent cancels (or one double-click) can both pass the SELECT above; only
+ * one of them gets a row back from the DELETE, and the refund is gated on
+ * having WON it rather than on the earlier read. That is the cheapest way to be
+ * idempotent here without a `SELECT FOR UPDATE`.
  *
- * Residual risk, unavoidable without transactions: the delete succeeds and the
- * refund throws, which LOSES the student their points. That is visible and a
- * teacher can re-award; the reverse ordering would silently mint points, which
- * is not correctable because nothing records that it happened.
+ * The shape this replaced was SELECT -> DELETE (unguarded) -> refund, which
+ * reads as safe and is not: both callers delete, the second removing zero rows
+ * without noticing, and both refund — handing the student a free `cost` worth
+ * of points that nothing records.
  */
 export async function cancelRedeemed(
   redeemedId: string,
@@ -693,28 +742,50 @@ export async function cancelRedeemed(
     if (!row) throw new ErrorResponse(404, "Not found");
     await assertTeacherOwnsGroup(row.groupId);
 
-    // Step 1 — the CAS. `userId`/`cost` are read back from the row we actually
-    // removed rather than from the SELECT above, so a concurrent cancel that
-    // lost the race refunds nothing.
-    const deleted = await db
-      .deleteFrom("redeemed")
-      .where("id", "=", redeemedId)
-      // Re-assert the owning group so the delete cannot be widened by a race
-      // that re-pointed the row between the SELECT and here.
-      .where("groupId", "=", row.groupId)
-      .returning(["id", "userId", "groupId", "cost"])
-      .executeTakeFirst();
+    await db.transaction().execute(async (trx) => {
+      // The CAS. `userId`/`cost` come back from the row we actually removed
+      // rather than from the SELECT above, so a cancel that lost the race
+      // refunds nothing.
+      const deleted = await trx
+        .deleteFrom("redeemed")
+        .where("id", "=", redeemedId)
+        // Re-assert the owning group so the delete cannot be widened by a race
+        // that re-pointed the row between the SELECT and here.
+        .where("groupId", "=", row.groupId)
+        .returning(["id", "userId", "groupId", "cost"])
+        .executeTakeFirst();
 
-    // Someone else cancelled it first. Idempotent success — no second refund.
-    if (!deleted) return ok();
+      // Someone else cancelled it first. Idempotent success — no second refund.
+      // Returning here COMMITS (Kysely rolls back only on a thrown error), which
+      // is exactly right: the DELETE matched nothing, so there is no write to
+      // undo. A refusal that had already written something would have to THROW.
+      if (!deleted) return;
 
-    // Step 2 — refund, atomically.
-    await db
-      .updateTable("enrollments")
-      .set((eb) => ({ points: eb("points", "+", deleted.cost) }))
-      .where("userId", "=", deleted.userId)
-      .where("groupId", "=", deleted.groupId)
-      .execute();
+      // Refund, on the same handle so it lands with the delete or not at all.
+      //
+      // `.returning` and the check below are NOT decoration. Postgres does not
+      // error on an UPDATE that matches zero rows, so without them the delete
+      // would COMMIT with no refund and the action would report success — the
+      // exact theft the transaction is here to prevent. This is reachable:
+      // `redeemed` has foreign keys to "users" and "groups" but NEVER to
+      // "enrollments", so un-enrolling a student leaves their redemption rows
+      // behind with no enrollment for the refund to land on.
+      const refunded = await trx
+        .updateTable("enrollments")
+        .set((eb) => ({ points: eb("points", "+", deleted.cost) }))
+        .where("userId", "=", deleted.userId)
+        .where("groupId", "=", deleted.groupId)
+        .returning("id")
+        .executeTakeFirst();
+
+      if (!refunded) {
+        // THROW, do not return: returning here would commit the delete.
+        throw new Error(
+          `Cannot cancel: ${deleted.userId} is no longer enrolled in ${deleted.groupId}, ` +
+            `so the ${deleted.cost} kudos could not be refunded. Re-enrol the student first.`,
+        );
+      }
+    });
 
     return ok();
   } catch (error) {

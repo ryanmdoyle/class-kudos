@@ -1,8 +1,9 @@
 import "server-only";
 
 import { ErrorResponse, getRequestInfo } from "rwsdk/worker";
+import type { Kysely, Transaction } from "kysely";
 
-import { db, type UserRole } from "@/db";
+import { db, type AppDatabase, type UserRole } from "@/db";
 import { sessions } from "@/session/store";
 import type { Session, SessionInput } from "@/session/durableObject";
 import {
@@ -206,13 +207,24 @@ export function requireStudent(): AuthUser {
  * comparing a fetched row afterwards, so there is no path where the row is read
  * first. It throws 404 rather than 403 so a teacher cannot distinguish "someone
  * else's group" from "no such group" and enumerate ids by response code.
+ *
+ * `executor` exists so a caller that is INSIDE a transaction can run the guard
+ * on that transaction. It is not a preference: the ambient `db` is a pool of
+ * `max: 1`, so asking it for a connection while the caller's transaction holds
+ * the only one deadlocks the request. It also means the guard sees rows the
+ * transaction has written but not yet committed. The default keeps every
+ * existing call site working unchanged.
  */
 export async function assertTeacherOwnsGroup(
   groupId: string,
+  executor: Kysely<AppDatabase> | Transaction<AppDatabase> = db,
 ): Promise<AuthUser> {
   const user = requireTeacher();
 
-  let query = db.selectFrom("groups").select("id").where("id", "=", groupId);
+  let query = executor
+    .selectFrom("groups")
+    .select("id")
+    .where("id", "=", groupId);
 
   if (user.role !== "ADMIN") {
     query = query.where("ownerId", "=", user.id);

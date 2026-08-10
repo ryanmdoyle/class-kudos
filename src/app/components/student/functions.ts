@@ -30,23 +30,40 @@ export type RequestRewardResult =
   | { ok: false; error: string };
 
 /**
+ * Thrown INSIDE the redemption transaction when the guarded deduction matches
+ * no row, i.e. the child cannot afford the reward.
+ *
+ * !! READ THIS BEFORE EDITING THE TRANSACTION BELOW !!
+ * Kysely rolls back ONLY on a thrown error. Returning a value from the callback
+ * — including a perfectly innocent-looking `{ ok: false, error }` — COMMITS.
+ * A "refuse and abort" path therefore has to throw, and the refusal is turned
+ * back into a `RequestRewardResult` outside the callback. Nothing else in this
+ * file throws for control flow; this is the exception, and it exists so that a
+ * refusal cannot silently commit a deduction.
+ */
+class InsufficientPointsError extends Error {
+  constructor() {
+    super("insufficient points");
+    this.name = "InsufficientPointsError";
+  }
+}
+
+/**
  * Redeem a reward.
  *
- * !! NO TRANSACTIONS !! `db.transaction()` throws at runtime in rwsdk/db 1.7.0,
- * so "spend points AND record the request" cannot be one atomic unit. The
- * ordering here is chosen so that the failure modes are safe rather than
- * convenient:
+ * "Spend the points" and "record the request" are ONE unit of work, so they run
+ * in one transaction: either the child is charged and the teacher sees the
+ * request, or neither happened. There is no compensating write and no window in
+ * which a redemption can be lost while the points stay spent.
  *
- *   1. Deduct FIRST, as a single conditional UPDATE carrying `points >= cost`
- *      in its own WHERE clause. That is a compare-and-swap: two taps on the
- *      same button race in the database, not in JavaScript, so a child can
- *      never double-spend or go negative. (The legacy code read the balance,
- *      compared it in the component, then decremented — that check could always
- *      be lost to a race or simply skipped by calling the action directly.)
- *   2. Insert the `redeemed` row.
- *   3. If (2) throws, re-credit the points. The reward request is lost but the
- *      balance is right, which is the failure a teacher can actually recover
- *      from — the child asks again.
+ * The `points >= cost` predicate STAYS IN THE WHERE CLAUSE. It is not made
+ * redundant by the transaction — under READ COMMITTED it is the compare-and-swap
+ * that makes two taps on the same button race in the database rather than in
+ * JavaScript, so a child can never double-spend or go negative, and it costs
+ * nothing compared with a `SELECT ... FOR UPDATE`. (The legacy code read the
+ * balance, compared it in the component, then decremented — that check could
+ * always be lost to a race or simply skipped by calling the action directly.)
+ * Do not "simplify" it into a read-then-write.
  */
 export async function requestReward(input: {
   groupId: string;
@@ -86,57 +103,66 @@ export async function requestReward(input: {
     };
   }
 
-  // Step 1 — atomic, guarded deduction. `points >= cost` lives in the WHERE.
-  const updated = await db
-    .updateTable("enrollments")
-    .set((eb) => ({ points: eb("points", "-", reward.cost) }))
-    .where("userId", "=", user.id)
-    .where("groupId", "=", groupId)
-    .where("points", ">=", reward.cost)
-    .returning(["id", "points"])
-    .executeTakeFirst();
-
-  if (!updated) {
-    return {
-      ok: false,
-      error: `You need ${reward.cost} kudos for that. Keep going!`,
-    };
-  }
-
-  // Step 2 — record the request. `name`/`cost` are snapshotted so editing the
-  // reward later does not rewrite the child's history.
   try {
-    await db
-      .insertInto("redeemed")
-      .values({
-        id: newId(),
-        userId: user.id,
-        groupId,
-        name: reward.name,
-        cost: reward.cost,
-        response: response.length > 0 ? response : null,
-        reviewed: false,
-        reviewedAt: null,
-        createdAt: nowIso(),
-      })
-      .execute();
-  } catch (error) {
-    // Step 3 — compensate. Nothing else can undo step 1 for us.
-    await db
-      .updateTable("enrollments")
-      .set((eb) => ({ points: eb("points", "+", reward.cost) }))
-      .where("id", "=", updated.id)
-      .execute();
+    // Every statement below uses `trx`, never the ambient `db`. `db` is a
+    // request-scoped proxy over a pool of ONE connection, so a stray `db` query
+    // in here would not merely run outside the transaction — it would queue
+    // behind the connection this callback is holding and hang the request.
+    const points = await db.transaction().execute(async (trx) => {
+      // Guarded deduction. See the note above: `points >= cost` is deliberate.
+      const updated = await trx
+        .updateTable("enrollments")
+        .set((eb) => ({ points: eb("points", "-", reward.cost) }))
+        .where("userId", "=", user.id)
+        .where("groupId", "=", groupId)
+        .where("points", ">=", reward.cost)
+        .returning("points")
+        .executeTakeFirst();
 
-    console.error("requestReward: redemption insert failed, points restored", error);
+      if (!updated) {
+        // Cannot afford it — or a second tap already spent the balance. THROW,
+        // do not return: a returned `{ ok: false }` would commit a deduction
+        // that this branch exists to prevent. Caught immediately below.
+        throw new InsufficientPointsError();
+      }
+
+      // Record the request. `name`/`cost` are snapshotted so editing the reward
+      // later does not rewrite the child's history.
+      await trx
+        .insertInto("redeemed")
+        .values({
+          id: newId(),
+          userId: user.id,
+          groupId,
+          name: reward.name,
+          cost: reward.cost,
+          response: response.length > 0 ? response : null,
+          reviewed: false,
+          reviewedAt: null,
+          createdAt: nowIso(),
+        })
+        .execute();
+
+      return updated.points;
+    });
+
+    return { ok: true, points };
+  } catch (error) {
+    if (error instanceof InsufficientPointsError) {
+      return {
+        ok: false,
+        error: `You need ${reward.cost} kudos for that. Keep going!`,
+      };
+    }
+
+    // Anything else rolled the whole thing back, so the balance is untouched.
+    console.error("requestReward: transaction rolled back", error);
 
     return {
       ok: false,
       error: "That didn't save. Your kudos are safe — please try again.",
     };
   }
-
-  return { ok: true, points: updated.points };
 }
 
 /**

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { db } from "@/db";
-import { newId, nowIso } from "@/lib/dbValues";
+import { newId } from "@/lib/dbValues";
 
 /**
  * The ONE implementation of "this student moved".
@@ -21,9 +21,8 @@ import { newId, nowIso } from "@/lib/dbValues";
  * NOT a `"use server"` module — nothing here may become a network endpoint on
  * its own. The two wrappers above are the only published surface.
  *
- * !! NO TRANSACTIONS !! `db.transaction()` type-checks but throws
- * "Transactions are not supported yet." in rwsdk/db 1.7.0. A move is therefore
- * three statements, ordered and guarded as described in `applyLocationChange`.
+ * A move is three writes and they are one Postgres transaction: either the
+ * child's current location and both audit rows all land, or none of them do.
  */
 
 export type LocationChangeResult =
@@ -38,6 +37,26 @@ export type LocationChangeResult =
 /** Deliberately identical for "no such enrollment" and "not in this group". */
 const NOT_FOUND = "We couldn't find that student. Please refresh the page.";
 const STALE = "Someone just moved that student. Please refresh and try again.";
+
+/**
+ * Thrown INSIDE the move transaction when the compare-and-swap on the
+ * enrollment matches no row — i.e. somebody else moved this child between our
+ * read and our write.
+ *
+ * !! READ THIS BEFORE EDITING THE TRANSACTION BELOW !!
+ * Kysely rolls back ONLY on a thrown error. Returning a value from the callback
+ * — including an innocent-looking `{ ok: false, error: STALE }` — COMMITS. The
+ * two `locationHistory` writes that run before the swap would then be committed
+ * on behalf of a request that lost the race, corrupting the audit trail with a
+ * departure and an arrival that never happened. So the refusal throws, and is
+ * turned back into a `LocationChangeResult` outside the callback.
+ */
+class StaleMoveError extends Error {
+  constructor() {
+    super("lost the compare-and-swap on enrollments.currentLocationId");
+    this.name = "StaleMoveError";
+  }
+}
 
 type EnrollmentRowLite = {
   id: string;
@@ -59,6 +78,16 @@ export async function applyLocationChange({
   enrollmentId,
   locationId,
 }: LocationChangeInput): Promise<LocationChangeResult> {
+  /*
+   * Validation runs OUTSIDE the transaction on purpose. These are pure reads
+   * with nothing to roll back, and keeping them out here means every "refuse"
+   * path below is an ordinary `return` rather than a throw — see StaleMoveError
+   * for why a `return` inside the callback would be a bug.
+   *
+   * Reading `currentLocationId` out here and writing inside is safe *because*
+   * of the compare-and-swap at the end of the transaction: if this read went
+   * stale in the meantime, the swap matches no row and the whole move unwinds.
+   */
   const enrollment: EnrollmentRowLite | undefined = await db
     .selectFrom("enrollments")
     .select(["id", "userId", "groupId", "currentLocationId"])
@@ -92,7 +121,12 @@ export async function applyLocationChange({
 
   const previousLocationId = enrollment.currentLocationId;
 
-  // Idempotent: a double-tap must not open a second history row.
+  /*
+   * Idempotent short-circuit: a double-tap on the tile they are already in must
+   * not open a second history row. This is NOT made redundant by the
+   * transaction — a transaction would happily commit the duplicate arrival.
+   * It stays.
+   */
   if (previousLocationId === locationId) {
     return {
       ok: true,
@@ -102,79 +136,107 @@ export async function applyLocationChange({
     };
   }
 
-  const now = nowIso();
+  const now = new Date();
 
-  /*
-   * Statement 1 — compare-and-swap on the enrollment.
-   *
-   * The `currentLocationId = <what we read>` predicate makes this a CAS: if two
-   * children tap the same tile at once, exactly one UPDATE matches a row and the
-   * other gets `undefined` back and bails out BEFORE writing any history. That
-   * is what replaces the transaction we cannot have — the history writes below
-   * only ever run for the request that actually won the swap.
-   *
-   * The enrollment is written FIRST on purpose. It is the value the board and
-   * the teacher read; `locationHistory` is an audit trail. If a later statement
-   * fails, the room is still showing the truth and only the log is incomplete —
-   * the far better of the two failure modes.
-   */
-  const updated = await db
-    .updateTable("enrollments")
-    .set({ currentLocationId: locationId, locationUpdatedAt: now })
-    .where("id", "=", enrollment.id)
-    .where("groupId", "=", groupId)
-    .where((eb) =>
-      previousLocationId === null
-        ? eb("currentLocationId", "is", null)
-        : eb("currentLocationId", "=", previousLocationId),
-    )
-    .returning(["id"])
-    .executeTakeFirst();
+  try {
+    /*
+     * Every statement below uses `trx`, never the ambient `db`. `db` is a
+     * request-scoped proxy over a pool of ONE connection, so a stray `db` query
+     * in here would not merely run outside the transaction — it would queue
+     * behind the connection this callback is holding and hang the request.
+     *
+     * The writes are in the order the events actually happen: leave the old
+     * place, arrive at the new one, then point the enrollment at where the
+     * child now is. Ordering is a free choice now that the three writes commit
+     * or fail together; it is chosen to read chronologically.
+     */
+    await db.transaction().execute(async (trx) => {
+      // 1 — close the open history row for the place they just left.
+      if (previousLocationId !== null) {
+        const open = await trx
+          .selectFrom("locationHistory")
+          .select(["id", "arrivedAt"])
+          .where("userId", "=", enrollment.userId)
+          .where("groupId", "=", groupId)
+          .where("locationId", "=", previousLocationId)
+          .where("leftAt", "is", null)
+          .orderBy("arrivedAt", "desc")
+          .executeTakeFirst();
 
-  if (!updated) {
-    return { ok: false, error: STALE };
-  }
+        if (open) {
+          // `arrivedAt` is a real `Date` off a timestamptz column, so there is
+          // no parse here and no NaN to guard against. `max(0, …)` still
+          // stands: a clock skew between app servers could otherwise write a
+          // negative duration.
+          const minutes = Math.max(
+            0,
+            Math.floor((now.getTime() - open.arrivedAt.getTime()) / 60_000),
+          );
 
-  // Statement 2 — close the open history row for the place they just left.
-  if (previousLocationId !== null) {
-    const open = await db
-      .selectFrom("locationHistory")
-      .select(["id", "arrivedAt"])
-      .where("userId", "=", enrollment.userId)
-      .where("groupId", "=", groupId)
-      .where("locationId", "=", previousLocationId)
-      .where("leftAt", "is", null)
-      .orderBy("arrivedAt", "desc")
-      .executeTakeFirst();
+          await trx
+            .updateTable("locationHistory")
+            .set({ leftAt: now, duration: minutes })
+            .where("id", "=", open.id)
+            .execute();
+        }
+      }
 
-    if (open) {
-      const arrived = new Date(open.arrivedAt).getTime();
-      const minutes = Number.isNaN(arrived)
-        ? null
-        : Math.max(0, Math.floor((Date.parse(now) - arrived) / 60_000));
+      // 2 — open a history row for the place they are going to.
+      if (locationId !== null) {
+        await trx
+          .insertInto("locationHistory")
+          .values({
+            id: newId(),
+            userId: enrollment.userId,
+            locationId,
+            groupId,
+            arrivedAt: now,
+            leftAt: null,
+            duration: null,
+          })
+          .execute();
+      }
 
-      await db
-        .updateTable("locationHistory")
-        .set({ leftAt: now, duration: minutes })
-        .where("id", "=", open.id)
-        .execute();
+      /*
+       * 3 — compare-and-swap the enrollment, and the gate for the whole move.
+       *
+       * !! THE `currentLocationId = <what we read>` PREDICATE STAYS. !!
+       * It is not made redundant by the transaction. Under READ COMMITTED two
+       * simultaneous taps both reach this UPDATE; the second one blocks on the
+       * row lock, and when the first commits it re-evaluates this predicate
+       * against the NEW row, finds the location has moved on, and matches
+       * nothing. That is what resolves a double-tap to exactly one winner
+       * without a `SELECT … FOR UPDATE`, and it is the cheapest way to get it.
+       * Delete it and both taps "succeed", each writing its own arrival row.
+       */
+      const updated = await trx
+        .updateTable("enrollments")
+        .set({ currentLocationId: locationId, locationUpdatedAt: now })
+        .where("id", "=", enrollment.id)
+        .where("groupId", "=", groupId)
+        .where((eb) =>
+          previousLocationId === null
+            ? eb("currentLocationId", "is", null)
+            : eb("currentLocationId", "=", previousLocationId),
+        )
+        .returning(["id"])
+        .executeTakeFirst();
+
+      if (!updated) {
+        // We lost the race. THROW, do not return: a returned value commits,
+        // and the two history writes above are still pending. Caught below.
+        throw new StaleMoveError();
+      }
+    });
+  } catch (caught) {
+    if (caught instanceof StaleMoveError) {
+      return { ok: false, error: STALE };
     }
-  }
 
-  // Statement 3 — open a history row for the place they are going to.
-  if (locationId !== null) {
-    await db
-      .insertInto("locationHistory")
-      .values({
-        id: newId(),
-        userId: enrollment.userId,
-        locationId,
-        groupId,
-        arrivedAt: now,
-        leftAt: null,
-        duration: null,
-      })
-      .execute();
+    // Anything else rolled the whole move back, so the child is still shown in
+    // the place they were, and the history has no half-written move in it.
+    console.error("applyLocationChange: transaction rolled back", caught);
+    throw caught;
   }
 
   return {
