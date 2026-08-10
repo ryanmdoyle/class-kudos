@@ -109,7 +109,8 @@ of your shell history. The script is idempotent.
 | `npm run seed` | Seed a full demo database |
 | `npm run provision-teacher` | Create one teacher, no demo data |
 | `npm run build` | Production build |
-| `npm run release` | Build and deploy to Cloudflare |
+| `npm run migrate` | Apply `supabase/migrations/*.sql` to the linked project |
+| `npm run release` | Build, migrate, then deploy to Cloudflare |
 
 ## Things worth knowing before you change something
 
@@ -135,7 +136,23 @@ of your shell history. The script is idempotent.
 npm run release
 ```
 
-Set the Supabase secrets in the Cloudflare dashboard (or via
-`wrangler secret put`) before the first deploy. A Cloudflare Rate Limiting rule
-on the login path is recommended as a second layer in front of the app-level
-throttling in `src/auth/rateLimit.ts`.
+That is `build → migrate → deploy`, and the order is deliberate:
+
+- **Build first.** A compile error then costs nothing — no schema has changed yet.
+- **Migrate before deploy**, so the new code never starts against an old schema.
+  `supabase db push` is idempotent, so a release with no new migrations is a
+  no-op rather than an error.
+
+The unavoidable consequence is a brief window where the schema is ahead of the
+running code. **Keep migrations additive** — add columns and tables, do not
+rename or drop them in the same release as the code that stops using them.
+Split a destructive change across two deploys.
+
+Migrating requires the Supabase CLI to be linked (`supabase link --project-ref
+<ref>`). In CI, set `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` instead.
+
+Set the Supabase secrets in the Cloudflare dashboard (or via `wrangler secret
+put`) before the first deploy: `AUTH_SECRET_KEY`, `DATABASE_URL`, `SUPABASE_URL`,
+`SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `APP_URL`. A Cloudflare
+Rate Limiting rule on the login path is recommended as a second layer in front
+of the app-level throttling in `src/auth/rateLimit.ts`.

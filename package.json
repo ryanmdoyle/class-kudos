@@ -16,13 +16,13 @@
     "worker:run": "rw-scripts worker-run",
     "clean": "npm run clean:vite",
     "clean:vite": "rm -rf ./node_modules/.vite",
-    "release": "rw-scripts ensure-deploy-env && npm run clean && RWSDK_DEPLOY=1 npm run build && wrangler deploy",
+    "release": "rw-scripts ensure-deploy-env && npm run clean && RWSDK_DEPLOY=1 npm run build && npm run migrate && wrangler deploy",
     "seed": "npm run worker:run ./src/scripts/seed.ts",
     "provision-teacher": "npm run worker:run ./src/scripts/provisionTeacher.ts",
     "generate": "rw-scripts ensure-env && wrangler types --include-runtime false",
     "check": "npm run generate && npm run types",
     "types": "tsc",
-    "db:spike": "npm run worker:run ./src/scripts/dbSpike.ts"
+    "migrate": "supabase db push --linked"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
