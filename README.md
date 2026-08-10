@@ -153,6 +153,8 @@ Migrating requires the Supabase CLI to be linked (`supabase link --project-ref
 
 Set the Supabase secrets in the Cloudflare dashboard (or via `wrangler secret
 put`) before the first deploy: `AUTH_SECRET_KEY`, `DATABASE_URL`, `SUPABASE_URL`,
-`SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `APP_URL`. A Cloudflare
+`SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `APP_URL`
+(`https://classkudos.com` — production only; leave it unset locally so emailed
+links point at your dev server). A Cloudflare
 Rate Limiting rule on the login path is recommended as a second layer in front
 of the app-level throttling in `src/auth/rateLimit.ts`.
