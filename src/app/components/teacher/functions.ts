@@ -547,32 +547,45 @@ export async function createNewStudents(
       updatedAt: timestamp,
     }));
 
-    await db.insertInto("users").values(userRows).execute();
+    /*
+     * All three writes are ONE transaction, and they have to be. A `users` row
+     * without its enrollment is invisible AND unreachable: every teacher-facing
+     * query is scoped by `groupId`, and `removeEnrollment` resolves a student
+     * only through an enrollment — so an orphan can never be listed, used, or
+     * deleted from the UI. It would simply accumulate in the table forever.
+     *
+     * `issueStudentCodesForGroup` takes the transaction explicitly. Called
+     * without it, it would run on the ambient handle — a different connection,
+     * outside this transaction — and silently defeat the point.
+     */
+    await db.transaction().execute(async (trx) => {
+      await trx.insertInto("users").values(userRows).execute();
 
-    await db
-      .insertInto("enrollments")
-      .values(
-        userRows.map((user) => ({
-          id: newId(),
-          userId: user.id,
-          groupId,
-          points: 0,
-          currentLocationId: null,
-          locationUpdatedAt: null,
-          createdAt: timestamp,
-        })),
-      )
-      .execute();
+      await trx
+        .insertInto("enrollments")
+        .values(
+          userRows.map((user) => ({
+            id: newId(),
+            userId: user.id,
+            groupId,
+            points: 0,
+            currentLocationId: null,
+            locationUpdatedAt: null,
+            createdAt: timestamp,
+          })),
+        )
+        .execute();
 
-    const group = await db
-      .selectFrom("groups")
-      .select("codeMode")
-      .where("id", "=", groupId)
-      .executeTakeFirst();
+      const group = await trx
+        .selectFrom("groups")
+        .select("codeMode")
+        .where("id", "=", groupId)
+        .executeTakeFirst();
 
-    if (group?.codeMode === "individual") {
-      await issueStudentCodesForGroup(groupId, { onlyMissing: true });
-    }
+      if (group?.codeMode === "individual") {
+        await issueStudentCodesForGroup(groupId, { onlyMissing: true }, trx);
+      }
+    });
 
     return ok({ created: userRows.length });
   } catch (error) {
@@ -868,20 +881,65 @@ export async function editLocation(formData: FormData): Promise<ActionResult> {
 export async function deleteLocation(id: string): Promise<ActionResult> {
   try {
     requireTeacher();
-    await assertOwnsLocation(id);
+    const groupId = await assertOwnsLocation(id);
 
-    await db
-      .updateTable("locations")
-      .set({ isActive: false, updatedAt: nowIso() })
-      .where("id", "=", id)
-      .execute();
+    const now = new Date();
 
-    // Anyone currently "at" the retired location goes back to no location.
-    await db
-      .updateTable("enrollments")
-      .set({ currentLocationId: null, locationUpdatedAt: nowIso() })
-      .where("currentLocationId", "=", id)
-      .execute();
+    /*
+     * Retiring a location is THREE writes, and the third one is the reason this
+     * is a transaction rather than two statements.
+     *
+     * Sending everyone back to "no location" without closing their open history
+     * rows strands those rows permanently: `applyLocationChange` only closes a
+     * row when `previousLocationId !== null` (see locationService.ts), and this
+     * has just set that to null. Nothing else in the app closes one. The travel
+     * log would show a trip that never ends, forever.
+     *
+     * That is the same locationHistory invariant applyLocationChange was written
+     * to protect — it just was not applied here.
+     */
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .updateTable("locations")
+        .set({ isActive: false, updatedAt: nowIso() })
+        .where("id", "=", id)
+        .execute();
+
+      // Close every trip still in progress at this location, BEFORE the link
+      // that identifies them is removed below.
+      const open = await trx
+        .selectFrom("locationHistory")
+        .select(["id", "arrivedAt"])
+        .where("locationId", "=", id)
+        .where("groupId", "=", groupId)
+        .where("leftAt", "is", null)
+        .execute();
+
+      for (const row of open) {
+        // Same computation as applyLocationChange, deliberately: `arrivedAt` is
+        // a real Date off a timestamptz, and max(0, …) guards clock skew rather
+        // than a parse failure. A retired location holds at most a classroom's
+        // worth of open rows, so per-row updates are cheaper than a second
+        // convention for the same arithmetic.
+        const minutes = Math.max(
+          0,
+          Math.floor((now.getTime() - row.arrivedAt.getTime()) / 60_000),
+        );
+
+        await trx
+          .updateTable("locationHistory")
+          .set({ leftAt: now, duration: minutes })
+          .where("id", "=", row.id)
+          .execute();
+      }
+
+      // Anyone currently "at" the retired location goes back to no location.
+      await trx
+        .updateTable("enrollments")
+        .set({ currentLocationId: null, locationUpdatedAt: nowIso() })
+        .where("currentLocationId", "=", id)
+        .execute();
+    });
 
     return ok();
   } catch (error) {
