@@ -7,13 +7,8 @@ import { db } from "@/db";
 import { newId, nowIso } from "@/lib/dbValues";
 import { provisionTeacher } from "@/auth/provision";
 import { isSupabaseAdminConfigured } from "@/lib/supabase";
-import {
-  formatCodeForDisplay,
-  generateUniqueCode,
-  hashCode,
-  STUDENT_CODE_LENGTH,
-} from "@/app/lib/codes";
-import type { CodeKind } from "@/db";
+import { formatCodeForDisplay } from "@/app/lib/codes";
+import { insertClassCode } from "@/db/classCodeSeed";
 
 /**
  * Seed a usable database: one teacher, one group, a handful of students, and
@@ -60,41 +55,6 @@ const LOCATIONS: ReadonlyArray<[string, string]> = [
   ["Library", "#FCD34D"],
   ["Bathroom", "#FCA5A5"],
 ];
-
-/** Script-local class-code insert. See the note at the call site. */
-async function seedClassCode(params: {
-  kind: CodeKind;
-  groupId: string;
-  enrollmentId: string | null;
-}): Promise<string> {
-  const code = await generateUniqueCode({
-    length: STUDENT_CODE_LENGTH,
-    isTaken: async (candidate) =>
-      Boolean(
-        await db
-          .selectFrom("classCodes")
-          .select("id")
-          .where("codeHash", "=", await hashCode(candidate))
-          .executeTakeFirst(),
-      ),
-  });
-
-  await db
-    .insertInto("classCodes")
-    .values({
-      id: newId(),
-      code,
-      codeHash: await hashCode(code),
-      kind: params.kind,
-      groupId: params.groupId,
-      enrollmentId: params.enrollmentId,
-      createdAt: nowIso(),
-      lastUsedAt: null,
-    })
-    .execute();
-
-  return code;
-}
 
 export default defineScript(async ({ env }) => {
   await withDb(async () => {
@@ -256,11 +216,17 @@ export default defineScript(async ({ env }) => {
     //
     // The teacher-facing helpers in `@/auth/classCodes` all call
     // `assertTeacherOwnsGroup()`, which reads the current user off the REQUEST
-    // context. A script has no request, so we insert directly here using the same
-    // pure primitives from `@/app/lib/codes`. This is the only place in the
-    // codebase that is allowed to write `classCodes` without an ownership check.
+    // context. A script has no request, so we use `insertClassCode` — the one
+    // place allowed to write `classCodes` without an ownership check. It is
+    // shared with `tests/helpers/fixtures.ts`, which has the same problem and
+    // must additionally be importable from plain Node; see the header of
+    // `@/db/classCodeSeed` before adding an import to it.
 
-    const groupCode = await seedClassCode({ kind: "group", groupId, enrollmentId: null });
+    const groupCode = await insertClassCode(db, {
+      kind: "group",
+      groupId,
+      enrollmentId: null,
+    });
 
     const enrollments = await db
       .selectFrom("enrollments")
@@ -277,7 +243,7 @@ export default defineScript(async ({ env }) => {
     console.log(`\n🔑 Shared class code: ${formatCodeForDisplay(groupCode)}`);
     console.log("🔑 Per-student codes (used when codeMode = 'individual'):");
     for (const e of enrollments) {
-      const code = await seedClassCode({
+      const code = await insertClassCode(db, {
         kind: "student",
         groupId,
         enrollmentId: e.enrollmentId,
