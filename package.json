@@ -1,7 +1,7 @@
 {
   "name": "class-kudos-sdk",
   "version": "2.0.0",
-  "description": "Class Kudos \u2014 classroom points, rewards and travel log, built on RedwoodSDK.",
+  "description": "Class Kudos — classroom points, rewards and travel log, built on RedwoodSDK.",
   "main": "index.js",
   "type": "module",
   "keywords": [],
@@ -20,8 +20,14 @@
     "seed": "npm run worker:run ./src/scripts/seed.ts",
     "provision-teacher": "npm run worker:run ./src/scripts/provisionTeacher.ts",
     "generate": "rw-scripts ensure-env && wrangler types --include-runtime false",
-    "check": "npm run generate && npm run types",
+    "check": "npm run generate && npm run types && npm run types:test",
     "types": "tsc",
+    "types:test": "tsc -p tsconfig.test.json",
+    "test": "vitest run --project unit",
+    "test:watch": "vitest --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:all": "vitest run",
+    "test:db": "supabase start && supabase db reset && npm run seed",
     "migrate": "supabase db push --linked"
   },
   "dependencies": {
@@ -92,6 +98,7 @@
     "tw-animate-css": "^1.3.4",
     "typescript": "7.0.2",
     "vite": "~8.2.0",
+    "vitest": "4.1.10",
     "wrangler": "4.118.0"
   }
 }
