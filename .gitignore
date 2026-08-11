@@ -10,6 +10,10 @@ pnpm-debug.log*
 # Environment variables
 .env
 .dev.vars
+# Local backup of the online project's secrets, made when .env was repointed at
+# the local Supabase stack for testing. Deliberately NOT named .env.local: Vite's
+# loadEnv() reads .env.local and would shadow the local-stack values in tests.
+.env.remote
 
 # Vite build output
 dist
