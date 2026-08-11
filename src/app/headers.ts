@@ -1,36 +1,23 @@
 import { RouteMiddleware } from "rwsdk/router";
 import { IS_DEV } from "rwsdk/constants";
 
+import { sentryOriginFromDsn } from "@/app/lib/sentry";
 import { appEnv } from "@/lib/env";
 
 /**
  * The origin Sentry events are POSTed to, derived from the DSN itself.
  *
- * The browser SDK sends events to the DSN's own host, so `connect-src` has to
- * permit it — and if it does not, errors are captured, the request is refused by
- * the browser, and nothing arrives. That failure is completely silent and looks
- * exactly like "no errors happened".
+ * Deriving beats listing. A hardcoded `https://*.ingest.us.sentry.io` works right up
+ * until the DSN moves org or region, and then fails silently — errors captured, the
+ * request refused by the browser, nothing arriving, indistinguishable from "no errors
+ * happened". Reading the secret means the policy is always exactly one origin, always
+ * the right one, and when no DSN is configured no Sentry host is permitted at all.
  *
- * Deriving the host beats listing it. A hardcoded `https://*.ingest.us.sentry.io`
- * works right up until the DSN moves org or region, and then it fails in the silent
- * way above — note that a CSP host wildcard matches a SUFFIX, so
- * `*.ingest.sentry.io` does NOT cover `o249012.ingest.us.sentry.io`, which is the
- * kind of near-miss nobody spots by eye. Reading the secret means the policy is
- * always exactly one origin, always the right one, and when no DSN is configured no
- * Sentry host is permitted at all.
- *
- * A malformed DSN yields `null` rather than throwing: this runs in middleware on
- * every request, and a bad secret must not take the whole site down. The cost of
- * getting it wrong is then only that reporting stays off.
+ * The parsing lives in `@/app/lib/sentry` so it can be unit-tested without a Worker;
+ * see the header there.
  */
 function sentryOrigin(): string | null {
-  const dsn = appEnv.SENTRY_DSN;
-  if (!dsn) return null;
-  try {
-    return new URL(dsn).origin;
-  } catch {
-    return null;
-  }
+  return sentryOriginFromDsn(appEnv.SENTRY_DSN);
 }
 
 export const setCommonHeaders =

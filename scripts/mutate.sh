@@ -257,13 +257,20 @@ m=re.search(r"\nif \(dsn\) \{\n[\s\S]*?\n\}\n", s)
 assert m, "guarded Sentry.init block not found"
 io.open(p,"w").write(s[:m.start()]+"\n"+s[m.end():])'
 
-add sentry "headers.ts: stop adding the DSN origin to connect-src" src/app/headers.ts integration tests/integration/document.test.ts \
+add sentry "sentry.ts: never derive an origin from the DSN" src/app/lib/sentry.ts unit tests/unit/sentry.test.ts \
 'import io
-p="src/app/headers.ts"; s=io.open(p).read()
-o="[\"'"'"'self'"'"'\", \"blob:\", sentryOrigin()]"
-n="[\"'"'"'self'"'"'\", \"blob:\"]"
-assert o in s, "connect-src source list not found"
+p="src/app/lib/sentry.ts"; s=io.open(p).read()
+o="  return url.origin;"
+n="  return null;"
+assert o in s, "origin return not found"
 io.open(p,"w").write(s.replace(o,n,1))'
+
+add sentry "sentry.ts: allow a non-http DSN scheme through" src/app/lib/sentry.ts unit tests/unit/sentry.test.ts \
+'import io
+p="src/app/lib/sentry.ts"; s=io.open(p).read()
+o="  if (url.protocol !== \"https:\" && url.protocol !== \"http:\") return null;\n"
+assert o in s, "protocol guard not found"
+io.open(p,"w").write(s.replace(o,"",1))'
 
 # NOT a row: removing `nonce={nonce}` from the Document's script tags.
 #

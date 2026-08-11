@@ -547,7 +547,7 @@ precise about how much that proves, because it is less than it looks:
 testing**, and it is a command rather than a claim:
 
 ```sh
-npm run test:mutate            # 18 mutations; currently 17 killed, 1 type-rejected
+npm run test:mutate            # 19 mutations; currently 18 killed, 1 type-rejected
 npm run test:mutate -- --list  # the table, with the test each one must turn red
 ```
 
