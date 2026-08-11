@@ -1,45 +1,99 @@
 import { link } from "@/app/shared/links";
-import { Button } from "../ui/button";
+import { Button } from "@/app/components/ui/button";
 
-type StudentNavProps = {
+/**
+ * The student header. A server component — it renders `Button`, which is a
+ * client component, but has no state of its own.
+ *
+ * "My Classes" is ALWAYS present, including on `/student` itself. The legacy
+ * nav hid every link on the dashboard, which left a child who had tapped into
+ * the wrong class with no visible way back except the browser's back button —
+ * the exact dead end this surface cannot have.
+ */
+export function StudentNav({
+  url,
+  firstName,
+  currentGroupId,
+}: {
   url: string;
-  currentGroup?: string;
-};
+  firstName?: string;
+  currentGroupId?: string;
+}) {
+  const pathname = safePathname(url);
 
-export function StudentNav({ url, currentGroup }: StudentNavProps) {
-  const fullUrl = new URL(url);
-
-  // Compute paths for comparison
-  const groupsPath = "/student";
-  const kudosPath = link("/student/:groupId", { groupId: currentGroup ?? "" });
-  const rewardsPath = link("/student/:groupId/rewards", { groupId: currentGroup ?? "" });
+  const groupsPath = link("/student");
+  const kudosPath = currentGroupId
+    ? link("/student/:groupId", { groupId: currentGroupId })
+    : null;
+  const rewardsPath = currentGroupId
+    ? link("/student/:groupId/rewards", { groupId: currentGroupId })
+    : null;
 
   return (
-    <div className="h-[100px] border border-border flex items-center justify-between w-full">
-      <div className="flex items-center gap-2 pl-4 flex-1">
-        <img src="/images/coin.png" alt="coin" className="w-[60px]" />
-        <h1 className="page-title font-bold">Class Kudos</h1>
+    <header className="bg-background flex flex-wrap items-center justify-between gap-3 border-b-2 border-border px-4 py-3">
+      <div className="flex items-center gap-3">
+        <img src="/images/coin.png" alt="" className="h-12 w-12" />
+        <div>
+          <p className="font-display text-xl font-bold leading-tight">
+            Class Kudos
+          </p>
+          {firstName ? (
+            <p className="text-sm opacity-70">Hi, {firstName}!</p>
+          ) : null}
+        </div>
       </div>
-      <nav className="flex gap-8 flex-1 justify-center pt-4">
-        {fullUrl.pathname !== '/student' && (
-          <>
-            <a href={groupsPath}>
-              <Button variant={fullUrl.pathname === groupsPath ? "green" : "default"}>Groups</Button>
-            </a>
-            <a href={kudosPath}>
-              <Button variant={fullUrl.pathname === kudosPath ? "green" : "default"}>Kudos</Button>
-            </a>
-            <a href={rewardsPath}>
-              <Button variant={fullUrl.pathname === rewardsPath ? "green" : "default"}>Rewards</Button>
-            </a>
-          </>
-        )}
+
+      <nav aria-label="Student" className="flex flex-wrap items-center gap-3">
+        <NavLink href={groupsPath} active={pathname === groupsPath}>
+          My Classes
+        </NavLink>
+        {kudosPath ? (
+          <NavLink href={kudosPath} active={pathname === kudosPath}>
+            My Kudos
+          </NavLink>
+        ) : null}
+        {rewardsPath ? (
+          <NavLink href={rewardsPath} active={pathname === rewardsPath}>
+            Rewards
+          </NavLink>
+        ) : null}
       </nav>
-      <div className="flex-1 flex justify-end pr-4 pt-4">
-        <a href={link("/user/logout")}>
-          <Button variant="neutral">Logout</Button>
-        </a>
-      </div>
-    </div>
-  )
+
+      <a href={link("/user/logout")}>
+        <Button variant="neutral" className="h-12 px-5 text-base font-bold">
+          Log out
+        </Button>
+      </a>
+    </header>
+  );
+}
+
+function NavLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <a href={href} aria-current={active ? "page" : undefined}>
+      <Button
+        variant={active ? "green" : "default"}
+        className="h-12 px-5 text-base font-bold"
+      >
+        {children}
+      </Button>
+    </a>
+  );
+}
+
+/** `request.url` is absolute, but never trust it enough to throw a page away. */
+function safePathname(url: string): string {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return url;
+  }
 }

@@ -1,106 +1,152 @@
-import { TeacherNav } from "@/app/components/teacher/TeacherNav"
-import { RequestInfo } from "rwsdk/worker";
+import { ErrorResponse, type RequestInfo } from "rwsdk/worker";
+
 import { db } from "@/db";
+import { assertTeacherOwnsGroup } from "@/auth";
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-  TableCaption,
-} from "@/app/components/ui/table"
-
+} from "@/app/components/ui/table";
 import { ApproveRedeemedButton } from "@/app/components/teacher/ApproveRedeemedButton";
 import { CancelRedeemedButton } from "@/app/components/teacher/CancelRedeemedButton";
 import { GroupHeader } from "@/app/components/teacher/GroupHeader";
+import { TeacherNav } from "@/app/components/teacher/TeacherNav";
+import { RedemptionDate } from "@/app/components/teacher/RedemptionDate";
+import { loadRedemptions } from "@/app/components/teacher/queries";
 
+/** The teacher's approval queue for rewards students have spent kudos on. */
 export async function Rewards({ params, request }: RequestInfo) {
-  const groupId = params.groupId
+  const groupId = params.groupId;
+  await assertTeacherOwnsGroup(groupId);
 
-  const redeemed = await db.redeemed.findMany({
-    where: { groupId: groupId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      user: {
-        select: {
-          firstName: true,
-          lastName: true
-        }
-      }
-    }
-  })
+  const group = await db
+    .selectFrom("groups")
+    .select(["id", "name", "rewardedPoints", "codeMode"])
+    .where("id", "=", groupId)
+    .executeTakeFirst();
 
-  const group = await db.group.findUnique({
-    where: { id: groupId }
-  })
+  if (!group) {
+    throw new ErrorResponse(404, "Group Not Found");
+  }
 
-  const pending = redeemed.filter(r => r.reviewed === false)
-  const reviewed = redeemed.filter(r => r.reviewed === true)
+  const [redemptions, sharedCode] = await Promise.all([
+    loadRedemptions(groupId),
+    db
+      .selectFrom("classCodes")
+      .select("code")
+      .where("groupId", "=", groupId)
+      .where("kind", "=", "group")
+      .executeTakeFirst(),
+  ]);
+
+  const pending = redemptions.filter((row) => !row.reviewed);
+  const reviewed = redemptions.filter((row) => row.reviewed);
 
   return (
     <div className="flex flex-col min-h-screen min-w-screen">
       <div className="h-[100px] flex-shrink-0">
-        <TeacherNav url={request.url} currentGroup={groupId} redeemedCount={pending.length} />
+        <TeacherNav
+          url={request.url}
+          currentGroup={groupId}
+          redeemedCount={pending.length}
+        />
       </div>
+
       <div className="flex-1 overflow-auto flex flex-col gap-4 bg-green-background min-w-screen p-8">
-        {group && <GroupHeader group={group} />}
+        <GroupHeader
+          group={group}
+          codeMode={group.codeMode}
+          classCode={sharedCode?.code ?? null}
+        />
+
         <div className="bg-background w-full neo-container p-6 mb-4">
           <h2 className="text-2xl font-bold mb-2">Pending Rewards</h2>
           <Table>
             <TableCaption className="text-foreground">
-              Pending rewards are rewards that your students have reddemed with their kudos. Track whether or not they have actually recieved them by approving them here.
+              Rewards your students have redeemed with their kudos. Approve one
+              once they have actually received it.
             </TableCaption>
             <TableHeader>
               <TableRow>
                 <TableHead>Reward</TableHead>
                 <TableHead>Requested By</TableHead>
+                <TableHead>Response</TableHead>
                 <TableHead className="text-right">Cost</TableHead>
-                <TableHead className="text-right">Date Recieved</TableHead>
-                <TableHead className="text-right"></TableHead>
+                <TableHead className="text-right">Requested</TableHead>
+                <TableHead className="text-right" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pending.map((p) => (
-                <TableRow key={p.id} className={p.reviewed === true ? "bg-green-300" : "bg-background"}>
-                  <TableCell className="font-base">{p.name}</TableCell>
-                  <TableCell className="font-base">{p.user.firstName} {p.user.lastName}</TableCell>
-                  <TableCell className="text-right">{p.cost}</TableCell>
-                  <TableCell className="text-right">{p.createdAt.toDateString()}</TableCell>
+              {pending.map((redemption) => (
+                <TableRow key={redemption.id} className="bg-background">
+                  <TableCell className="font-base">{redemption.name}</TableCell>
+                  <TableCell className="font-base">
+                    {redemption.firstName} {redemption.lastName}
+                  </TableCell>
+                  <TableCell className="font-base">
+                    {redemption.response ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right">{redemption.cost}</TableCell>
                   <TableCell className="text-right">
-                    <ApproveRedeemedButton redeemed={p} />
-                    <CancelRedeemedButton redeemed={p} />
+                    <RedemptionDate value={redemption.createdAt} />
+                  </TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    <ApproveRedeemedButton redeemedId={redemption.id} />
+                    <CancelRedeemedButton
+                      redeemedId={redemption.id}
+                      cost={redemption.cost}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
+
         <div className="bg-background w-full neo-container p-6 mb-4">
           <h2 className="text-2xl font-bold mb-2">Reviewed Rewards</h2>
           <Table>
-            {reviewed.length === 0 && (
+            {reviewed.length === 0 ? (
               <TableCaption className="text-foreground">
-                Rewards that are approved will be found here.
+                Rewards you have approved will be found here.
               </TableCaption>
-            )}
+            ) : null}
             <TableHeader>
               <TableRow>
                 <TableHead>Reward</TableHead>
                 <TableHead>Requested By</TableHead>
+                <TableHead>Response</TableHead>
                 <TableHead className="text-right">Cost</TableHead>
-                <TableHead className="text-right">Date Recieved</TableHead>
-                <TableHead className="text-right"></TableHead>
+                <TableHead className="text-right">Approved</TableHead>
+                <TableHead className="text-right" />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {reviewed.length > 0 && reviewed.map((r) => (
-                <TableRow key={r.id} className="bg-background">
-                  <TableCell className="font-base">{r.name}</TableCell>
-                  <TableCell className="font-base">{r.user.firstName} {r.user.lastName}</TableCell>
-                  <TableCell className="text-right">{r.cost}</TableCell>
-                  <TableCell className="text-right">{r.createdAt.toDateString()}</TableCell>
-                  <TableCell className="text-right"><CancelRedeemedButton redeemed={r} /></TableCell>
+              {reviewed.map((redemption) => (
+                <TableRow key={redemption.id} className="bg-green-300">
+                  <TableCell className="font-base">{redemption.name}</TableCell>
+                  <TableCell className="font-base">
+                    {redemption.firstName} {redemption.lastName}
+                  </TableCell>
+                  <TableCell className="font-base">
+                    {redemption.response ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-right">{redemption.cost}</TableCell>
+                  <TableCell className="text-right">
+                    <RedemptionDate
+                      value={redemption.reviewedAt ?? redemption.createdAt}
+                    />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <CancelRedeemedButton
+                      redeemedId={redemption.id}
+                      cost={redemption.cost}
+                    />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -108,5 +154,5 @@ export async function Rewards({ params, request }: RequestInfo) {
         </div>
       </div>
     </div>
-  )
+  );
 }

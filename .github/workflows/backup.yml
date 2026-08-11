@@ -1,0 +1,84 @@
+name: Nightly database backup
+
+# Supabase does NOT back up free-tier projects. Daily backups start at the Pro
+# plan, so until then this workflow is the only copy of the data that exists
+# anywhere other than the live database.
+#
+# It has a useful side effect: a free project is paused after roughly 7 days of
+# inactivity, and a nightly connection counts as activity. So this also keeps the
+# project awake over half-terms and holidays — the failure mode that would
+# otherwise greet the first teacher back with an error rather than a slow page.
+
+on:
+  schedule:
+    # 07:00 UTC daily — the middle of the night in US timezones, so a dump never
+    # overlaps a classroom.
+    #
+    # NOTE: GitHub only runs scheduled workflows from the DEFAULT BRANCH. While
+    # this lives on a feature branch it will never fire on its own; use the
+    # manual trigger below until it is merged.
+    - cron: "0 7 * * *"
+  # Lets you run it by hand from the Actions tab — do that once after merging to
+  # prove it works, rather than discovering at 07:00 that it does not.
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Schema and data are dumped separately. The schema is already in
+      # supabase/migrations, but a dump that cannot rebuild the database on its
+      # own is not a backup — you would be reconstructing from two sources under
+      # pressure.
+      - name: Dump schema
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: supabase db dump --db-url "$DB_URL" -f schema.sql
+
+      - name: Dump data
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: supabase db dump --db-url "$DB_URL" --data-only -f data.sql
+
+      # The classic backup failure is not an error — it is a job that goes green
+      # while writing an empty file, and is only discovered when it is needed.
+      # A schema dump for 11 tables cannot plausibly be under 1 KB.
+      - name: Verify the dumps are not empty
+        run: |
+          set -euo pipefail
+          schema_bytes=$(wc -c < schema.sql)
+          data_bytes=$(wc -c < data.sql)
+          echo "schema.sql: ${schema_bytes} bytes"
+          echo "data.sql:   ${data_bytes} bytes"
+
+          if [ "$schema_bytes" -lt 1000 ]; then
+            echo "::error::schema.sql is only ${schema_bytes} bytes — the dump did not work."
+            exit 1
+          fi
+          if ! grep -q 'CREATE TABLE' schema.sql; then
+            echo "::error::schema.sql contains no CREATE TABLE — the dump is not a schema."
+            exit 1
+          fi
+          # data.sql is legitimately small on a fresh database, so this is a
+          # warning rather than a failure.
+          if [ "$data_bytes" -lt 200 ]; then
+            echo "::warning::data.sql is only ${data_bytes} bytes. Expected on an empty database; investigate otherwise."
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: |
+            schema.sql
+            data.sql
+          # GitHub's maximum. This is RECENT-RECOVERY, not an archive: after 90
+          # days the artifact is deleted automatically. If this data ever matters
+          # beyond a term, download one periodically or move to Supabase Pro,
+          # which keeps 7 days of its own daily backups.
+          retention-days: 90

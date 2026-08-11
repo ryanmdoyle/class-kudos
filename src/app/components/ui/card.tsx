@@ -2,12 +2,19 @@ import * as React from "react"
 
 import { cn } from "@/app/lib/utils"
 
+/**
+ * NOTE: the default fill is `bg-background` (the lavender page colour), not
+ * white. Several ported teacher panels pass `bg-background` explicitly and the
+ * dashboards were laid out against it — do not "fix" it to white without
+ * checking those. Pass `className="bg-secondary-background"` for a white card.
+ */
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
       className={cn(
-        "rounded-base flex flex-col shadow-shadow border-2 gap-6 py-6 border-border bg-background text-foreground font-base",
+        "flex flex-col gap-6 rounded-base border-2 border-border bg-background py-6",
+        "font-base text-foreground shadow-shadow",
         className,
       )}
       {...props}
@@ -20,7 +27,8 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-header"
       className={cn(
-        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-[data-slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
+        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6",
+        "has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
         className,
       )}
       {...props}
@@ -42,7 +50,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-description"
-      className={cn("text-sm font-base", className)}
+      className={cn("text-sm font-base text-muted-foreground", className)}
       {...props}
     />
   )
@@ -63,11 +71,7 @@ function CardAction({ className, ...props }: React.ComponentProps<"div">) {
 
 function CardContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div
-      data-slot="card-content"
-      className={cn("px-6", className)}
-      {...props}
-    />
+    <div data-slot="card-content" className={cn("px-6", className)} {...props} />
   )
 }
 

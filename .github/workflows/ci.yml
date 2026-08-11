@@ -1,0 +1,146 @@
+name: CI
+
+# Two jobs, deliberately separate.
+#
+# `check` is fast, needs nothing external, and catches the drift STACK.md §2
+# accepts as the price of skipping codegen: `src/db/types.ts` is hand-written to
+# mirror `supabase/migrations/*.sql`, with nothing inferring one from the other.
+# Kysely will happily typecheck a query the database rejects, so `tsc` is the only
+# thing standing between a renamed column and a runtime failure in a classroom.
+#
+# `integration` is the one that matters. It boots a real Postgres and a real
+# GoTrue, applies the migrations, seeds a teacher and drives the app over HTTP —
+# because the guarantees under test (a `points >= cost` compare-and-swap, a
+# `delete … returning`, a transaction that rolls back only on a THROWN error) exist
+# in the database and nowhere else. Mock any of it and you are testing the mock.
+#
+# Keeping them apart means a red integration run never hides a red typecheck, and
+# you can see at a glance which layer broke.
+#
+# NEEDS NO SECRETS. The local Supabase stack's keys are the CLI's fixed demo
+# values, so this runs on pull requests from anywhere.
+
+# `pull_request` covers feature branches, so `push` is restricted to the default
+# branch. Listing a feature branch here as well would run both jobs twice for every
+# push to an open PR — the `concurrency` group keys on `github.ref`, which differs
+# between the two events, so neither run cancels the other.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# A second push to the same branch cancels the first: these jobs are pure
+# verification, so an outdated run has no value.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # `npm run check` is NOT used here: it starts with `npm run generate`, which
+      # runs `wrangler types` and needs Cloudflare credentials and a .dev.vars.
+      # `worker-configuration.d.ts` is committed, so the typechecks below have
+      # everything they need without it.
+      - name: Typecheck the app
+        run: npm run types
+
+      # The test harness is a plain-Node program checked against Node's lib rather
+      # than workerd's. See the header of tsconfig.test.json for why that
+      # separation is load-bearing.
+      - name: Typecheck the test harness
+        run: npm run types:test
+
+      # The unit project has no globalSetup, no env and no database by
+      # construction, so this passes on a fresh clone with Docker stopped.
+      - name: Unit tests
+        run: npm test
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # `.dev.vars` is gitignored (it is a symlink to `.env` locally), so CI has to
+      # write the environment itself. Every value here is public: they are the
+      # Supabase CLI's fixed local demo keys, and AUTH_SECRET_KEY only signs
+      # session cookies for a database that is destroyed when the job ends.
+      #
+      # Both files are needed, for different readers: the Worker reads `.dev.vars`
+      # (via the Cloudflare Vite plugin) and the test harness reads `.env` (via
+      # Vite's loadEnv in vitest.config.mts).
+      - name: Write the local-stack environment
+        run: |
+          set -euo pipefail
+          cat > .env <<'ENV'
+          AUTH_SECRET_KEY="ci-only-session-signing-key-not-a-secret-000000"
+          SUPABASE_URL="http://127.0.0.1:54321"
+          SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+          SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+          DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          ENV
+          cp .env .dev.vars
+
+      # Brings up Postgres on :54322 and GoTrue behind Kong on :54321, and applies
+      # supabase/migrations/*.sql. Realtime, storage, analytics and edge functions
+      # are disabled in supabase/config.toml — this app uses none of them, and
+      # analytics is both the heaviest container and the most common cause of a
+      # failed start.
+      - name: Start the local Supabase stack
+        run: supabase start
+
+      # `start` already applied the migrations on a fresh volume; `reset` makes the
+      # starting state explicit and identical to the documented local workflow.
+      - name: Apply migrations to a clean database
+        run: supabase db reset
+
+      # A teacher's users.id IS its auth.users.id, so the row can only be created
+      # through provisionTeacher with the service-role key. Every fixture owns its
+      # group through this teacher.
+      - name: Seed a teacher
+        run: npm run seed
+
+      # globalSetup spawns its own `vite dev` with --strictPort and waits for a real
+      # action to answer before any test runs, so there is no separate server step
+      # and no sleep to tune.
+      - name: Integration tests
+        run: npm run test:integration
+
+      # The dev server's stdout carries the only real stack trace for a worker-side
+      # 500; the HTTP response never does. Surface the container logs too, since a
+      # GoTrue or Postgres failure otherwise looks like an application bug.
+      - name: Supabase logs (on failure)
+        if: failure()
+        run: |
+          supabase status || true
+          docker ps -a || true
+          docker logs supabase_db_class-kudos-sdk --tail 100 || true
+          docker logs supabase_auth_class-kudos-sdk --tail 100 || true

@@ -5,10 +5,23 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import * as React from "react"
 
-import { cn } from "@/app/lib/utils"
+import { cn, focusRing } from "@/app/lib/utils"
 
+/**
+ * The neobrutalist press: the button sits 4px up-left of its own solid shadow,
+ * and on hover it translates INTO the shadow, which is simultaneously removed.
+ * `reverse` inverts that — it starts flat and pops out on hover.
+ *
+ * Every variant keeps `border-2 border-border`; the black edge is the identity
+ * of the system and a variant without it will look broken next to the rest.
+ */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-base text-sm font-base ring-offset-white transition-all gap-2 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  cn(
+    "inline-flex items-center justify-center whitespace-nowrap rounded-base text-sm font-base",
+    "gap-2 transition-all [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+    "disabled:pointer-events-none disabled:opacity-50",
+    focusRing,
+  ),
   {
     variants: {
       variant: {
@@ -17,9 +30,12 @@ const buttonVariants = cva(
         green:
           "text-main-foreground bg-green-background border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
         gold:
-          "text-main-foreground bg-yellow-500 border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
+          "text-main-foreground bg-chart-3 border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
+        danger:
+          "text-main-foreground bg-error border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
         noShadow: "text-main-foreground bg-main border-2 border-border",
-        noShadowNeutral: "text-main-foreground bg-secondary-background hover:bg-green-background border-2 border-border",
+        noShadowNeutral:
+          "text-foreground bg-secondary-background hover:bg-green-background hover:text-main-foreground border-2 border-border",
         neutral:
           "bg-secondary-background text-foreground border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
         reverse:

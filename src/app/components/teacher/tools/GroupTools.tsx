@@ -2,7 +2,7 @@
 
 import { RandomStudentButton } from "./RandomStudentButton";
 import { RandomGroupsButton } from "./RandomGroupsButton";
-import { Name } from "@/app/lib/types";
+import type { Name } from "@/app/components/teacher/types";
 import {
   Card,
   CardContent,

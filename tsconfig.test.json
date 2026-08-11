@@ -1,0 +1,55 @@
+{
+  /*
+   * Type-checks `tests/` as what it actually is: a plain-Node program that
+   * spawns a dev server, talks to Postgres over `pg`, and drives the app over
+   * HTTP. Run by `npm run types:test`, which `npm run check` includes.
+   *
+   * ==========================================================================
+   * THE `types` OVERRIDE IS THE WHOLE POINT OF THIS FILE.
+   *
+   * The base tsconfig injects @cloudflare/workers-types and ./types/rw.d.ts
+   * (which imports src/worker, and with it the app's entire workerd surface) as
+   * ambient globals. Inheriting that here would typecheck a Node program
+   * against the Workers runtime, and would quietly bless the one mistake this
+   * harness must never make: importing `@/db` or `@/auth/*` into a test helper.
+   * Those modules reach `cloudflare:workers` through `@/lib/env`, which does not
+   * resolve outside workerd — the import fails before `withDb()` could ever run,
+   * so there is no runtime escape hatch. With only Node's types present, such an
+   * import is a compile error here instead of a confusing failure at test time.
+   *
+   * `@/db/types` IS safe to import, and the harness does: it imports only
+   * `type { ColumnType, Generated } from "kysely"`, so it is a pure type module.
+   * That is what lets tests use the real row types instead of a hand-copied
+   * duplicate that could drift from the migrations.
+   * ==========================================================================
+   */
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    /*
+     * The harness reads .ts source (tests/helpers/actions.ts derives the RSC
+     * action-id map from `"use server"` files), so it needs no DOM lib — but it
+     * does need fetch/FormData/crypto, which Node 25 provides as globals via
+     * @types/node.
+     */
+    "lib": ["ESNext", "ES2022"],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  /*
+   * MUST be restated. `extends` inherits the base `exclude`, which lists
+   * "tests" — and `exclude` filters the results of `include`, so inheriting it
+   * would leave this project compiling ZERO test files while still reporting
+   * success. That failure is silent and total: `npm run types:test` prints
+   * nothing and exits 0, and every type error in the harness sails through.
+   *
+   * If you ever add a directory to the base `exclude`, check whether it needs
+   * re-including here.
+   */
+  "exclude": ["node_modules", ".tmp", "dist", ".wrangler"],
+  "include": ["tests/**/*.ts", "vitest.config.mts"]
+}

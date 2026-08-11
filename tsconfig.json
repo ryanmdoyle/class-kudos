@@ -15,13 +15,14 @@
     "moduleResolution": "bundler",
     /* Specify type package names to be included without being referenced in a source file. */
     "types": [
+      "@cloudflare/workers-types",
       "./worker-configuration.d.ts",
       "./types/rw.d.ts",
-      "./types/vite.d.ts"
+      "./types/vite.d.ts",
+      "./types/css.d.ts"
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@generated/*": ["./generated/*"]
+      "@/*": ["./src/*"]
     },
     /* Enable importing .json files */
     "resolveJsonModule": true,
@@ -44,5 +45,43 @@
 
     /* Skip type checking all .d.ts files. */
     "skipLibCheck": true
-  }
+  },
+  /*
+   * Only build artefacts are excluded. Every source file in `src/` is a
+   * compilation root and is type-checked.
+   *
+   * Do NOT add source directories here to make `tsc` green. Beyond hiding real
+   * errors, rwsdk's directive scan globs `<root>/src/**` and ignores this array:
+   * a file under `src/` carrying "use client"/"use server" with an unresolvable
+   * import fails `runDirectivesScan` and `npm run dev` refuses to start,
+   * excluded or not. (`findDirectiveRoots` in
+   * node_modules/rwsdk/dist/vite/runDirectivesScan.mjs — `path.resolve(root,
+   * "src")`. The scan is src-global, not repo-global; nothing outside `src/` is
+   * ever a scan root.)
+   */
+  "exclude": [
+    "node_modules",
+    ".tmp",
+    "dist",
+    ".wrangler",
+    /*
+     * NOT an exception to the rule above. `tests/` is not a source directory: it
+     * is a plain-Node program, and it IS type-checked — by tsconfig.test.json
+     * (`npm run types:test`), against Node's lib instead of workerd's.
+     *
+     * Two reasons it must be checked separately rather than added here as a
+     * compilation root:
+     *
+     *  1. The `types` array above injects @cloudflare/workers-types and
+     *     ./types/rw.d.ts (which pulls in src/worker, and with it the whole
+     *     app's workerd surface) as globals. The test harness spawns processes,
+     *     talks to Postgres through `pg`, and uses undici's fetch. Checking it
+     *     against workerd's globals would hide the one mistake it must never
+     *     make: importing `@/db` or `@/auth/*`, which reach
+     *     `cloudflare:workers` and cannot resolve outside the Worker.
+     *  2. It is outside the directive scan by construction (see above), so no
+     *     test file can ever become a scan root and break `npm run dev`.
+     */
+    "tests"
+  ]
 }

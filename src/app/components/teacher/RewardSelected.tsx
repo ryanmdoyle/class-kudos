@@ -1,14 +1,18 @@
 "use client";
 
-import { KudosType } from "@generated/prisma";
-import { Button } from "../ui/button";
-import { addKudos, getUpdatedEnrollments } from "./functions";
-import { EnrollmentWithUser, KudosWithUser, Name } from "@/app/lib/types";
-import { PointsPieChart } from "./PointsPieChart"
-import { GroupTools } from "./tools/GroupTools";
-import { KudosLeaderboard } from "./tools/KudosLeaderboard";
-import { toast } from "sonner"
-import { useState } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/app/components/ui/button";
+import {
+  awardKudos,
+  getUpdatedEnrollments,
+} from "@/app/components/teacher/functions";
+import { PointsPieChart } from "@/app/components/teacher/PointsPieChart";
+import { GroupTools } from "@/app/components/teacher/tools/GroupTools";
+import { KudosLeaderboard } from "@/app/components/teacher/tools/KudosLeaderboard";
+import type { Name } from "@/app/components/teacher/types";
+import type { EnrollmentWithUser, KudosWithUser } from "@/app/lib/types";
+import type { KudosTypeRow } from "@/db";
 
 export function RewardSelected({
   groupId,
@@ -21,109 +25,122 @@ export function RewardSelected({
   isAwarding,
   setIsAwarding,
 }: {
-  groupId: string,
-  selected: EnrollmentWithUser[],
-  setSelected: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>>,
-  groupKudoTypes: KudosType[],
-  setEnrollments: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>>,
-  kudos: KudosWithUser[],
-  names: Name[]
-  isAwarding: boolean,
-  setIsAwarding: React.Dispatch<React.SetStateAction<boolean>>,
+  groupId: string;
+  selected: EnrollmentWithUser[];
+  setSelected: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>>;
+  groupKudoTypes: KudosTypeRow[];
+  setEnrollments: React.Dispatch<React.SetStateAction<EnrollmentWithUser[]>>;
+  kudos: KudosWithUser[];
+  names: Name[];
+  isAwarding: boolean;
+  setIsAwarding: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
+  /**
+   * Award a kudos type to everyone currently selected.
+   *
+   * Only IDS go over the wire. The server reads the kudos type's name and value
+   * from the database and re-filters the enrollment ids by group, so a tampered
+   * request cannot award an arbitrary number of points or credit a student in
+   * someone else's class.
+   *
+   * The UI updates optimistically because this is used live in front of a class
+   * and a round trip per tap is too slow to be usable; the authoritative roster
+   * is then refetched and replaces the optimistic state wholesale.
+   */
+  async function handleGiveKudos(kudoType: KudosTypeRow) {
+    if (isAwarding || selected.length === 0) return;
+    setIsAwarding(true);
 
-  async function handleGiveKudos(kudoType: KudosType) {
-    if (!!isAwarding) return; //prevent concurrent awarding
-    setIsAwarding(true)
+    const awardedTo = selected;
+    const enrollmentIds = awardedTo.map((enrollment) => enrollment.id);
 
-    // Optimistically update points for selected enrollments
-    setEnrollments(prevEnrollments =>
-      prevEnrollments.map(enrollment =>
-        selected.some(sel => sel.id === enrollment.id)
+    setEnrollments((previous) =>
+      previous.map((enrollment) =>
+        enrollmentIds.includes(enrollment.id)
           ? { ...enrollment, points: enrollment.points + kudoType.value }
-          : enrollment
-      )
+          : enrollment,
+      ),
     );
-    toast.success("Kudos Given!", {
-      classNames: {
-        toast: "bg-red-500 text-white shadow-lg"
-      }
-    });
     setSelected([]);
 
-    // Fire off the server update in the background
-    await addKudos(kudoType, selected);
+    const result = await awardKudos(groupId, kudoType.id, enrollmentIds);
 
-    // Fetch the latest enrollments from the server and update state
-    const result = await getUpdatedEnrollments(kudoType.groupId);
-    if (result.success && result.data) {
-      setEnrollments(result.data);
+    if (!result.success) {
+      toast.error(result.error ?? "Error saving kudos. Try again.");
+    } else {
+      toast.success("Kudos given!");
     }
-    if (result.error) {
-      toast.error("Error Saving Kudos. Try Again.", {
-        classNames: {
-          toast: "bg-red-500 text-white shadow-lg"
-        }
-      });
+
+    // Refetch either way: on failure this rolls the optimistic update back.
+    const refreshed = await getUpdatedEnrollments(groupId);
+    if (refreshed.success && refreshed.data) {
+      setEnrollments(refreshed.data);
     }
-    setIsAwarding(false)
+
+    setIsAwarding(false);
   }
 
-  if (!selected || selected.length === 0) return (
-    <div className="center flex-col gap-6 p-4">
-      <div className="p-4 bg-background neo-container center">
-        <span className="font-bold">
-          Select someone to reward them with kudos!
-        </span>
-      </div>
-      {kudos.length > 0 && (
-        <div className="flex flex-wrap gap-6">
-          <KudosLeaderboard kudos={kudos} />
-          <PointsPieChart kudos={kudos} />
-          <GroupTools groupId={groupId} names={names} />
+  if (selected.length === 0) {
+    return (
+      <div className="center flex-col gap-6 p-4">
+        <div className="p-4 bg-background neo-container center">
+          <span className="font-bold">
+            Select someone to reward them with kudos!
+          </span>
         </div>
-      )}
+        {kudos.length > 0 ? (
+          <div className="flex flex-wrap gap-6">
+            <KudosLeaderboard kudos={kudos} />
+            <PointsPieChart kudos={kudos} />
+            <GroupTools groupId={groupId} names={names} />
+          </div>
+        ) : (
+          <GroupTools groupId={groupId} names={names} />
+        )}
+      </div>
+    );
+  }
+
+  const kudoButtons = (
+    <div className="flex gap-2 flex-wrap overflow-y-auto">
+      {groupKudoTypes.map((kudoType) => (
+        <Button
+          key={kudoType.id}
+          variant="gold"
+          className="flex items-center justify-between min-w-[120px]"
+          onClick={() => handleGiveKudos(kudoType)}
+          disabled={isAwarding}
+        >
+          <span className="font-medium">{kudoType.name}</span>
+          <span className="text-lg font-bold ml-2">+{kudoType.value}</span>
+        </Button>
+      ))}
     </div>
   );
 
   if (selected.length === 1) {
-    const user = selected[0].user;
+    const student = selected[0]!.user;
     return (
       <div className="p-4 bg-background neo-container">
         <h2 className="text-xl font-bold mb-4">
-          Give {user.firstName} {user.lastName} some kudos:
+          Give {student.firstName} {student.lastName} some kudos:
         </h2>
-        {/* Reward buttons go here */}
-        <div className="flex gap-2 flex-wrap overflow-y-auto">
-          {groupKudoTypes && groupKudoTypes.map(kudoType => (
-            <Button
-              key={kudoType.id}
-              variant="gold"
-              className="flex items-center justify-between min-w-[120px]"
-              onClick={() => handleGiveKudos(kudoType)}
-              disabled={!!isAwarding}
-            >
-              <span className="font-medium">{kudoType.name}</span>
-              <span className="text-lg font-bold ml-2">+{kudoType.value}</span>
-            </Button>
-          ))}
-        </div>
+        {kudoButtons}
       </div>
     );
   }
 
-  // Multiple selected
   return (
     <div className="p-4 bg-background neo-container grid grid-cols-2 gap-4 overflow-hidden">
-
       <div className="flex flex-col overflow-hidden">
-        <h2 className="text-lg font-semibold mb-2">Selected:</h2>
+        <h2 className="text-lg font-semibold mb-2">
+          Selected ({selected.length}):
+        </h2>
         <div className="flex-1 overflow-y-auto p-2">
-
           <ul className="list-disc list-inside">
-            {selected.map(sel => (
-              <li key={sel.id}>
-                {sel.user.firstName} {sel.user.lastName}
+            {selected.map((enrollment) => (
+              <li key={enrollment.id}>
+                {enrollment.user.firstName} {enrollment.user.lastName}
               </li>
             ))}
           </ul>
@@ -132,21 +149,7 @@ export function RewardSelected({
 
       <div className="flex flex-col items-start gap-1 overflow-hidden">
         <h2 className="text-lg font-semibold mb-2">Give kudos to selected:</h2>
-        {/* Reward buttons go here */}
-        <div className="flex-1 overflow-y-auto p-2 gap-2">
-          {groupKudoTypes && groupKudoTypes.map(kudoType => (
-            <Button
-              key={kudoType.id}
-              variant="gold"
-              className="flex items-center justify-between min-w-[120px]"
-              onClick={() => handleGiveKudos(kudoType)}
-            >
-              <span className="font-medium">{kudoType.name}</span>
-              <span className="text-lg font-bold ml-2">+{kudoType.value}</span>
-            </Button>
-
-          ))}
-        </div>
+        <div className="flex-1 overflow-y-auto p-2 gap-2">{kudoButtons}</div>
       </div>
     </div>
   );

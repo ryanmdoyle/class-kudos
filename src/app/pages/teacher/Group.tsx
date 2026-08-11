@@ -1,52 +1,80 @@
-import { TeacherNav } from "@/app/components/teacher/TeacherNav"
-import { ErrorResponse, RequestInfo } from "rwsdk/worker"
-import { db } from "@/db";
-import { GroupDashboard } from "@/app/components/teacher/GroupDashboard";
+import { ErrorResponse, type RequestInfo } from "rwsdk/worker";
 
+import { db } from "@/db";
+import { assertTeacherOwnsGroup } from "@/auth";
+import { GroupDashboard } from "@/app/components/teacher/GroupDashboard";
+import { TeacherNav } from "@/app/components/teacher/TeacherNav";
+import {
+  countPendingRedemptions,
+  loadEnrollmentsWithUser,
+  loadKudosWithUser,
+} from "@/app/components/teacher/queries";
+
+/**
+ * The live classroom screen: pick students, hand out kudos.
+ *
+ * `assertTeacherOwnsGroup` runs FIRST and filters on `ownerId` inside its own
+ * query, so nothing below can read another teacher's group even though the id
+ * comes straight off the URL. It throws 404 (not 403) so group ids stay
+ * unenumerable.
+ *
+ * Prisma's single `include:`-heavy `findUnique` is now several explicit queries.
+ * That is not a regression — `include:` was issuing separate statements anyway;
+ * this just makes them visible and lets each one select only what it needs.
+ */
 export async function Group({ params, request }: RequestInfo) {
   const groupId = params.groupId;
+  await assertTeacherOwnsGroup(groupId);
 
-  const groupData = await db.group.findUnique({
-    where: { id: groupId },
-    include: {
-      enrollments: {
-        include: {
-          user: true
-        },
-      },
-      KudosType: {
-        orderBy: { name: "asc" }
-      },
-      kudos: {
-        include: {
-          user: {
-            select: {
-              firstName: true,
-              lastName: true
-            }
-          }
-        }
-      }
-    }
-  });
+  const group = await db
+    .selectFrom("groups")
+    .select(["id", "name", "rewardedPoints", "codeMode"])
+    .where("id", "=", groupId)
+    .executeTakeFirst();
 
-  if (!groupData) {
-    throw new ErrorResponse(404, "Group Not Found")
+  if (!group) {
+    throw new ErrorResponse(404, "Group Not Found");
   }
 
-  const redeemedAwaitingReview = await db.redeemed.count({
-    where: { groupId, reviewed: false }
-  });
-
-  const { enrollments, KudosType: kudoTypes, kudos } = groupData;
+  const [kudoTypes, enrollments, kudos, redeemedAwaitingReview, sharedCode] =
+    await Promise.all([
+      db
+        .selectFrom("kudosTypes")
+        .selectAll()
+        .where("groupId", "=", groupId)
+        .orderBy("value", "asc")
+        .orderBy("name", "asc")
+        .execute(),
+      loadEnrollmentsWithUser(groupId),
+      loadKudosWithUser(groupId),
+      countPendingRedemptions(groupId),
+      db
+        .selectFrom("classCodes")
+        .select("code")
+        .where("groupId", "=", groupId)
+        .where("kind", "=", "group")
+        .executeTakeFirst(),
+    ]);
 
   return (
     <div className="flex flex-col h-screen min-w-screen">
-      <TeacherNav url={request.url} currentGroup={groupId} redeemedCount={redeemedAwaitingReview} />
+      <TeacherNav
+        url={request.url}
+        currentGroup={groupId}
+        redeemedCount={redeemedAwaitingReview}
+      />
 
       <div className="flex-1 overflow-auto">
         <GroupDashboard
-          group={groupData}
+          group={{
+            id: group.id,
+            name: group.name,
+            rewardedPoints: group.rewardedPoints,
+            // A real Postgres enum, so this arrives already typed as CodeMode —
+            // there is nothing to parse or cast at the boundary.
+            codeMode: group.codeMode,
+            classCode: sharedCode?.code ?? null,
+          }}
           initialEnrollments={enrollments}
           groupKudoTypes={kudoTypes}
           initialKudos={kudos}
