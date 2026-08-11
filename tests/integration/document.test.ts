@@ -47,19 +47,39 @@ describe("the document shell", () => {
     }
   });
 
-  it("allows Sentry's ingest host in connect-src", async () => {
-    const csp = (await createClient().get("/")).headers.get(
-      "content-security-policy",
-    );
-    const connectSrc = /connect-src ([^;]*)/.exec(csp ?? "")?.[1] ?? "";
+  it("permits exactly the DSN's own origin in connect-src, and only when configured", async () => {
+    const response = await createClient().get("/");
+    const html = await response.text();
+    const connectSrc =
+      /connect-src ([^;]*)/.exec(
+        response.headers.get("content-security-policy") ?? "",
+      )?.[1] ?? "";
+
+    const dsn = /window\.__SENTRY_DSN__="([^"]*)";/.exec(html)?.[1];
 
     /*
-     * A CSP host wildcard matches a SUFFIX, so `*.ingest.sentry.io` does not cover
-     * `o123.ingest.us.sentry.io`. Modern DSNs are regional, so both spellings have
-     * to be present or reporting silently stops for whichever form the DSN uses.
+     * THIS IS A CONSISTENCY CHECK, not a hardcoded host.
+     *
+     * The two things have to agree, and asserting a literal host would pass happily
+     * while disagreeing with the actual DSN. A CSP host wildcard matches a SUFFIX,
+     * so `*.ingest.sentry.io` does not cover `o249012.ingest.us.sentry.io` — the
+     * kind of near-miss that reads as correct and silently drops every event. Since
+     * `setCommonHeaders` derives the origin from the DSN, tying the assertion to the
+     * DSN is what actually catches a mismatch.
      */
-    expect(connectSrc).toContain("https://*.ingest.sentry.io");
-    expect(connectSrc).toContain("https://*.ingest.us.sentry.io");
+    if (dsn) {
+      const origin = new URL(dsn).origin;
+      expect(
+        connectSrc,
+        `connect-src does not permit ${origin}, so every captured browser error ` +
+          "will be refused by the browser before it reaches Sentry",
+      ).toContain(origin);
+    } else {
+      /*
+       * No DSN: the policy must not have widened for a Sentry that is not in use.
+       */
+      expect(connectSrc.trim()).toBe("'self' blob:");
+    }
   });
 
   it("injects the Sentry DSN only when one is configured", async () => {

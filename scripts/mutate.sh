@@ -257,12 +257,13 @@ m=re.search(r"\nif \(dsn\) \{\n[\s\S]*?\n\}\n", s)
 assert m, "guarded Sentry.init block not found"
 io.open(p,"w").write(s[:m.start()]+"\n"+s[m.end():])'
 
-add sentry "headers.ts: drop Sentry from connect-src" src/app/headers.ts integration tests/integration/document.test.ts \
+add sentry "headers.ts: stop adding the DSN origin to connect-src" src/app/headers.ts integration tests/integration/document.test.ts \
 'import io
 p="src/app/headers.ts"; s=io.open(p).read()
-o=" https://*.ingest.sentry.io https://*.ingest.us.sentry.io"
-assert o in s, "sentry ingest hosts not found in the CSP"
-io.open(p,"w").write(s.replace(o,"",1))'
+o="[\"'"'"'self'"'"'\", \"blob:\", sentryOrigin()]"
+n="[\"'"'"'self'"'"'\", \"blob:\"]"
+assert o in s, "connect-src source list not found"
+io.open(p,"w").write(s.replace(o,n,1))'
 
 # NOT a row: removing `nonce={nonce}` from the Document's script tags.
 #
