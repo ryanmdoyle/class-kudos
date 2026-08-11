@@ -67,25 +67,53 @@ account created without waiting on an email.
 
 ## Getting started
 
+The quickest path is the local Supabase stack — it needs no cloud project and no
+keys of your own, and it is what the test suite uses:
+
 ```shell
 npm install
-cp .env.example .dev.vars   # then fill it in
+docker info > /dev/null            # Docker must be running
+npm run test:db                    # supabase start && db reset && seed
 npm run dev
 ```
 
-Migrations are plain SQL in `supabase/migrations/` and are applied explicitly
-with `npm run migrate` (`supabase db push --linked`). Nothing migrates itself at
-startup or on first request.
+`npm run test:db` prints the seeded teacher's credentials
+(`teacher@classkudos.local` / `changeme-please-8+`) and the class codes. Copy the
+local stack's values into `.dev.vars` first — `.env.example` shows exactly which,
+and `supabase start` prints the keys.
 
-Seed a working local database — one teacher, one group, five students, and class
-codes for both modes:
+To point at a real Supabase project instead, fill `.dev.vars` from
+`.env.example` and see [SUPABASE_SETUP.md](./SUPABASE_SETUP.md).
+
+Migrations are plain SQL in `supabase/migrations/` and are applied explicitly —
+`supabase db reset` locally, `npm run migrate` (`supabase db push --linked`)
+against the linked project. Nothing migrates itself at startup or on first
+request.
+
+Seeding creates one teacher, one group, five students, and class codes for both
+login modes. The seeded teacher IS a Supabase auth user, so without the keys the
+script stops before writing anything.
+
+## Tests
 
 ```shell
-npm run seed
+npm test                  # unit — pure functions, no database, no Docker
+npm run test:integration  # the real suite: spawns a dev server, needs test:db first
+npm run test:all
 ```
 
-Configure Supabase first: the seeded teacher IS a Supabase auth user, so without
-the keys the script stops before writing anything.
+`npm test` is the one that runs anywhere. The integration suite drives real RSC
+actions over HTTP and asserts against the database, because the guarantees it
+protects — a `points >= cost` compare-and-swap, a rollback that only happens on a
+thrown error — live in Postgres and nowhere else.
+
+It reuses a dev server if one is already running and otherwise starts its own. To
+watch the server's own logs (where worker-side stack traces actually appear), run
+it yourself and set `TEST_SERVER=external`.
+
+**See [STACK.md §4](./STACK.md) for how the harness works** — the action recipe,
+the five ways an action can refuse, and why a race test that cannot race is worse
+than no test at all.
 
 ## Supabase
 
@@ -117,8 +145,13 @@ of your shell history. The script is idempotent.
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Dev server |
-| `npm run types` | `tsc --noEmit` |
-| `npm run check` | Regenerate Cloudflare types, then typecheck |
+| `npm run types` | `tsc --noEmit` on the app |
+| `npm run types:test` | Typecheck `tests/` against Node's lib, not workerd's |
+| `npm run check` | Regenerate Cloudflare types, then both typechecks |
+| `npm test` | Unit tests. No database, no server, no Docker |
+| `npm run test:integration` | Integration suite (needs `npm run test:db` first) |
+| `npm run test:all` | Both projects |
+| `npm run test:db` | Start local Supabase, reset the schema, seed |
 | `npm run seed` | Seed a full demo database |
 | `npm run provision-teacher` | Create one teacher, no demo data |
 | `npm run build` | Production build |

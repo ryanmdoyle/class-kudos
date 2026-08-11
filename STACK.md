@@ -407,7 +407,158 @@ what makes the retry legal where it stands.
 
 ---
 
-## 4. What is deliberately not done
+## 4. How it is tested
+
+The suite defends the two things from §2 that fail **silently**: the transactional
+guarantees, and application-level authorization. Everything else in this app fails
+loudly — if `addLocation` breaks you find out by using it. If `cancelRedeemed`
+half-commits, a child quietly loses points and nobody ever knows.
+
+```
+npm test                 # unit — pure functions. No database, no server, no Docker.
+npm run test:integration # drives a real vite dev over HTTP against a real Postgres
+npm run test:all         # both
+npm run types:test       # typechecks tests/ against Node's lib, not workerd's
+npm run test:db          # supabase start && supabase db reset && npm run seed
+```
+
+### The database is local, and disposable
+
+`supabase start` gives Postgres on `:54322` and GoTrue on `:54321`, and
+`supabase db reset` re-applies `supabase/migrations/*.sql` to a clean database in
+seconds. `supabase/config.toml` disables realtime, storage, analytics and edge
+functions — this app uses none of them — and enables the local Supavisor pooler on
+`:54329`.
+
+A test database has to be one the tests may **destroy**, which rules out the
+online project: it is dev today and production the moment `v2-rebuild` merges.
+Local also removes a subtler hazard — GoTrue's own rate limit is keyed on the
+caller as GoTrue sees it, so it is effectively a global ceiling on teacher logins
+per run, and the app deliberately collapses every Supabase error into one string.
+Exhaust it against a remote project and your tests fail with "That email and
+password didn't match".
+
+**What local does not cover:** production reaches Postgres only through the
+Supavisor *transaction* pooler (trap 4), and a direct connection does not exercise
+it. To check that, point `DATABASE_URL` at `:54329` — and note it is
+`DATABASE_URL`, not `TEST_DATABASE_URL`, because the thing under test is the
+**worker's** connection path. Moving only the harness's own connection proves
+nothing.
+
+### The harness drives HTTP, not imported functions
+
+`tests/` is a plain-Node program that POSTs RSC actions to a running `vite dev`
+and asserts against the database directly with its own Kysely handle.
+
+Two rejected alternatives, for the same underlying reason:
+
+- **`@cloudflare/vitest-pool-workers`.** It bundles test modules with its own
+  esbuild and never runs `redwood()`'s RSC transform or directive scan. 52 files
+  carry `"use client"` and 14 carry `"use server"`; `SELF.fetch()` against this app
+  is not going to work. It also pins a conflicting `wrangler`.
+- **Importing the action functions and calling them.** Every one of them reaches
+  `getRequestInfo()` for `ctx`, the session, the rate-limit key and `db` itself.
+  Faking that means reimplementing rwsdk's request pipeline, and the tests would
+  then pass against a pipeline that is not the one production runs.
+
+The consequence is that `db` behaves in tests exactly as it does in production —
+one `max: 1` pool per request — which is what makes a race a real race. **N
+concurrent promises inside one request are not concurrent**; they queue on one
+connection. Real concurrency means N independent HTTP requests, which is what
+`tests/helpers/parallel.ts` does.
+
+### The action recipe
+
+```
+POST /?__rsc&__rsc_action_id=<urlencoded "/src/…/functions.ts#exportName">
+Origin: http://localhost:5173      <- non-GET actions are refused without a match
+accept: text/x-component
+x-rsc-data-only: true              <- suppresses the page render
+cf-connecting-ip: 198.51.100.x     <- per-client rate-limit isolation
+body: await encodeReply(args)
+```
+
+Four details that are not obvious and each cost time to find:
+
+- **`encodeReply`** from `react-server-dom-webpack/client.edge` runs in plain Node
+  and produces exactly what the browser sends — a JSON string for plain arguments,
+  a real `FormData` when any argument is one. Hand it to `fetch` and let undici set
+  the Content-Type; setting it by hand is the one way to break the nine FormData
+  actions.
+- **`x-rsc-data-only: true`** makes the page element `null`, so the payload carries
+  only the action result and no page renders. This sidesteps the hung-RSC-stream
+  failure in trap 3 entirely. It gates on `actionResult !== undefined`, so an
+  action returning `undefined` still renders the page.
+- **Action ids are derived, never hardcoded** (`tests/helpers/actions.ts` scans
+  `src/` for the directive). `tests/unit/actionIds.test.ts` pins the result against
+  a golden list of all 35 exports, so a new network endpoint appearing fails a
+  test — `src/auth/provision.ts` carries the service-role key and is one stray
+  directive away from being one.
+- **`node` is never `null`** in a decoded payload, even when the page was
+  suppressed. `renderToRscStream` always appends a `<div id="rwsdk-app-end">`
+  marker, so a suppressed page is `node[0] === null`.
+
+### Five refusal channels, and why the tests care
+
+Determined by observation against the running app, not from reading rwsdk. Three
+of them are HTTP-visible and two are not, and telling them apart is most of what
+the authorization tests assert:
+
+| Cause | HTTP | Content-type | Where |
+| --- | --- | --- | --- |
+| Action **throws** `ErrorResponse` | real 401/403/404 | `text/plain` | guards **outside** `try` — the student module |
+| Middleware returns a `Response` | real 401/403 | `text/plain` | `isAuthenticated`, `checkRoleAccess` |
+| Action **returns** a value | **200** | `text/x-component` | guards **inside** `try` — the teacher modules |
+| Action returns a `Response` | **200** | `text/x-component` | flattened to `{ __rw_action_response: { status } }` |
+| POST to an unrouted path | 404 | `text/plain` | the action **still ran**; its result was discarded |
+
+The first two are indistinguishable over HTTP. So every authorization test POSTs
+to **`/`**, whose only route middleware returns early for actions — meaning a
+refusal there can only have come from the action's own guard. That is what makes
+the sweep in `tests/integration/authz.test.ts` evidence of self-guarding rather
+than evidence that some middleware happened to catch it.
+
+The last row is a genuine route-middleware bypass: rwsdk's router calls
+`handleAction()` **before** returning its 404, so `POST /nope?__rsc_action_id=…`
+executes the action with `ctx.user` populated. It is safe only because every action
+guards itself — which is exactly the claim trap 3 makes, and now a test.
+
+### A race test that cannot race is worse than no test
+
+"Exactly one winner" passes trivially when the requests serialised: the second
+simply arrives after the first has committed. So `inParallel` records
+client-observed intervals and `assertRealOverlap` guards against it — but be
+precise about how much that proves, because it is less than it looks:
+
+- `maxConcurrent` proves the requests were **in flight from the client** together,
+  not that the server interleaved them. On its own it is nearly tautological:
+  `inParallel` stamps every start in one synchronous tick, so four deliberately
+  sequential 25 ms tasks still report `maxConcurrent = 4`. It is kept because it
+  does catch one real regression — a race test rewritten as a sequential
+  `for (…) await …` loop drops it to 1.
+- `overlapFactor` (summed durations ÷ wall clock) is the serialisation canary, and
+  it does discriminate: the same serial measurement gave 2.52 where overlapped work
+  gives ≈4. It is only asserted at four or more requests, since serial tends to
+  ≈(n+1)/2 and overlapped to ≈n, which do not separate at two. A tighter timing
+  assertion was deliberately not added — it would be flaky on a shared runner
+  without buying any real confidence.
+
+**What actually proves a race test exercises its compare-and-swap is mutation
+testing**, and it has been run. Deleting `.where("points", ">=", reward.cost)` from
+`requestReward` turns the five-way race red; turning `StaleMoveError` into a
+`return` turns the location race red; widening `cancelRedeemed`'s refund from
+`userId + groupId` to `groupId` alone turns the double-cancel race red. If you
+change these tests, re-run the mutations rather than trusting the helper.
+
+The other half of the same discipline: each race test asserts **row counts** and
+**which row**, not just return values. An app that returns `ok` once while writing
+two `redeemed` rows satisfies "exactly one winner" and has still minted points; one
+that refunds the right amount to the wrong child satisfies a balance check on a
+single-student fixture. Both are why the fixtures carry a bystander.
+
+---
+
+## 5. What is deliberately not done
 
 - **No RLS, and no `supabase.from(...)`.** See §2. If you are about to write a
   policy, you have left the intended scope.
@@ -447,7 +598,7 @@ what makes the retry legal where it stands.
 
 ---
 
-## 5. Where to look for what
+## 6. Where to look for what
 
 | Path | What lives there |
 | --- | --- |
@@ -470,4 +621,11 @@ what makes the retry legal where it stands.
 | `src/app/components/teacher/queries.ts`, `src/app/pages/student/data.ts` | Read-side queries. Neither is `"use server"`; both document the authorization contract with their callers. |
 | `src/app/components/public/locationService.ts` | The one implementation of "this student moved", shared by the authenticated and anonymous paths. The best worked example of the transaction + CAS pattern. |
 | `src/scripts/` | `seed.ts` and `provisionTeacher.ts`, run via `rw-scripts worker-run`. Both need `withDb()`. |
+| `src/db/classCodeSeed.ts` | `insertClassCode` — the ONE place allowed to write `classCodes` without an ownership check, shared by the seed script and the test fixtures. Its header lists the imports it must never gain. |
 | `src/lib/pgNativeStub.ts` + `vite.config.mts` | Why the build does not fall over on `pg-native`. |
+| `vitest.config.mts` | Two projects: `unit` (no external dependencies, by construction) and `integration`. Replaces `vite.config.mts` for tests, which is why the `@/` and `pg-native` aliases are restated there. |
+| `tsconfig.test.json` | Typechecks `tests/` against Node's lib instead of workerd's, so importing `@/db` into a test helper is a compile error. Must restate `exclude`, or it silently checks nothing. |
+| `tests/helpers/` | The harness: `rsc.ts` (action client), `fixtures.ts`, `db.ts`, `parallel.ts` (the overlap witness), `flight.ts`, `session.ts`, `actions.ts` (derived action ids). |
+| `tests/integration/harness.test.ts` | The harness testing itself. Fails if requests stop genuinely overlapping — otherwise every race test would quietly start passing for the wrong reason. |
+| `supabase/config.toml` | The local test stack. Header explains the five deliberate deviations from `supabase init` defaults. |
+| `.github/workflows/ci.yml` | Two jobs, no secrets: `check` (typechecks + unit) and `integration` (local Supabase + dev server + full suite). |
