@@ -544,11 +544,23 @@ precise about how much that proves, because it is less than it looks:
   without buying any real confidence.
 
 **What actually proves a race test exercises its compare-and-swap is mutation
-testing**, and it has been run. Deleting `.where("points", ">=", reward.cost)` from
-`requestReward` turns the five-way race red; turning `StaleMoveError` into a
-`return` turns the location race red; widening `cancelRedeemed`'s refund from
-`userId + groupId` to `groupId` alone turns the double-cancel race red. If you
-change these tests, re-run the mutations rather than trusting the helper.
+testing**, and it is a command rather than a claim:
+
+```sh
+npm run test:mutate            # 16 mutations; currently 15 killed, 1 type-rejected
+npm run test:mutate -- --list  # the table, with the test each one must turn red
+```
+
+`scripts/mutate.sh` removes a guarantee — the `points >= cost` predicate, a
+`throw` that becomes a `return`, an `assertTeacherOwnsGroup`, the `trx` threaded into
+a helper — and requires a named test to fail. Its header records why each of its
+safeguards exists; all three were added after the bug they prevent, and the worst of
+them was a harness that silently stopped mutating and therefore reported the tests as
+useless. If you change a race, re-run it rather than trusting the overlap helper.
+
+The one skip is informative rather than a gap: `requestReward`'s throw-to-return edit
+will not compile, because `points` becomes `number | undefined`. The type system gets
+there before the tests do.
 
 The other half of the same discipline: each race test asserts **row counts** and
 **which row**, not just return values. An app that returns `ok` once while writing
@@ -629,3 +641,5 @@ single-student fixture. Both are why the fixtures carry a bystander.
 | `tests/integration/harness.test.ts` | The harness testing itself. Fails if requests stop genuinely overlapping — otherwise every race test would quietly start passing for the wrong reason. |
 | `supabase/config.toml` | The local test stack. Header explains the five deliberate deviations from `supabase init` defaults. |
 | `.github/workflows/ci.yml` | Two jobs, no secrets: `check` (typechecks + unit) and `integration` (local Supabase + dev server + full suite). |
+| `scripts/mutate.sh` | The mutation battery. One row per guarantee, naming the test that must fail when it is removed. Read its header before adding a row. |
+| `CLAUDE.md` | Conventions for anyone (or anything) changing this repo, including which docs must be updated alongside which kind of change. |

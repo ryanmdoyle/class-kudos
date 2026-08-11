@@ -100,6 +100,7 @@ script stops before writing anything.
 npm test                  # unit — pure functions, no database, no Docker
 npm run test:integration  # the real suite: spawns a dev server, needs test:db first
 npm run test:all
+npm run test:mutate       # break the app on purpose; the suite must notice
 ```
 
 `npm test` is the one that runs anywhere. The integration suite drives real RSC
@@ -110,6 +111,15 @@ thrown error — live in Postgres and nowhere else.
 It reuses a dev server if one is already running and otherwise starts its own. To
 watch the server's own logs (where worker-side stack traces actually appear), run
 it yourself and set `TEST_SERVER=external`.
+
+`npm run test:mutate` is the one that checks the tests themselves. It removes a
+guarantee — a compare-and-swap, a rollback, an ownership check — and confirms a
+specific test goes red, because a green suite only proves the tests ran. Currently
+16 mutations: 15 killed, 1 rejected by TypeScript before it can even run. Run it on
+a committed tree; it edits source files and refuses to start on a dirty one.
+
+**If you add a race, a guard or a transaction, add a row to `scripts/mutate.sh`.** A
+test with no row there has never been shown to fail.
 
 **See [STACK.md §4](./STACK.md) for how the harness works** — the action recipe,
 the five ways an action can refuse, and why a race test that cannot race is worse
@@ -152,6 +162,7 @@ of your shell history. The script is idempotent.
 | `npm run test:integration` | Integration suite (needs `npm run test:db` first) |
 | `npm run test:all` | Both projects |
 | `npm run test:db` | Start local Supabase, reset the schema, seed |
+| `npm run test:mutate` | Break the app on purpose and check the suite notices |
 | `npm run seed` | Seed a full demo database |
 | `npm run provision-teacher` | Create one teacher, no demo data |
 | `npm run build` | Production build |
