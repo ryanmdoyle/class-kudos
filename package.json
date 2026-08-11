@@ -28,6 +28,7 @@
     "test:integration": "vitest run --project integration",
     "test:all": "vitest run",
     "test:db": "supabase start && supabase db reset && npm run seed",
+    "test:mutate": "bash scripts/mutate.sh",
     "migrate": "supabase db push --linked"
   },
   "dependencies": {
