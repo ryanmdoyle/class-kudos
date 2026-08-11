@@ -73,17 +73,21 @@ keys of your own, and it is what the test suite uses:
 ```shell
 npm install
 docker info > /dev/null            # Docker must be running
+cp .env.example .env.localstack    # then fill in the LOCAL STACK shape
+npm run env:local                  # make it active
 npm run test:db                    # supabase start && db reset && seed
 npm run dev
 ```
 
-`npm run test:db` prints the seeded teacher's credentials
-(`teacher@classkudos.local` / `changeme-please-8+`) and the class codes. Copy the
-local stack's values into `.dev.vars` first — `.env.example` shows exactly which,
-and `supabase start` prints the keys.
+`supabase start` prints the anon and service-role keys you need for
+`.env.localstack`; they are the CLI's fixed local demo values, identical on every
+machine. `npm run test:db` then prints the seeded teacher's credentials
+(`teacher@classkudos.local` / `changeme-please-8+`) and the class codes.
 
-To point at a real Supabase project instead, fill `.dev.vars` from
-`.env.example` and see [SUPABASE_SETUP.md](./SUPABASE_SETUP.md).
+To point at a real Supabase project instead, fill `.env.remote` from `.env.example`,
+run `npm run env:remote`, and see [SUPABASE_SETUP.md](./SUPABASE_SETUP.md). See
+**Environments** below for which mode to use when — and note the test suite will
+refuse to run against anything but the local stack.
 
 Migrations are plain SQL in `supabase/migrations/` and are applied explicitly —
 `supabase db reset` locally, `npm run migrate` (`supabase db push --linked`)
@@ -93,6 +97,43 @@ request.
 Seeding creates one teacher, one group, five students, and class codes for both
 login modes. The seeded teacher IS a Supabase auth user, so without the keys the
 script stops before writing anything.
+
+## Environments
+
+Two, and which one is active is a single file.
+
+| | Reads | Use it for |
+| --- | --- | --- |
+| **localstack** | local Supabase on `:54322` / `:54321` | development and **all** testing |
+| **remote** | the online project | a real confirmation or reset email, or reproducing something with production data |
+
+```shell
+npm run env:which     # which is active (and whether .dev.vars is healthy)
+npm run env:local     # switch to the local stack
+npm run env:remote    # switch to the online project
+```
+
+`.env.localstack` and `.env.remote` are the **sources**; `.env` is the active copy,
+and `.dev.vars` is a symlink to it. That symlink is deliberate: the Worker reads
+`.dev.vars` and the test harness reads `.env`, so one file behind both means they can
+never disagree about a secret. Neither source is committed — see `.env.example` for
+what belongs in them.
+
+The switcher refuses to overwrite hand-edits to `.env` without `--force`, warns when
+it puts you on the online project, and tells you if the `.dev.vars` symlink has gone
+dangling (which otherwise leaves the Worker with no secrets while the tests keep
+passing).
+
+**The test suite refuses to run against anything but a local database.** The fixtures
+create and destroy groups, students and balances, which is fine against a stack
+`supabase db reset` rebuilds in seconds and is data loss anywhere else.
+`ALLOW_REMOTE_TEST_DB=1` opts in deliberately, for the Supavisor pooler fidelity check
+and nothing else.
+
+**Never create `.env.local`, `.env.test` or `.env.test.local`.** Vite's `loadEnv`
+reads all three at higher precedence than `.env` in the test harness, while the Worker
+keeps reading `.dev.vars` — so the tests and the app would silently see different
+values.
 
 ## Tests
 
@@ -115,7 +156,7 @@ it yourself and set `TEST_SERVER=external`.
 `npm run test:mutate` is the one that checks the tests themselves. It removes a
 guarantee — a compare-and-swap, a rollback, an ownership check — and confirms a
 specific test goes red, because a green suite only proves the tests ran. Currently
-19 mutations: 18 killed, 1 rejected by TypeScript before it can even run. Run it on
+21 mutations: 20 killed, 1 rejected by TypeScript before it can even run. Run it on
 a committed tree; it edits source files and refuses to start on a dirty one.
 
 **If you add a race, a guard or a transaction, add a row to `scripts/mutate.sh`.** A
@@ -162,6 +203,9 @@ of your shell history. The script is idempotent.
 | `npm run test:integration` | Integration suite (needs `npm run test:db` first) |
 | `npm run test:all` | Both projects |
 | `npm run test:db` | Start local Supabase, reset the schema, seed |
+| `npm run env:which` | Which environment is active |
+| `npm run env:local` | Point `.env` at the local Supabase stack |
+| `npm run env:remote` | Point `.env` at the online project |
 | `npm run test:mutate` | Break the app on purpose and check the suite notices |
 | `npm run seed` | Seed a full demo database |
 | `npm run provision-teacher` | Create one teacher, no demo data |
@@ -216,29 +260,41 @@ putting the site to sleep.
 
 ## Deploying
 
+**See [DEPLOY.md](./DEPLOY.md)** — the pre-flight checks, what to watch, the smoke
+tests, and rollback.
+
 ```shell
 npm run release
 ```
 
-That is `build → migrate → deploy`, and the order is deliberate:
+Two things worth knowing before you read further, because this section used to get
+both wrong:
 
-- **Build first.** A compile error then costs nothing — no schema has changed yet.
-- **Migrate before deploy**, so the new code never starts against an old schema.
-  `supabase db push` is idempotent, so a release with no new migrations is a
-  no-op rather than an error.
+- It is **not** just `build → migrate → deploy`. It starts with
+  `rw-scripts ensure-deploy-env`, which **prompts `y/N`**, leaves a junk
+  `TMP_WORKER_CREATED` secret, and would silently generate an `AUTH_SECRET_KEY` if
+  one were missing. `npm run migrate` then prompts for the database password. Two
+  interactive stops, so a release cannot run unattended — which is also why no CI
+  job deploys.
+- **Nothing deploys automatically.** Merging to `main` runs CI and changes nothing
+  users can see.
 
-The unavoidable consequence is a brief window where the schema is ahead of the
-running code. **Keep migrations additive** — add columns and tables, do not
-rename or drop them in the same release as the code that stops using them.
-Split a destructive change across two deploys.
+Migrate runs **between** build and deploy, deliberately: a compile error costs
+nothing before any schema has changed, and the new code never starts against an old
+schema. The consequence is a brief window where the schema is ahead of the running
+code, so **keep migrations additive** — add columns and tables, never rename or drop
+them in the same release as the code that stops using them. Split destructive changes
+across two deploys.
 
-Migrating requires the Supabase CLI to be linked (`supabase link --project-ref
-<ref>`). In CI, set `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` instead.
+Migrating needs the Supabase CLI linked (`supabase link --project-ref <ref>`); the ref
+and token are machine-local, so on another machine set `SUPABASE_ACCESS_TOKEN` and
+`SUPABASE_DB_PASSWORD`.
 
-Set the Supabase secrets in the Cloudflare dashboard (or via `wrangler secret
-put`) before the first deploy: `AUTH_SECRET_KEY`, `DATABASE_URL`, `SUPABASE_URL`,
-`SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `APP_URL`
-(`https://classkudos.com` — production only; leave it unset locally so emailed
-links point at your dev server). A Cloudflare
-Rate Limiting rule on the login path is recommended as a second layer in front
-of the app-level throttling in `src/auth/rateLimit.ts`.
+`wrangler.jsonc` declares the six secrets the Worker cannot run without, so
+`wrangler deploy` refuses and names any that are unset rather than shipping a build
+whose every login 500s. Set them before the first release — see
+[SUPABASE_SETUP.md](./SUPABASE_SETUP.md) §6, which is the canonical list. `APP_URL`
+is production-only; leave it unset locally so emailed links point at your dev server.
+
+A Cloudflare Rate Limiting rule on the login path is recommended as a second layer in
+front of the app-level throttling in `src/auth/rateLimit.ts`.

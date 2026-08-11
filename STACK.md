@@ -547,7 +547,7 @@ precise about how much that proves, because it is less than it looks:
 testing**, and it is a command rather than a claim:
 
 ```sh
-npm run test:mutate            # 19 mutations; currently 18 killed, 1 type-rejected
+npm run test:mutate            # 21 mutations; currently 20 killed, 1 type-rejected
 npm run test:mutate -- --list  # the table, with the test each one must turn red
 ```
 
@@ -643,3 +643,6 @@ single-student fixture. Both are why the fixtures carry a bystander.
 | `.github/workflows/ci.yml` | Two jobs, no secrets: `check` (typechecks + unit) and `integration` (local Supabase + dev server + full suite). |
 | `scripts/mutate.sh` | The mutation battery. One row per guarantee, naming the test that must fail when it is removed. Read its header before adding a row. |
 | `CLAUDE.md` | Conventions for anyone (or anything) changing this repo, including which docs must be updated alongside which kind of change. |
+| `DEPLOY.md` | The deploy itself: pre-flight checks, the two interactive prompts inside `npm run release`, smoke tests, rollback. |
+| `scripts/env.sh` | `npm run env:local|env:remote|env:which`. `.env` is a COPY of `.env.localstack` or `.env.remote`; refuses to clobber hand-edits. |
+| `public/.assetsignore` | Files that must not be served from the apex. Honest about what it does and does not verify. |

@@ -1,0 +1,285 @@
+# Deploying
+
+How to ship Class Kudos to `classkudos.com`, and what to watch while it happens.
+
+[README.md](./README.md) covers running it locally; [STACK.md](./STACK.md) covers why
+it is built this way; [SUPABASE_SETUP.md](./SUPABASE_SETUP.md) covers every Supabase
+dashboard setting and is the canonical list of production secrets. **This document is
+the deploy itself**, including the parts `npm run release` does that are not obvious.
+
+---
+
+## First, what deploying is *not*
+
+**Nothing deploys automatically.** No workflow runs `wrangler deploy`:
+
+- `.github/workflows/ci.yml` — `pull_request` + `push` to `main`. Typechecks, unit
+  tests, then the integration suite against a throwaway Supabase stack. No secrets,
+  no deploy step.
+- `.github/workflows/backup.yml` — `schedule` + `workflow_dispatch`. Dumps the
+  database.
+
+So merging to `main` changes nothing users can see. CI passing means the code is
+sound, not that it is live. The two are worth watching at different moments: CI on
+the merge, this document when you ship.
+
+**It cannot run unattended.** There are two interactive prompts (below), which is
+also why there is no deploy job to add.
+
+---
+
+## Pre-flight
+
+Each of these is read-only. Run them in order; every one has bitten someone.
+
+### 1. The code you think you are shipping
+
+```sh
+git switch main && git pull
+git log --oneline -1
+npm run check          # generate + tsc + tsc -p tsconfig.test.json
+npm test               # unit; needs no database
+```
+
+The integration suite needs the local stack, so if you want the full set first:
+`npm run test:db && npm run test:integration`.
+
+### 2. Production secrets are all present
+
+```sh
+npx wrangler secret list
+```
+
+Expect these six, which the Worker cannot run without:
+
+```
+AUTH_SECRET_KEY  DATABASE_URL  SUPABASE_URL
+SUPABASE_ANON_KEY  SUPABASE_SERVICE_ROLE_KEY  APP_URL
+```
+
+`SENTRY_DSN` is optional — unset means error reporting is off, deliberately and
+completely. `TMP_WORKER_CREATED` is junk that `ensure-deploy-env` leaves behind;
+ignore it.
+
+`wrangler.jsonc` declares the six as `secrets.required`, so `wrangler deploy` now
+refuses and names any that are missing instead of shipping. That guard exists because
+`requireSecret` throws at *first use*, not at startup: without it, a missing secret
+gives you a deploy that goes completely green and a site where every login 500s.
+
+**`DATABASE_URL` must be the Supavisor pooler on port 6543** (STACK.md trap 4). The
+direct host is IPv6-only and Workers cannot open outbound IPv6.
+
+### 3. Supabase is linked, and you know the migration state
+
+```sh
+supabase projects list                 # is xkvmtgpmafwmrajzsyjq linked?
+supabase migration list --linked       # which migrations are applied REMOTELY
+```
+
+That second command is the only honest way to know. Nothing in the repo records
+whether `0001_initial_schema` and `0002_login_attempts` are applied to the online
+project — `supabase/.temp/` is gitignored, and the only source of truth is the remote
+`supabase_migrations.schema_migrations` ledger.
+
+**This step is machine-bound.** The project ref lives in gitignored
+`supabase/.temp/`, and the access token is in the macOS Keychain. On a different
+machine you need `supabase link --project-ref xkvmtgpmafwmrajzsyjq` first, and
+`SUPABASE_ACCESS_TOKEN` + `SUPABASE_DB_PASSWORD` to avoid the prompts.
+
+### 4. The three things that must agree (STACK.md trap 6)
+
+`APP_URL`, the `routes` host in `wrangler.jsonc`, and Supabase's redirect allow-list.
+Every confirmation and reset link is built from `APP_URL` via `getAppOrigin`.
+
+| Must be | Currently |
+| --- | --- |
+| `APP_URL` secret | `https://classkudos.com` |
+| `wrangler.jsonc` `routes` | `classkudos.com`, `custom_domain: true` — apex only, `www` deliberately unrouted |
+| Supabase allow-list | all four of `{localhost:5173, classkudos.com} × {/user/reset-password, /user/confirm}` |
+
+**A mismatch fails silently.** Supabase refuses a `redirectTo` that is not on the
+allow-list and substitutes its Site URL, which loses the path — so the teacher lands
+somewhere that does not answer and no error is raised anywhere. If you set
+`APP_URL=https://www.classkudos.com`, links point at an origin the Worker never
+answers.
+
+### 5. Dry run — the last safe step
+
+```sh
+npx wrangler deploy --dry-run
+```
+
+Validates the config, resolves bindings, and exits without shipping. Expect
+`SESSION_DURABLE_OBJECT`, `ASSETS` and `APP_NAME`.
+
+It does **not** contact the API, so it cannot tell you a secret is missing — that
+error appears on the real deploy. And `secrets.required` is a newer wrangler config
+field: if a real deploy ever complains about the `secrets` block itself, deleting
+those few lines from `wrangler.jsonc` is a safe fallback that only loses the
+fail-fast behaviour.
+
+---
+
+## The deploy
+
+```sh
+npm run release
+```
+
+Which is:
+
+```
+rw-scripts ensure-deploy-env && npm run clean && RWSDK_DEPLOY=1 npm run build && npm run migrate && wrangler deploy
+```
+
+Step by step, including the parts README used to omit:
+
+### `rw-scripts ensure-deploy-env`
+
+1. **Prompts `Do you want to proceed with deployment? (y/N)`.** Anything but `y`
+   exits 1. ← **first interactive stop**
+2. On a machine that has never authenticated, runs a wrangler command purely to
+   trigger the login/account picker. ← possible second stop, first time only
+3. Runs `wrangler secret put TMP_WORKER_CREATED` to force the Worker to exist. This
+   is why that junk secret is there. Harmless; recreated every release.
+4. **If `AUTH_SECRET_KEY` is not already set, it generates a random one and sets it
+   without showing you.** Yours is set, so this will not fire — but on a fresh Worker
+   it means your sessions are signed by a key you never saw, and setting your own
+   afterwards is a *rotation* that logs every teacher out. Set secrets before the
+   first release, not after.
+
+### `npm run clean`
+
+`rm -rf ./node_modules/.vite` only. It does **not** clear `dist/`.
+
+### `RWSDK_DEPLOY=1 npm run build`
+
+`RWSDK_DEPLOY` is a **dead no-op** in rwsdk 1.7.0 — nothing reads it. The build is
+just `vite build`, writing `dist/client/**` and `dist/worker/**`.
+
+`dist/worker/.dev.vars` is written here and looks alarming — it contains whatever your
+local `.env` says, including local Supabase values. **`wrangler deploy` ignores it.**
+Verified: the uploaded metadata's `vars` is only `{APP_NAME}`, and nothing local is
+inlined into `dist/worker/index.js`. It exists for `vite preview` on the built output.
+Treat it as a plaintext copy of your secrets on disk, but not as a deploy hazard.
+
+### `npm run migrate`
+
+`supabase db push --linked`, against the online project. **Prompts for the database
+password** unless it is cached in the Keychain or `SUPABASE_DB_PASSWORD` is set.
+← **second interactive stop**
+
+This runs **between build and deploy**, deliberately: a compile error costs nothing
+before any schema has changed, and the new code never starts against an old schema.
+The unavoidable consequence is a brief window where the schema is *ahead* of the
+running code. **Keep migrations additive** — add columns and tables, never rename or
+drop them in the same release as the code that stops using them. Split destructive
+changes across two deploys.
+
+### `wrangler deploy`
+
+Uploads the Worker and the assets in `dist/client`. Because
+`.wrangler/deploy/config.json` exists, wrangler deploys `dist/worker/wrangler.json`
+rather than the root `wrangler.jsonc`.
+
+---
+
+## Watching it
+
+```sh
+npx wrangler tail                    # live Worker logs, including exceptions
+```
+
+Leave that running in a second terminal while you smoke-test. Otherwise:
+
+- **Cloudflare dashboard** → Workers & Pages → `class-kudos-sdk` → Deployments, and
+  Observability (enabled in `wrangler.jsonc`) for request-level detail.
+- **GitHub Actions** for CI, which is a separate thing on a separate trigger.
+- **Sentry**, once `SENTRY_DSN` is set — server errors go through
+  `Sentry.withSentry`, browser errors through `Sentry.init` in `src/client.tsx`.
+
+---
+
+## Smoke checks, in the order things fail
+
+```sh
+# 1. It is serving, and the CSP is right. If SENTRY_DSN is set, connect-src must
+#    contain your ingest origin — derived from the DSN, so a mismatch means the
+#    secret changed shape.
+curl -sI https://classkudos.com | grep -i content-security-policy
+
+# 2. Junk is not served. Both should be 404 — see public/.assetsignore, which is
+#    honest about the fact that this is the check that actually settles it.
+curl -sI https://classkudos.com/.DS_Store | head -1
+curl -sI https://classkudos.com/.vite/manifest.json | head -1
+```
+
+Then in a browser:
+
+3. **A teacher logs in.** This is the big one: it proves `DATABASE_URL` reaches
+   Postgres through the pooler, `AUTH_SECRET_KEY` signs a session, the Durable Object
+   is bound, and Supabase Auth answers. Most misconfigurations die here.
+4. **A student logs in with a class code.** Proves the path that never touches
+   Supabase.
+5. **Award a kudos, redeem a reward.** Proves a transaction commits.
+6. **An error reaches Sentry**, if the DSN is set. If the browser console shows a
+   `Refused to connect` CSP violation instead, the ingest origin and the CSP disagree.
+
+---
+
+## If it goes wrong
+
+```sh
+git checkout 29f520b && npm run release      # the pre-rebuild app
+```
+
+`29f520b` is the last commit before the v2 merge. Rollback is a deploy like any
+other, so it needs the same prompts and the same few minutes — decide quickly rather
+than debugging in production.
+
+**A rollback does not undo migrations.** They are additive, so the old code will
+tolerate the new schema; that is exactly why "keep migrations additive" matters.
+
+---
+
+## Afterwards
+
+**Run the backup workflow by hand, once.** Actions tab → *Nightly database backup* →
+Run workflow. GitHub only runs `schedule` triggers from the default branch, so it has
+never fired, and it is currently the only copy of the data outside the live database.
+It also needs the `SUPABASE_DB_URL` repository secret, which is the **session** pooler
+on port **5432** — not the runtime `DATABASE_URL` on 6543, because `pg_dump` needs
+session-level features the transaction pooler does not provide.
+
+Optionally tidy the junk secret, knowing the next release recreates it:
+
+```sh
+npx wrangler secret delete TMP_WORKER_CREATED
+```
+
+---
+
+## Gotchas
+
+**`rm -rf dist` breaks every wrangler command.** `.wrangler/deploy/config.json`
+points at `dist/worker/wrangler.json`; if that target is missing, wrangler throws
+before doing anything — including the `wrangler secret put` calls inside
+`ensure-deploy-env`, which run *before* the build. If you have deleted `dist`, either
+`npm run build` first or delete `.wrangler/deploy/` too.
+
+**Never set `RWSDK_RENAME_WORKER=1` (or `RWSDK_RENAME_DB=1`).** Those branches
+rewrite `wrangler.jsonc` with `JSON.stringify`, destroying every comment in a heavily
+commented file. Nothing needs them here; the worker is already named.
+
+**Do not tidy the `migrations` array in `wrangler.jsonc`.** Cloudflare migration tags
+are append-only. `v1` names a now-deleted `Database` class on purpose and `v2` records
+its removal.
+
+**`npm run seed` is not a deploy step.** It writes demo students and groups, and
+README says plainly not to run it against production. `npm run env:remote` makes that
+mistake reachable — the switcher warns for exactly this reason.
+
+**Your local `.env` is irrelevant to the deploy.** The Worker reads
+`wrangler secret` values at runtime. Whether `.env` points at the local stack or the
+online project changes nothing about what ships — verified, not assumed. You do not
+need `npm run env:remote` to deploy.

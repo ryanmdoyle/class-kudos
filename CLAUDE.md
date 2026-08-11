@@ -22,8 +22,9 @@ touched:
 | If you changed | Update |
 | --- | --- |
 | an architectural choice, or anything in the traps | `STACK.md` — and if a §-numbered section moves, fix the cross-references |
-| how to run, test, seed or deploy | `README.md`, including the scripts table |
-| an env var, secret, or its shape | `.env.example` (both the local and remote shapes) |
+| how to run, test or seed | `README.md`, including the scripts table |
+| the deploy process, or anything `npm run release` does | `DEPLOY.md` — and README's Deploying section if the summary there stops being true |
+| an env var, secret, or its shape | `.env.example` (both shapes) — and `.env.localstack` / `.env.remote`, which are copies of it |
 | the `"use server"` surface | the golden list in `tests/unit/actionIds.test.ts` AND a row in `tests/integration/authz.test.ts` — every export is a public endpoint |
 | a race, a guard, or a transaction | a row in `scripts/mutate.sh`, then run it |
 | behaviour a comment describes | that comment, in the same commit |
@@ -77,8 +78,15 @@ Rules that are not obvious:
   actually establishes that a test defends what it claims.
 - **Run `npm run test:mutate` on a committed tree.** It edits source files. It
   refuses to run on a dirty tree for good reason.
-- **Never point the tests at the online Supabase project.** `.env` is deliberately
-  aimed at the local stack; the online project becomes production.
+- **Never point the tests at the online Supabase project.** The harness refuses a
+  non-local database, and that guard is not decoration: the fixtures create and
+  DESTROY groups, students and balances, which is fine against a stack
+  `supabase db reset` rebuilds in seconds and is irreversible data loss anywhere
+  else. `npm run env:local` is the fix; `ALLOW_REMOTE_TEST_DB=1` exists only for the
+  Supavisor pooler fidelity check.
+- **`npm run env:which` before you wonder why something is odd.** Which environment
+  is active is one copied file, and a dangling `.dev.vars` symlink leaves the Worker
+  with no secrets at all while the tests keep passing.
 
 ---
 
