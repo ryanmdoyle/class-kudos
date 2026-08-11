@@ -14,6 +14,8 @@ pnpm-debug.log*
 # the local Supabase stack for testing. Deliberately NOT named .env.local: Vite's
 # loadEnv() reads .env.local and would shadow the local-stack values in tests.
 .env.remote
+# The local-stack source file. Not secret (CLI demo keys), gitignored for symmetry.
+.env.localstack
 
 # Vite build output
 dist

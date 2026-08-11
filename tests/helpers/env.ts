@@ -45,10 +45,65 @@ export function databaseUrl(): string {
       "No TEST_DATABASE_URL or DATABASE_URL.\n" +
         "  Both are loaded from .env by vitest.config.mts (loadEnv, prefix \"\").\n" +
         "  Bring the local stack up first:\n" +
-        "    supabase start && supabase db reset && npm run seed",
+        "    npm run test:db",
     );
   }
+  assertLocalDatabase(url);
   return url;
+}
+
+/** Hosts the suite is allowed to destroy data on. */
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+
+/**
+ * Refuse to run against anything but a local database.
+ *
+ * ==========================================================================
+ * THIS GUARD EXISTS BECAUSE THE FAILURE IS SILENT AND UNRECOVERABLE.
+ *
+ * The fixtures do not read data, they DESTROY it: every test creates a group with
+ * students, spends a balance to zero, races requests at it and deletes the lot.
+ * That is correct against the local stack, which `supabase db reset` rebuilds in
+ * seconds. Against the online project — a real classroom's roster, points children
+ * have earned — it is not a failing test, it is data loss with no undo.
+ *
+ * And the only thing standing between those two outcomes is which file happened to
+ * be copied over `.env`. `npm run env:remote` for one real reset email, forget to
+ * switch back, run the suite: gone. So the harness checks rather than trusting.
+ *
+ * `ALLOW_REMOTE_TEST_DB=1` opts in deliberately, which keeps the documented
+ * Supavisor-pooler fidelity check possible (STACK.md §4) without leaving the
+ * footgun armed the rest of the time.
+ * ==========================================================================
+ */
+export function assertLocalDatabase(url: string): void {
+  if (process.env.ALLOW_REMOTE_TEST_DB === "1") return;
+
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    /*
+     * Unparseable: let it through and let `pg` produce the connection error. A
+     * malformed URL cannot reach production, so failing here would only obscure a
+     * clearer message a moment later.
+     */
+    return;
+  }
+
+  if (LOCAL_HOSTS.has(hostname)) return;
+
+  throw new Error(
+    "Refusing to run the test suite against a non-local database.\n\n" +
+      `  host: ${hostname}\n\n` +
+      "  This suite CREATES AND DESTROYS groups, students and balances. Against a\n" +
+      "  real database that is data loss, not a test failure.\n\n" +
+      "  If .env is pointed at the online project:\n" +
+      "    npm run env:local        # switch back, then re-run\n\n" +
+      "  If you genuinely meant a remote database — the Supavisor pooler fidelity\n" +
+      "  check is the only good reason — opt in explicitly:\n" +
+      "    ALLOW_REMOTE_TEST_DB=1 npm run test:integration\n",
+  );
 }
 
 /**

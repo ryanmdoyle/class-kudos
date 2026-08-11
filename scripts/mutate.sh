@@ -281,6 +281,25 @@ io.open(p,"w").write(s.replace(o,"",1))'
 # instead of magic, but there is no bug to catch and a row here would report a
 # survivor forever.
 
+# The guard that stops the suite destroying a real classroom's data. Both rows
+# matter: one defeats the check, the other unhooks it from the thing that resolves
+# the connection string — and only the second is invisible to a test that calls the
+# guard directly.
+add env "env.ts: let a non-local database through" tests/helpers/env.ts unit tests/unit/testDatabaseGuard.test.ts \
+'import io
+p="tests/helpers/env.ts"; s=io.open(p).read()
+o="  if (process.env.ALLOW_REMOTE_TEST_DB === \"1\") return;"
+n="  if (process.env.ALLOW_REMOTE_TEST_DB !== \"1\") return;"
+assert o in s, "opt-in check not found"
+io.open(p,"w").write(s.replace(o,n,1))'
+
+add env "env.ts: stop calling the guard from databaseUrl" tests/helpers/env.ts unit tests/unit/testDatabaseGuard.test.ts \
+'import io
+p="tests/helpers/env.ts"; s=io.open(p).read()
+o="  assertLocalDatabase(url);\n"
+assert o in s, "guard call not found"
+io.open(p,"w").write(s.replace(o,"",1))'
+
 # The nets that stop the network surface growing unnoticed. This one ADDS a file
 # rather than editing one, so its "file to restore" is the file it creates.
 add nets "a new endpoint hidden behind a leading comment" src/app/components/teacher/__mutant.ts unit "$UNIT_IDS" \
