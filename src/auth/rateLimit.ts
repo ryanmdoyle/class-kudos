@@ -87,9 +87,27 @@ export async function isRateLimited(
   // timestamp without the `Z` suffix or with unpadded fields.
   const cutoff = new Date(Date.now() - windowMs);
 
-  // Prune globally, not just for this key: any read is a fine moment to drop
-  // everyone's expired rows, and it keeps the table bounded.
-  await db.deleteFrom("loginAttempts").where("createdAt", "<", cutoff).execute();
+  // Prune THIS SCOPE only.
+  //
+  // This used to be a global delete — every scope, every key — justified as "any
+  // read is a fine moment to drop everyone's expired rows". That reasoning is only
+  // sound if every scope shares one window, and they do not: `student-code` and
+  // `teacher-password` expire in 5 minutes, `teacher-confirm` in 10, and
+  // `teacher-signup` in 60. A global delete using THIS scope's cutoff therefore
+  // discarded other scopes' rows while they were still live.
+  //
+  // It was reachable and it mattered: `loginStudentByCode` is UNAUTHENTICATED and
+  // free to call, so one wrong class code pruned on a 5-minute cutoff and wiped the
+  // hour-long `teacher-signup` budget — letting anyone reset account-creation rate
+  // limiting at will. Scoping the delete keeps every budget independent.
+  //
+  // The table stays bounded regardless: every scope is read often enough to prune
+  // itself, and each key's rows are capped by its own `max`.
+  await db
+    .deleteFrom("loginAttempts")
+    .where("scope", "=", scope)
+    .where("createdAt", "<", cutoff)
+    .execute();
 
   const rows = await db
     .selectFrom("loginAttempts")
