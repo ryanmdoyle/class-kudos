@@ -80,5 +80,29 @@
   // SUPABASE_SETUP.md.
   "vars": {
     "APP_NAME": "Class Kudos"
+  },
+
+  // Secrets the Worker cannot run without. `wrangler deploy` refuses and names any
+  // that are unset, rather than shipping.
+  //
+  // This closes the worst silent failure in the deploy path. `requireSecret` throws
+  // at FIRST USE, not at startup, so a missing secret produces a deploy that goes
+  // completely green followed by a site where every login 500s — and nothing in
+  // `npm run release` checked: `ensure-deploy-env` verifies only that
+  // AUTH_SECRET_KEY exists, and invents a random one if it does not.
+  //
+  // SENTRY_DSN is deliberately ABSENT. It is optional by design — unset means the
+  // Worker disables the SDK, the document injects nothing and the CSP does not widen
+  // — so listing it here would break the deploy for a feature that is meant to be
+  // switch-off-able.
+  "secrets": {
+    "required": [
+      "AUTH_SECRET_KEY",
+      "DATABASE_URL",
+      "SUPABASE_URL",
+      "SUPABASE_ANON_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "APP_URL"
+    ]
   }
 }

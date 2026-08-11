@@ -1,0 +1,35 @@
+# Files that must never be served from the apex, listed defensively.
+#
+# Everything under dist/client is uploaded as a static asset, and dist/client is
+# public/ plus the build's own output — so anything that lands there is a candidate
+# for being served. Two things land there without being asked for:
+#
+#   .DS_Store       macOS writes it into public/, and the build copies it across.
+#   .vite/          the build writes .vite/manifest.json — a map of every source
+#                   module and chunk. Build metadata, not something to publish.
+#
+# HONEST ABOUT WHAT THIS IS: belt and braces, NOT a verified fix.
+#
+# `wrangler deploy --dry-run` reports "Read N files from the assets directory", and
+# that number is unchanged by adding or removing this file — but it DROPS when the
+# file itself is deleted from public/. So the count measures files read, before
+# ignores are applied, and is no evidence about what actually gets uploaded. Whether
+# these patterns take effect could not be established without a real deploy.
+#
+# The certain fix was deleting `public/.DS_Store` outright, which is done. It is
+# gitignored, so it never reaches another machine or CI — but macOS recreates it
+# locally, and the build copies whatever is in public/ at the time.
+#
+# So this file stays as the durable guard, and DEPLOY.md carries the check that
+# settles it for real:
+#     curl -I https://classkudos.com/.DS_Store        # expect 404
+# If that ever returns 200, these patterns are not working — most likely an
+# anchoring difference, since wrangler's own defaults use a leading slash
+# (`/.assetsignore`), so try `/.DS_Store` instead.
+#
+# @cloudflare/vite-plugin PREPENDS this file to the generated
+# dist/client/.assetsignore, which already covers `wrangler.json` and `.dev.vars`,
+# and wrangler itself defaults to ignoring `/.assetsignore`, `/_headers` and
+# `/_redirects`. Do not restate those.
+.DS_Store
+.vite/**
