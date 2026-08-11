@@ -247,6 +247,32 @@ m=re.search(r"[ \t]*await db\n[ \t]*\.deleteFrom\(\"loginAttempts\"\)\n[ \t]*\.w
 assert m, "scoped prune not found"
 io.open(p,"w").write(s[:m.start()]+"  await db.deleteFrom(\"loginAttempts\").where(\"createdAt\", \"<\", cutoff).execute();"+s[m.end():])'
 
+# Error reporting. Every one of these fails SILENTLY in production — the app keeps
+# working and simply stops telling you when it breaks — which is why they are here
+# rather than trusted to review.
+add sentry "client.tsx: drop the Sentry.init call" src/client.tsx unit tests/unit/sentry.test.ts \
+'import io,re
+p="src/client.tsx"; s=io.open(p).read()
+m=re.search(r"\nif \(dsn\) \{\n[\s\S]*?\n\}\n", s)
+assert m, "guarded Sentry.init block not found"
+io.open(p,"w").write(s[:m.start()]+"\n"+s[m.end():])'
+
+add sentry "headers.ts: drop Sentry from connect-src" src/app/headers.ts integration tests/integration/document.test.ts \
+'import io
+p="src/app/headers.ts"; s=io.open(p).read()
+o=" https://*.ingest.sentry.io https://*.ingest.us.sentry.io"
+assert o in s, "sentry ingest hosts not found in the CSP"
+io.open(p,"w").write(s.replace(o,"",1))'
+
+# NOT a row: removing `nonce={nonce}` from the Document's script tags.
+#
+# It is unobservable, which was worth establishing rather than assuming. React
+# propagates the CSP nonce to every inline script it renders, so the served HTML is
+# byte-identical with or without the explicit attribute — verified by removing it and
+# diffing the response. The attribute stays because it makes the requirement visible
+# instead of magic, but there is no bug to catch and a row here would report a
+# survivor forever.
+
 # The nets that stop the network surface growing unnoticed. This one ADDS a file
 # rather than editing one, so its "file to restore" is the file it creates.
 add nets "a new endpoint hidden behind a leading comment" src/app/components/teacher/__mutant.ts unit "$UNIT_IDS" \

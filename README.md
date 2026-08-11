@@ -115,7 +115,7 @@ it yourself and set `TEST_SERVER=external`.
 `npm run test:mutate` is the one that checks the tests themselves. It removes a
 guarantee — a compare-and-swap, a rollback, an ownership check — and confirms a
 specific test goes red, because a green suite only proves the tests ran. Currently
-16 mutations: 15 killed, 1 rejected by TypeScript before it can even run. Run it on
+18 mutations: 17 killed, 1 rejected by TypeScript before it can even run. Run it on
 a committed tree; it edits source files and refuses to start on a dirty one.
 
 **If you add a race, a guard or a transaction, add a row to `scripts/mutate.sh`.** A

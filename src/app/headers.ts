@@ -28,10 +28,20 @@ export const setCommonHeaders =
         "geolocation=(), microphone=(), camera=()",
       );
 
-      // Defines trusted sources for content loading and script execution:
+      // Defines trusted sources for content loading and script execution.
+      //
+      // `connect-src` includes Sentry's ingest hosts, and it HAS to: the browser SDK
+      // POSTs events there, and without them errors are captured, the request is
+      // refused by the browser, and nothing ever arrives — a silent failure that
+      // looks identical to "no errors happened". See src/client.tsx.
+      //
+      // Both spellings are listed because a CSP host wildcard matches a SUFFIX:
+      // `*.ingest.sentry.io` does NOT match `o123.ingest.us.sentry.io`, and modern
+      // DSNs are regional. Narrow this to your own org host if you prefer:
+      //   https://o123456.ingest.us.sentry.io
       headers.set(
         "Content-Security-Policy",
-        `default-src 'self'; script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; connect-src 'self' blob:; object-src 'none';`
+        `default-src 'self'; script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; frame-src https://challenges.cloudflare.com; connect-src 'self' blob: https://*.ingest.sentry.io https://*.ingest.us.sentry.io; object-src 'none';`
 
       );
     };
