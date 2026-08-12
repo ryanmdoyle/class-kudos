@@ -286,11 +286,11 @@ io.open(p,"w").write(s.replace(o,"",1))'
 # same `db` proxy. The RULE lives in the pure `src/db/localGuard.ts` so it can be
 # tested from Node; only the Worker-only inputs are read in index.ts.
 add env "db/index.ts: stop calling the dev guard" src/db/index.ts unit tests/unit/devDbGuard.test.ts \
-'import io
+'import io, re
 p="src/db/index.ts"; s=io.open(p).read()
-o="  assertLocalDatabaseUrl(connectionString, {\n    isDev: IS_DEV,\n    allowRemote: appEnv.ALLOW_REMOTE_DB === \\"1\\",\n  });\n"
-assert o in s, "guard call not found in createHandle"
-io.open(p,"w").write(s.replace(o,"",1))'
+s2, n = re.subn(r"  assertLocalDatabaseUrl\(connectionString, \{[^}]*\}\);\n", "", s, count=1)
+assert n == 1, "guard call not found in createHandle"
+io.open(p,"w").write(s2)'
 
 add env "localGuard.ts: treat every host as local" src/db/localGuard.ts unit tests/unit/devDbGuard.test.ts \
 'import io
