@@ -1,8 +1,10 @@
 import { Kysely, PostgresDialect, type Selectable } from "kysely";
 import pg from "pg";
+import { IS_DEV } from "rwsdk/constants";
 import { getRequestInfo } from "rwsdk/worker";
 
-import { requireSecret } from "@/lib/env";
+import { assertLocalDatabaseUrl } from "@/db/localGuard";
+import { appEnv, requireSecret } from "@/lib/env";
 import type {
   AppDatabase,
   ClassCodesTable,
@@ -55,9 +57,45 @@ export { type UserRole, type CodeMode, type CodeKind } from "@/db/types";
 
 type DbHandle = { db: Kysely<AppDatabase>; pool: pg.Pool };
 
+/**
+ * The dev-only "is this database safe?" check.
+ *
+ * ==========================================================================
+ * THIS IS THE ONE PLACE THAT COVERS EVERY LOCAL CONSUMER.
+ *
+ * `npm run dev`, `npm run seed`, `npm run provision-teacher` and any future script
+ * all resolve the same `db` proxy, so they all pass through `createHandle()` below.
+ * One check therefore protects all of them, with nothing to remember when a new
+ * script appears.
+ *
+ * The RULE lives in `@/db/localGuard`, deliberately pure so it can be unit-tested
+ * from plain Node. Only its two inputs are read here, because both exist solely
+ * inside the Worker runtime:
+ *
+ *   - `IS_DEV` is false in the deployed Worker, where a remote database is the only
+ *     kind there is. This must never fire in production.
+ *   - `ALLOW_REMOTE_DB` must be set in `.dev.vars`, NOT the shell. That is forced,
+ *     not chosen: bindings come from that file, and @cloudflare/vite-plugin does not
+ *     forward process env into them (`CLOUDFLARE_INCLUDE_PROCESS_ENV` defaults to
+ *     false), so `ALLOW_REMOTE_DB=1 npm run dev` would never reach the Worker.
+ *     It works out better — the opt-in sits next to the DATABASE_URL it excuses
+ *     instead of vanishing with your shell.
+ *
+ * Note the asymmetry with the test harness, which has its own equivalent check in
+ * `tests/helpers/env.ts` because it opens its own `pg` pool rather than going through
+ * this module. Its override IS a shell variable (`ALLOW_REMOTE_TEST_DB=1`), because
+ * the harness runs in Node and reads `process.env` directly.
+ * ==========================================================================
+ */
 function createHandle(): DbHandle {
+  const connectionString = requireSecret("DATABASE_URL");
+  assertLocalDatabaseUrl(connectionString, {
+    isDev: IS_DEV,
+    allowRemote: appEnv.ALLOW_REMOTE_DB === "1",
+  });
+
   const pool = new pg.Pool({
-    connectionString: requireSecret("DATABASE_URL"),
+    connectionString,
     // Supavisor is doing the real pooling; a single Worker request needs
     // exactly one connection.
     max: 1,

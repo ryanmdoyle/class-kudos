@@ -11,8 +11,8 @@ import { assertLocalDatabase, databaseUrl } from "../helpers/env";
  * stack; against the online project it is a real classroom's roster and points
  * children earned, with no undo.
  *
- * The only thing separating those outcomes is which file was last copied over
- * `.env` — so this is worth testing properly rather than trusting.
+ * The only thing separating those outcomes is one line of `.dev.vars` — so this is
+ * worth testing properly rather than trusting.
  */
 describe("refusing a non-local test database", () => {
   const saved = process.env.ALLOW_REMOTE_TEST_DB;
@@ -48,7 +48,7 @@ describe("refusing a non-local test database", () => {
     expect(() => assertLocalDatabase(online)).toThrow(/Refusing to run/);
     expect(() => assertLocalDatabase(online)).toThrow(/CREATES AND DESTROYS/);
     /* The message has to say what to do, not just that it refused. */
-    expect(() => assertLocalDatabase(online)).toThrow(/npm run env:local/);
+    expect(() => assertLocalDatabase(online)).toThrow(/\.dev\.vars/);
     /* And it should name the host, so the reason is obvious at a glance. */
     expect(() => assertLocalDatabase(online)).toThrow(/pooler\.supabase\.com/);
   });
@@ -143,9 +143,9 @@ describe("databaseUrl applies the guard", () => {
 
   it("checks the DATABASE_URL fallback too, not only TEST_DATABASE_URL", () => {
     /*
-     * The common case: no TEST_DATABASE_URL set, and `.env` left pointing at the
-     * online project by `npm run env:remote`. That is the exact accident this
-     * whole guard exists for, so it must be covered on the fallback path.
+     * The common case: no TEST_DATABASE_URL set, and `DATABASE_URL` left pointing at
+     * the online project by a hand-edit to `.dev.vars`. That is the exact accident
+     * this guard exists for, so it must be covered on the fallback path.
      */
     delete process.env.TEST_DATABASE_URL;
     process.env.DATABASE_URL =

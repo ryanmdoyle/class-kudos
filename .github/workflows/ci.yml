@@ -89,25 +89,23 @@ jobs:
         with:
           version: latest
 
-      # `.dev.vars` is gitignored (it is a symlink to `.env` locally), so CI has to
-      # write the environment itself. Every value here is public: they are the
-      # Supabase CLI's fixed local demo keys, and AUTH_SECRET_KEY only signs
-      # session cookies for a database that is destroyed when the job ends.
+      # `.dev.vars` is gitignored, so CI writes it. ONE file: the Worker reads it via
+      # @cloudflare/vite-plugin, and the test harness reads the same file via
+      # `parseEnv` in vitest.config.mts. There is no `.env` any more.
       #
-      # Both files are needed, for different readers: the Worker reads `.dev.vars`
-      # (via the Cloudflare Vite plugin) and the test harness reads `.env` (via
-      # Vite's loadEnv in vitest.config.mts).
+      # Every value here is public — the Supabase CLI's fixed local demo keys — and
+      # AUTH_SECRET_KEY only signs session cookies for a database that is destroyed
+      # when the job ends. Which is also why this job needs no repository secrets.
       - name: Write the local-stack environment
         run: |
           set -euo pipefail
-          cat > .env <<'ENV'
+          cat > .dev.vars <<'ENV'
           AUTH_SECRET_KEY="ci-only-session-signing-key-not-a-secret-000000"
           SUPABASE_URL="http://127.0.0.1:54321"
           SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
           SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
           DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
           ENV
-          cp .env .dev.vars
 
       # Brings up Postgres on :54322 and GoTrue behind Kong on :54321, and applies
       # supabase/migrations/*.sql. Realtime, storage, analytics and edge functions

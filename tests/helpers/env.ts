@@ -3,10 +3,10 @@ import { fileURLToPath } from "node:url";
 /**
  * Environment for the integration suite, with errors that say what to do.
  *
- * Values arrive via `test.env` in vitest.config.mts, which reads them out of
- * `.env` with Vite's `loadEnv`. `.dev.vars` is a symlink to `.env`, so the
- * harness and the worker read the same bytes — there is no drift to reason
- * about.
+ * Values arrive via `test.env` in vitest.config.mts, which parses `.dev.vars`
+ * itself with `node:util`'s `parseEnv`. That is the same single file the Worker
+ * reads for its bindings, so the harness and the app under test cannot drift —
+ * and there is no second env file whose precedence you have to remember.
  */
 
 export const REPO_ROOT = fileURLToPath(new URL("../..", import.meta.url));
@@ -43,8 +43,10 @@ export function databaseUrl(): string {
   if (!url) {
     throw new Error(
       "No TEST_DATABASE_URL or DATABASE_URL.\n" +
-        "  Both are loaded from .env by vitest.config.mts (loadEnv, prefix \"\").\n" +
-        "  Bring the local stack up first:\n" +
+        "  Both are read from .dev.vars by vitest.config.mts. If you have no\n" +
+        "  .dev.vars yet:\n" +
+        "    cp .env.example .dev.vars\n" +
+        "  Then bring the local stack up:\n" +
         "    npm run test:db",
     );
   }
@@ -67,13 +69,16 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
  * seconds. Against the online project — a real classroom's roster, points children
  * have earned — it is not a failing test, it is data loss with no undo.
  *
- * And the only thing standing between those two outcomes is which file happened to
- * be copied over `.env`. `npm run env:remote` for one real reset email, forget to
- * switch back, run the suite: gone. So the harness checks rather than trusting.
+ * And the only thing standing between those two outcomes is one line of
+ * `.dev.vars`. Point DATABASE_URL at the real project for one debugging session,
+ * forget to change it back, run the suite: gone. So the harness checks rather than
+ * trusting.
  *
  * `ALLOW_REMOTE_TEST_DB=1` opts in deliberately, which keeps the documented
  * Supavisor-pooler fidelity check possible (STACK.md §4) without leaving the
- * footgun armed the rest of the time.
+ * footgun armed the rest of the time. Note it is a SHELL variable here, unlike the
+ * app's equivalent `ALLOW_REMOTE_DB` which must live in `.dev.vars` — the harness
+ * runs in Node and reads `process.env`, while the Worker only sees bindings.
  * ==========================================================================
  */
 export function assertLocalDatabase(url: string): void {
@@ -98,8 +103,8 @@ export function assertLocalDatabase(url: string): void {
       `  host: ${hostname}\n\n` +
       "  This suite CREATES AND DESTROYS groups, students and balances. Against a\n" +
       "  real database that is data loss, not a test failure.\n\n" +
-      "  If .env is pointed at the online project:\n" +
-      "    npm run env:local        # switch back, then re-run\n\n" +
+      "  Point DATABASE_URL in .dev.vars back at 127.0.0.1 — see .env.example for\n" +
+      "  the working local values — and re-run.\n\n" +
       "  If you genuinely meant a remote database — the Supavisor pooler fidelity\n" +
       "  check is the only good reason — opt in explicitly:\n" +
       "    ALLOW_REMOTE_TEST_DB=1 npm run test:integration\n",

@@ -16,7 +16,11 @@ import { insertClassCode } from "@/db/classCodeSeed";
  *
  * Run with:
  *   npm run seed
- *   SEED_TEACHER_EMAIL=me@example.com SEED_TEACHER_PASSWORD='...' npm run seed
+ *
+ * To override the seeded teacher, put SEED_TEACHER_EMAIL and
+ * SEED_TEACHER_PASSWORD in `.dev.vars`. NOT as a shell prefix: these are read off
+ * the Worker `env` below, and the vite plugin does not forward `process.env` into
+ * bindings, so a prefix is silently ignored and you get the defaults.
  *
  * Supabase is REQUIRED here. A teacher IS a Supabase auth user — `users.id` is
  * the `auth.users.id` — so without the service-role key there is no teacher to

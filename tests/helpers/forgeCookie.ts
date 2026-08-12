@@ -38,7 +38,7 @@ function requireSecret(): string {
   if (!secret) {
     throw new Error(
       "AUTH_SECRET_KEY is not set in the test environment.\n" +
-        "  vitest.config.mts passes it through from .env; check it is present there.",
+        "  vitest.config.mts reads it out of .dev.vars; check it is present there.",
     );
   }
   return secret;

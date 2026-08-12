@@ -8,14 +8,16 @@ npm-debug.log*
 pnpm-debug.log*
 
 # Environment variables
-.env
+#
+# `.dev.vars` is the only local env file this repo uses — the Worker reads it for
+# bindings and vitest.config.mts parses it for the test suite. The `.env*` names
+# below are not used by anything here; they stay ignored so that a stray one (from
+# a tool, a tutorial, or rwsdk's ensure-env on a fresh clone) can never be
+# committed with real values in it.
 .dev.vars
-# Local backup of the online project's secrets, made when .env was repointed at
-# the local Supabase stack for testing. Deliberately NOT named .env.local: Vite's
-# loadEnv() reads .env.local and would shadow the local-stack values in tests.
-.env.remote
-# The local-stack source file. Not secret (CLI demo keys), gitignored for symmetry.
-.env.localstack
+.env
+.env.*
+!.env.example
 
 # Vite build output
 dist
@@ -52,12 +54,6 @@ dist
 
 # pnpm store directory
 .pnpm-store
-
-# dotenv environment variables file
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
 # Vite cache
 .vite

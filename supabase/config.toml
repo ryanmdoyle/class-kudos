@@ -4,7 +4,7 @@
 # ============================================================================
 # This file exists for TESTING. `supabase start` gives the test suite a
 # throwaway Postgres and a real GoTrue, so no test ever writes to the online
-# project. See STACK.md §6 and tests/helpers/db.ts.
+# project. See STACK.md §4 and tests/helpers/db.ts.
 #
 # Five deliberate deviations from `supabase init` defaults:
 #
@@ -14,7 +14,10 @@
 #                             and a direct connection does not exercise it.
 #                             Tests default to the direct port because it is
 #                             faster and has no extra container to flake; point
-#                             TEST_DATABASE_URL at :54329 to check the pooler.
+#                             DATABASE_URL at :54329 to check the pooler — the
+#                             WORKER's connection is the thing under test, so
+#                             moving only TEST_DATABASE_URL (the harness's own
+#                             handle) proves nothing. STACK.md §4 says why.
 #   [realtime]     disabled — no subscriptions anywhere in this app.
 #   [storage]      disabled — no buckets, and it drags in imgproxy too.
 #   [analytics]    disabled — the heaviest container in the stack, and nothing

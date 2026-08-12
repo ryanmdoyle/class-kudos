@@ -93,7 +93,7 @@ key the same elevated access as `service_role`, so nothing about the design belo
 
 The Connect dialog leads with Postgres connection strings. Those belong in a **different**
 variable: `SUPABASE_URL` is spoken to over the Auth REST API only, and the connection string
-goes in `DATABASE_URL` (section 5a). So of the things that dialog offers:
+goes in `DATABASE_URL` (section 6). So of the things that dialog offers:
 
 | Shown as             | Looks like                                                    | Goes in           |
 | -------------------- | ------------------------------------------------------------- | ----------------- |
@@ -120,20 +120,18 @@ imports. Audit it in one command:
 grep -rE "^\s*import .*(supabase\.admin|auth/provision)" src/app   # must print nothing
 ```
 
-## 5. Local env
+## 5. Where the values you just collected go
 
-This repo symlinks `.dev.vars` → `.env`. Both are git-ignored — never commit real values.
-Copy the placeholders from `.env.example`:
+**Not into your local env file.** This is the step that is easy to get backwards, so it is
+worth stating plainly: the values above are PRODUCTION values, and production reads them
+from `wrangler secret` (section 6), never from a file. Local development runs against the
+local Supabase stack instead — `.dev.vars`, copied from `.env.example`, already contains
+working local values and needs nothing from this page. See README → Environments.
 
-```
-AUTH_SECRET_KEY=<openssl rand -base64 32>
-SUPABASE_URL=https://<project-ref>.supabase.co
-SUPABASE_ANON_KEY=<anon key>
-SUPABASE_SERVICE_ROLE_KEY=<service role key>
-DATABASE_URL=postgres://postgres.<ref>:<pw>@aws-<region>.pooler.supabase.com:6543/postgres
-# Optional: only needed when the request Host differs from the public URL
-# APP_URL=https://<your-domain>
-```
+There is a guard rather than a warning here. `createHandle()` in `src/db/index.ts` refuses a
+non-local `DATABASE_URL` whenever `IS_DEV`, so pasting the pooler URL into `.dev.vars` fails
+loudly instead of quietly pointing `npm run dev` and `npm run seed` at a real classroom's
+data. Section 7 covers the one case where you do mean it.
 
 `DATABASE_URL` **must** be the transaction pooler on port 6543. The direct connection
 (`db.<ref>.supabase.co:5432`) is IPv6-only and Cloudflare Workers cannot open outbound IPv6,
@@ -172,9 +170,11 @@ there are two operator routes in.
 **For your real account — no demo data:**
 
 ```sh
-# add to .dev.vars, run, then DELETE these two lines again
+# add to .dev.vars, run, then DELETE all four lines again
 TEACHER_EMAIL=you@school.org
 TEACHER_PASSWORD=a-real-password
+DATABASE_URL=postgres://postgres.<ref>:<pw>@aws-<region>.pooler.supabase.com:6543/postgres
+ALLOW_REMOTE_DB=1
 
 npm run provision-teacher
 ```
@@ -183,12 +183,21 @@ This creates one teacher and nothing else. Credentials come from `.dev.vars` rat
 the command line so the password stays out of your shell history. Use this one against
 anything you care about.
 
+This is the one time you deliberately point a local command at the real database, which is
+why `ALLOW_REMOTE_DB=1` is needed — without it the guard in section 5 refuses. It has to be
+in `.dev.vars`, not your shell: the Worker sees bindings from that file and does not inherit
+`process.env`. Delete all four lines afterwards, because `npm run seed` travels the same code
+path and would write demo students into that same real database.
+
 **For a throwaway dev database — teacher plus demo data:**
 
 ```sh
 npm run seed
-SEED_TEACHER_EMAIL=me@example.com SEED_TEACHER_PASSWORD='a-real-password' npm run seed
 ```
+
+To use your own address, put `SEED_TEACHER_EMAIL` and `SEED_TEACHER_PASSWORD` in
+`.dev.vars` — a shell prefix is silently ignored, because the script reads Worker
+bindings and those do not inherit `process.env`.
 
 `npm run seed` also creates the "Period 1" group, five fictional students, kudos types,
 rewards and locations. Do not run it against production unless you want Ada Lovelace in

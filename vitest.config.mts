@@ -1,14 +1,12 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { parseEnv } from "node:util";
+
 /*
- * Two imports, deliberately. `defineConfig` must come from "vitest/config" —
- * Vite's own overload has no `test` key and rejects this file outright under
- * `npm run types:test`. But vitest@4's "vitest/config" does NOT re-export Vite's
- * env helpers (its exports are: configDefaults, coverageConfigDefaults,
- * defaultBrowserPort, defaultExclude, defaultInclude, defineConfig,
- * defineProject, mergeConfig), so `loadEnv` still comes from "vite".
+ * `defineConfig` must come from "vitest/config" — Vite's own overload has no `test`
+ * key and rejects this file outright under `npm run types:test`.
  */
 import { defineConfig } from "vitest/config";
-import { loadEnv } from "vite";
 
 /**
  * Test runner configuration. Two projects, deliberately unequal:
@@ -38,14 +36,47 @@ import { loadEnv } from "vite";
 const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 /**
- * `.env` is the single source of truth, and `.dev.vars` is a SYMLINK to it — so
- * the values loaded here are byte-identical to the ones `vite dev` hands the
- * worker. There is no drift between harness and app to reason about.
+ * Read `.dev.vars` — the ONE local env file — directly.
  *
- * Prefix "" means "load every key", not just `VITE_*`. loadEnv also picks up
- * `.env.local` and `.env.test` if they ever appear, with the usual precedence.
+ * ==========================================================================
+ * WHY NOT Vite's `loadEnv`.
+ *
+ * `loadEnv` reads `.env`, `.env.local`, `.env.<mode>` and `.env.<mode>.local`, and
+ * it does NOT read `.dev.vars`. But `.dev.vars` is the only file the Worker reads:
+ * @cloudflare/vite-plugin resolves it first and, if it exists, exclusively.
+ *
+ * That mismatch used to be bridged with a symlink (`.dev.vars` -> `.env`), which
+ * meant two filenames for one file, and a standing hazard: creating `.env.local`,
+ * `.env.test` or `.env.test.local` would silently outrank `.env` for the TESTS
+ * while the Worker carried on reading `.dev.vars`, so the harness and the app would
+ * see different values with nothing to indicate it.
+ *
+ * Reading `.dev.vars` here removes all of that. We are no longer using Vite's
+ * env-file conventions, so Vite's precedence rules stop applying — there is one
+ * file, both readers read it, and no filename is dangerous any more.
+ *
+ * `node:util`'s `parseEnv` does the parsing, so this costs no dependency.
+ * ==========================================================================
  */
-const env = loadEnv("test", r("."), "");
+const DEV_VARS = ".dev.vars";
+
+function readDevVars(): Record<string, string | undefined> {
+  try {
+    return parseEnv(readFileSync(r(`./${DEV_VARS}`), "utf8"));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      /*
+       * Not fatal here. The `unit` project needs no env at all, and the
+       * integration project fails with a far better message from
+       * tests/helpers/env.ts, which names the missing keys and how to get them.
+       */
+      return {};
+    }
+    throw error;
+  }
+}
+
+const env = readDevVars();
 
 /**
  * Publish into `process.env` as well as `test.env` below.
@@ -53,11 +84,12 @@ const env = loadEnv("test", r("."), "");
  * `test.env` only reaches the TEST WORKER environments. `globalSetup` runs in
  * Vitest's main process, where it sweeps orphan fixtures and probes the dev
  * server — and it needs DATABASE_URL before any worker exists. Without this it
- * fails with "No TEST_DATABASE_URL or DATABASE_URL" while `.env` is sitting
+ * fails with "No TEST_DATABASE_URL or DATABASE_URL" while `.dev.vars` is sitting
  * right there, correctly populated.
  *
  * Existing values win, so `DATABASE_URL=… npm run test:integration` still
- * overrides the file.
+ * overrides the file — which is how the one-off remote cases work now that there
+ * is no remote MODE.
  */
 for (const key of [
   "DATABASE_URL",

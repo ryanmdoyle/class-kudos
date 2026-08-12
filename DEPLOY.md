@@ -47,24 +47,33 @@ The integration suite needs the local stack, so if you want the full set first:
 ### 2. Production secrets are all present
 
 ```sh
-npx wrangler secret list
+npm run check:secrets
 ```
 
-Expect these six, which the Worker cannot run without:
+Lists the Worker's secrets and exits 1 naming any of these six, which it cannot run
+without:
 
 ```
 AUTH_SECRET_KEY  DATABASE_URL  SUPABASE_URL
 SUPABASE_ANON_KEY  SUPABASE_SERVICE_ROLE_KEY  APP_URL
 ```
 
-`SENTRY_DSN` is optional — unset means error reporting is off, deliberately and
-completely. `TMP_WORKER_CREATED` is junk that `ensure-deploy-env` leaves behind;
-ignore it.
+It matters because `requireSecret` throws at *first use*, not at startup: a missing
+secret otherwise gives you a deploy that goes completely green and a site where every
+login 500s.
 
-`wrangler.jsonc` declares the six as `secrets.required`, so `wrangler deploy` now
-refuses and names any that are missing instead of shipping. That guard exists because
-`requireSecret` throws at *first use*, not at startup: without it, a missing secret
-gives you a deploy that goes completely green and a site where every login 500s.
+`SENTRY_DSN` is optional — unset means error reporting is off, deliberately and
+completely, and the script says so rather than complaining. `TMP_WORKER_CREATED` is
+junk that `ensure-deploy-env` leaves behind; ignore it.
+
+**Why a script and not `secrets.required` in `wrangler.jsonc`.** That config field
+makes `wrangler deploy` itself refuse, and this repo used it briefly — but declaring
+it silently turns `.dev.vars` into an *allow-list*: any key not on the required list
+stops becoming a binding in development, so `SENTRY_DSN` and `ALLOW_REMOTE_DB` could
+not be set locally at all. There is no `optional` counterpart to pair with it, so the
+choice was binary — deploy-time fail-fast, or a usable `.dev.vars`. The script gets
+the first without giving up the second, and reports the whole missing list at once.
+**The `secrets` block is gone; `wrangler deploy` no longer checks anything.**
 
 **`DATABASE_URL` must be the Supavisor pooler on port 6543** (STACK.md trap 4). The
 direct host is IPv6-only and Workers cannot open outbound IPv6.
@@ -109,14 +118,11 @@ answers.
 npx wrangler deploy --dry-run
 ```
 
-Validates the config, resolves bindings, and exits without shipping. Expect
-`SESSION_DURABLE_OBJECT`, `ASSETS` and `APP_NAME`.
+Checks that the config parses and that bindings resolve, then exits without shipping.
+Expect `SESSION_DURABLE_OBJECT`, `ASSETS` and `APP_NAME`.
 
-It does **not** contact the API, so it cannot tell you a secret is missing — that
-error appears on the real deploy. And `secrets.required` is a newer wrangler config
-field: if a real deploy ever complains about the `secrets` block itself, deleting
-those few lines from `wrangler.jsonc` is a safe fallback that only loses the
-fail-fast behaviour.
+It does **not** contact the API, so it can say nothing at all about secrets — that is
+step 2's job, and nothing later in the deploy repeats it.
 
 ---
 
@@ -157,8 +163,8 @@ Step by step, including the parts README used to omit:
 `RWSDK_DEPLOY` is a **dead no-op** in rwsdk 1.7.0 — nothing reads it. The build is
 just `vite build`, writing `dist/client/**` and `dist/worker/**`.
 
-`dist/worker/.dev.vars` is written here and looks alarming — it contains whatever your
-local `.env` says, including local Supabase values. **`wrangler deploy` ignores it.**
+`dist/worker/.dev.vars` is written here and looks alarming — it is a copy of your
+local `.dev.vars`, including local Supabase values. **`wrangler deploy` ignores it.**
 Verified: the uploaded metadata's `vars` is only `{APP_NAME}`, and nothing local is
 inlined into `dist/worker/index.js`. It exists for `vite preview` on the built output.
 Treat it as a plaintext copy of your secrets on disk, but not as a deploy hazard.
@@ -276,10 +282,12 @@ are append-only. `v1` names a now-deleted `Database` class on purpose and `v2` r
 its removal.
 
 **`npm run seed` is not a deploy step.** It writes demo students and groups, and
-README says plainly not to run it against production. `npm run env:remote` makes that
-mistake reachable — the switcher warns for exactly this reason.
+against production that is not undoable. It is no longer merely discouraged: in dev
+`createHandle()` calls `assertLocalDatabaseUrl`, so a non-local `DATABASE_URL` is
+*refused* before a connection is opened — seed included, and any future script that
+resolves the same `db` proxy. Getting past it takes `ALLOW_REMOTE_DB=1` in
+`.dev.vars`, not in your shell.
 
-**Your local `.env` is irrelevant to the deploy.** The Worker reads
-`wrangler secret` values at runtime. Whether `.env` points at the local stack or the
-online project changes nothing about what ships — verified, not assumed. You do not
-need `npm run env:remote` to deploy.
+**Your local `.dev.vars` is irrelevant to the deploy.** The Worker reads
+`wrangler secret` values at runtime. Whether `.dev.vars` points at the local stack or
+the online project changes nothing about what ships — verified, not assumed.

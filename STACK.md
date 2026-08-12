@@ -438,6 +438,17 @@ per run, and the app deliberately collapses every Supabase error into one string
 Exhaust it against a remote project and your tests fail with "That email and
 password didn't match".
 
+The harness and the Worker are configured from the **same file**, `.dev.vars`: the
+Worker reads it through `@cloudflare/vite-plugin`, the harness through `node:util`'s
+`parseEnv` in `vitest.config.mts`. Not Vite's `loadEnv`, which does not read
+`.dev.vars` at all — bridging the two filenames is what used to need a symlink, and
+with it Vite's `.env.local` / `.env.test` precedence rules, either of which could
+point the tests at one database while the app used another. One file read directly
+removed both. `.env.example` is the tracked template. `tests/helpers/env.ts` then
+refuses a non-local database, as `src/db/localGuard.ts` does for the app; the
+harness's override is a shell variable (`ALLOW_REMOTE_TEST_DB=1`) because it runs in
+Node, while the Worker's has to live in `.dev.vars`.
+
 **What local does not cover:** production reaches Postgres only through the
 Supavisor *transaction* pooler (trap 4), and a direct connection does not exercise
 it. To check that, point `DATABASE_URL` at `:54329` — and note it is
@@ -453,9 +464,9 @@ and asserts against the database directly with its own Kysely handle.
 Two rejected alternatives, for the same underlying reason:
 
 - **`@cloudflare/vitest-pool-workers`.** It bundles test modules with its own
-  esbuild and never runs `redwood()`'s RSC transform or directive scan. 52 files
-  carry `"use client"` and 14 carry `"use server"`; `SELF.fetch()` against this app
-  is not going to work. It also pins a conflicting `wrangler`.
+  esbuild and never runs `redwood()`'s RSC transform or directive scan. 34 files
+  open with `"use client"` and 5 with `"use server"`; `SELF.fetch()` against this
+  app is not going to work. It also pins a conflicting `wrangler`.
 - **Importing the action functions and calling them.** Every one of them reaches
   `getRequestInfo()` for `ctx`, the session, the rate-limit key and `db` itself.
   Faking that means reimplementing rwsdk's request pipeline, and the tests would
@@ -547,13 +558,14 @@ precise about how much that proves, because it is less than it looks:
 testing**, and it is a command rather than a claim:
 
 ```sh
-npm run test:mutate            # 21 mutations; currently 20 killed, 1 type-rejected
+npm run test:mutate            # 23 mutations; currently 22 killed, 1 type-rejected
 npm run test:mutate -- --list  # the table, with the test each one must turn red
 ```
 
 `scripts/mutate.sh` removes a guarantee — the `points >= cost` predicate, a
 `throw` that becomes a `return`, an `assertTeacherOwnsGroup`, the `trx` threaded into
-a helper — and requires a named test to fail. Its header records why each of its
+a helper, either half of the two non-local-database guards — and requires a named test
+to fail. Its header records why each of its
 safeguards exists; all three were added after the bug they prevent, and the worst of
 them was a harness that silently stopped mutating and therefore reported the tests as
 useless. If you change a race, re-run it rather than trusting the overlap helper.
@@ -616,6 +628,7 @@ single-student fixture. Both are why the fixtures carry a bystander.
 | --- | --- |
 | `src/worker.tsx` | `defineApp`, the middleware chain, the DO export, the Sentry wrapper, the per-request `closeRequestDb`. Read the middleware block comment before touching any middleware. |
 | `src/db/index.ts` | The `db` proxy, per-request pool, `withDb()` for scripts, row type aliases. The header explains the request-scoping rule. |
+| `src/db/localGuard.ts` | Pure, dev-only: refuses a non-local `DATABASE_URL`. Called from `createHandle()`, so `npm run dev`, `npm run seed`, `npm run provision-teacher` and any future script are covered at once. Override with `ALLOW_REMOTE_DB=1` **in `.dev.vars`** — not the shell; the vite plugin does not forward process env. |
 | `src/db/types.ts` | The hand-written Kysely schema. Mirror of `supabase/migrations/*.sql`; change one, change the other. |
 | `supabase/migrations/*.sql` | The actual schema. Append-only. `0001` is heavily commented and is the best single explanation of the data model. |
 | `src/auth/context.ts` | Session load/rotate/logout, and **every guard**. Not a `"use server"` module. |
@@ -637,12 +650,13 @@ single-student fixture. Both are why the fixtures carry a bystander.
 | `src/lib/pgNativeStub.ts` + `vite.config.mts` | Why the build does not fall over on `pg-native`. |
 | `vitest.config.mts` | Two projects: `unit` (no external dependencies, by construction) and `integration`. Replaces `vite.config.mts` for tests, which is why the `@/` and `pg-native` aliases are restated there. |
 | `tsconfig.test.json` | Typechecks `tests/` against Node's lib instead of workerd's, so importing `@/db` into a test helper is a compile error. Must restate `exclude`, or it silently checks nothing. |
-| `tests/helpers/` | The harness: `rsc.ts` (action client), `fixtures.ts`, `db.ts`, `parallel.ts` (the overlap witness), `flight.ts`, `session.ts`, `actions.ts` (derived action ids). |
+| `tests/helpers/` | The harness: `rsc.ts` (action client), `fixtures.ts`, `db.ts`, `parallel.ts` (the overlap witness), `flight.ts`, `session.ts`, `actions.ts` (derived action ids), `env.ts` (the non-local-database refusal). |
 | `tests/integration/harness.test.ts` | The harness testing itself. Fails if requests stop genuinely overlapping — otherwise every race test would quietly start passing for the wrong reason. |
 | `supabase/config.toml` | The local test stack. Header explains the five deliberate deviations from `supabase init` defaults. |
 | `.github/workflows/ci.yml` | Two jobs, no secrets: `check` (typechecks + unit) and `integration` (local Supabase + dev server + full suite). |
 | `scripts/mutate.sh` | The mutation battery. One row per guarantee, naming the test that must fail when it is removed. Read its header before adding a row. |
 | `CLAUDE.md` | Conventions for anyone (or anything) changing this repo, including which docs must be updated alongside which kind of change. |
 | `DEPLOY.md` | The deploy itself: pre-flight checks, the two interactive prompts inside `npm run release`, smoke tests, rollback. |
-| `scripts/env.sh` | `npm run env:local|env:remote|env:which`. `.env` is a COPY of `.env.localstack` or `.env.remote`; refuses to clobber hand-edits. |
+| `.dev.vars` / `.env.example` | The ONE local env file — gitignored, read by the Worker and by the test harness alike — and its tracked template. Nothing local reaches production; production values are wrangler secrets. |
+| `scripts/check-secrets.mjs` | `npm run check:secrets`: pre-flight that all six required Worker secrets are set, so a missing one fails before the deploy rather than at first use. Its header records why this is a script and not wrangler's `secrets.required` field, which had to be removed. |
 | `public/.assetsignore` | Files that must not be served from the apex. Honest about what it does and does not verify. |

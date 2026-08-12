@@ -24,7 +24,7 @@ touched:
 | an architectural choice, or anything in the traps | `STACK.md` — and if a §-numbered section moves, fix the cross-references |
 | how to run, test or seed | `README.md`, including the scripts table |
 | the deploy process, or anything `npm run release` does | `DEPLOY.md` — and README's Deploying section if the summary there stops being true |
-| an env var, secret, or its shape | `.env.example` (both shapes) — and `.env.localstack` / `.env.remote`, which are copies of it |
+| an env var, secret, or its shape | `.env.example`, the template you copy to `.dev.vars` (the one local env file, gitignored) — and `REQUIRED` in `scripts/check-secrets.mjs` if the Worker cannot run without it |
 | the `"use server"` surface | the golden list in `tests/unit/actionIds.test.ts` AND a row in `tests/integration/authz.test.ts` — every export is a public endpoint |
 | a race, a guard, or a transaction | a row in `scripts/mutate.sh`, then run it |
 | behaviour a comment describes | that comment, in the same commit |
@@ -64,6 +64,7 @@ npm test                   # unit — no database, no Docker, no network
 npm run test:integration   # drives real RSC actions over HTTP
 npm run test:mutate        # break the app on purpose; the suite must notice
 npm run check              # generate + tsc + tsc -p tsconfig.test.json
+npm run check:secrets      # are the Worker's required secrets set?  (before a deploy)
 ```
 
 Rules that are not obvious:
@@ -79,14 +80,18 @@ Rules that are not obvious:
 - **Run `npm run test:mutate` on a committed tree.** It edits source files. It
   refuses to run on a dirty tree for good reason.
 - **Never point the tests at the online Supabase project.** The harness refuses a
-  non-local database, and that guard is not decoration: the fixtures create and
-  DESTROY groups, students and balances, which is fine against a stack
-  `supabase db reset` rebuilds in seconds and is irreversible data loss anywhere
-  else. `npm run env:local` is the fix; `ALLOW_REMOTE_TEST_DB=1` exists only for the
-  Supavisor pooler fidelity check.
-- **`npm run env:which` before you wonder why something is odd.** Which environment
-  is active is one copied file, and a dangling `.dev.vars` symlink leaves the Worker
-  with no secrets at all while the tests keep passing.
+  non-local database (`tests/helpers/env.ts`), and that guard is not decoration: the
+  fixtures create and DESTROY groups, students and balances, which is fine against a
+  stack `supabase db reset` rebuilds in seconds and is irreversible data loss
+  anywhere else. The fix is to put a local `DATABASE_URL` back in `.dev.vars`;
+  `ALLOW_REMOTE_TEST_DB=1` exists only for the Supavisor pooler fidelity check.
+- **The app refuses a non-local `DATABASE_URL` in dev too.**
+  `assertLocalDatabaseUrl` (`src/db/localGuard.ts`) is called from `createHandle()`,
+  so one check covers `npm run dev`, `npm run seed`, `npm run provision-teacher` and
+  anything else that resolves the `db` proxy. The override is `ALLOW_REMOTE_DB=1`
+  **in `.dev.vars`**, not in the shell: Worker bindings come from that file and the
+  vite plugin does not forward `process.env`. The two guards' overrides differ for
+  that reason — the harness runs in Node and reads `process.env`.
 
 ---
 
@@ -104,6 +109,12 @@ Rules that are not obvious:
   action calls its own guard, and an action POSTed to an unrouted path still runs.
 - **Do not tidy the `migrations` array in `wrangler.jsonc`.** Cloudflare migration
   tags are append-only.
-- **Do not commit secrets.** `.env`, `.dev.vars` and `.env.remote` are gitignored.
-  The Supabase keys that DO appear in `.env.example` and CI are the CLI's fixed
+- **Do not add `secrets: { required: [...] }` to `wrangler.jsonc`.** It looks like a
+  free safety win — `wrangler deploy` refuses when a listed secret is unset — and it
+  silently turns `.dev.vars` into an allow-list: any key not listed (`SENTRY_DSN`,
+  `ALLOW_REMOTE_DB`) stops reaching the Worker in development. There is no `optional`
+  counterpart, so the choice is binary. `npm run check:secrets` does the same job
+  without the side effect. This was tried and reverted.
+- **Do not commit secrets.** `.dev.vars` is gitignored and is the only local env
+  file. The Supabase keys that DO appear in `.env.example` and CI are the CLI's fixed
   local demo values, which are public by design.

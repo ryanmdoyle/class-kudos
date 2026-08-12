@@ -281,6 +281,25 @@ io.open(p,"w").write(s.replace(o,"",1))'
 # instead of magic, but there is no bug to catch and a row here would report a
 # survivor forever.
 
+# The APP-side guard in src/db/index.ts. It covers `npm run dev`, `npm run seed`,
+# `provision-teacher` and any future script at once, because they all resolve the
+# same `db` proxy. The RULE lives in the pure `src/db/localGuard.ts` so it can be
+# tested from Node; only the Worker-only inputs are read in index.ts.
+add env "db/index.ts: stop calling the dev guard" src/db/index.ts unit tests/unit/devDbGuard.test.ts \
+'import io
+p="src/db/index.ts"; s=io.open(p).read()
+o="  assertLocalDatabaseUrl(connectionString, {\n    isDev: IS_DEV,\n    allowRemote: appEnv.ALLOW_REMOTE_DB === \\"1\\",\n  });\n"
+assert o in s, "guard call not found in createHandle"
+io.open(p,"w").write(s.replace(o,"",1))'
+
+add env "localGuard.ts: treat every host as local" src/db/localGuard.ts unit tests/unit/devDbGuard.test.ts \
+'import io
+p="src/db/localGuard.ts"; s=io.open(p).read()
+o="  if (LOCAL_DB_HOSTS.has(hostname)) return;"
+n="  return;"
+assert o in s, "local-host check not found"
+io.open(p,"w").write(s.replace(o,n,1))'
+
 # The guard that stops the suite destroying a real classroom's data. Both rows
 # matter: one defeats the check, the other unhooks it from the thing that resolves
 # the connection string — and only the second is invisible to a test that calls the
