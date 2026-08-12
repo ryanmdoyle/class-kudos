@@ -33,13 +33,12 @@ type AppSecrets = {
   /** Sentry DSN. Optional; error reporting is disabled when unset. */
   SENTRY_DSN?: string;
   /**
-   * Development escape hatch, read only by `assertLocalInDev` in `@/db`.
+   * Development escape hatch, read in exactly one place: `createHandle()` in `@/db`,
+   * which passes it to `assertLocalDatabaseUrl` in `@/db/localGuard`.
    *
    * `"1"` lets a development session connect to a NON-LOCAL database, which is
-   * otherwise refused because `npm run seed` and a dev session both write. Read by
-   * `createHandle()` in `@/db`, which passes it to `assertLocalDatabaseUrl` in
-   * `@/db/localGuard`. Set it in `.dev.vars`, not the shell — bindings come from
-   * that file.
+   * otherwise refused because `npm run seed` and a dev session both write. Set it in
+   * `.dev.vars`, not the shell — bindings come from that file.
    *
    * Meaningless in production, where a remote database is the only kind there is.
    */
