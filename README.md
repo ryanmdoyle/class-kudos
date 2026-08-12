@@ -259,7 +259,7 @@ putting the site to sleep.
 ## Deploying
 
 **See [DEPLOY.md](./DEPLOY.md)** — the pre-flight checks, what to watch, the smoke
-tests, and rollback.
+tests, rollback, and how a release is versioned and cut afterwards.
 
 ```shell
 npm run release

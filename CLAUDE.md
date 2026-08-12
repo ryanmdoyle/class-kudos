@@ -24,6 +24,7 @@ touched:
 | an architectural choice, or anything in the traps | `STACK.md` — and if a §-numbered section moves, fix the cross-references |
 | how to run, test or seed | `README.md`, including the scripts table |
 | the deploy process, or anything `npm run release` does | `DEPLOY.md` — and README's Deploying section if the summary there stops being true |
+| how a version number is chosen, or how a release is cut | `DEPLOY.md` §"Releases and versioning" — the bump table is the rule, so a release that contradicts it changes the table or is renumbered |
 | an env var, secret, or its shape | `.env.example`, the template you copy to `.dev.vars` (the one local env file, gitignored) — and `REQUIRED` in `scripts/check-secrets.mjs` if the Worker cannot run without it |
 | the `"use server"` surface | the golden list in `tests/unit/actionIds.test.ts` AND a row in `tests/integration/authz.test.ts` — every export is a public endpoint |
 | a race, a guard, or a transaction | a row in `scripts/mutate.sh`, then run it |

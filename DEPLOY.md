@@ -265,6 +265,51 @@ npx wrangler secret delete TMP_WORKER_CREATED
 
 ---
 
+## Releases and versioning
+
+**A release is cut after the deploy and its smoke checks, never before.** A tag on
+GitHub therefore means "this shipped to classkudos.com and was verified", not "this
+was merged". That is the whole point of the ordering: the releases page doubles as
+the deploy log, and `git checkout <tag> && npm run release` is a rollback you can
+trust because that tag was, at one point, provably running.
+
+**Which number moves.** Majors here have always tracked a platform generation, and
+that turns out to be ordinary semver rather than a private convention — each of
+those cutovers changed where the data lives, so none of them could be rolled back
+by redeploying alone.
+
+| Bump | When | Past examples |
+| --- | --- | --- |
+| MAJOR | The deploy is a cutover: the data store moves, authentication changes, or the required-secret contract changes — anything where redeploying the previous tag does **not** restore the previous app | `1.x` RedwoodJS → `2.x` RedwoodSDK → `3.x` Supabase Postgres |
+| MINOR | A new user-visible capability, or additive schema | `v2.1.0` — Locations |
+| PATCH | Bug fixes, documentation, deploy plumbing, dependency bumps | `v2.0.1`, `v2.1.1` |
+
+A MAJOR is the one that costs you something: it is a promise that the release notes
+name what an operator has to do by hand, because nothing else will do it for them.
+
+**Conventions.** Tags are `v`-prefixed (`v3.0.0`). Release titles are
+`v3.0.0 — Short Name`, so the list sorts by version *and* reads as English. Tags
+before `v2.0.1` are bare and two old releases are titled with a name only; they stay
+that way — retagging published history breaks every permalink to it and fixes
+nothing.
+
+**Cutting one**, once the smoke checks above have passed:
+
+```sh
+npm version 3.0.0                    # bumps package.json, commits, tags v3.0.0
+git push origin main --follow-tags
+gh release create v3.0.0 --title "v3.0.0 — Short Name" --notes-file notes.md --latest
+```
+
+`npm version` is what keeps `package.json` and the tag from drifting — they were out
+of step from `v2.0.1` to `v2.1.1` because the bump was done by hand, which is to say
+not at all. Nothing at runtime reads `package.json` (Sentry is initialised without a
+`release` option), so this commit needs no deploy of its own; the tag sitting one
+commit ahead of the deployed SHA is expected, and the release notes should say which
+SHA actually shipped if the two differ.
+
+---
+
 ## Gotchas
 
 **`rm -rf dist` breaks every wrangler command.** `.wrangler/deploy/config.json`
