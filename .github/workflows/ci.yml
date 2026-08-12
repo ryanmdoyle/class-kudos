@@ -43,9 +43,9 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -76,18 +76,32 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
 
       - run: npm ci
 
-      - uses: supabase/setup-cli@v1
+      # PINNED, and installed from npm rather than a GitHub release.
+      #
+      # `setup-cli@v1` with `version: latest` asked the unauthenticated GitHub API
+      # which release was newest, from a shared runner IP. That is a coin flip:
+      # when the rate limit is exhausted the job dies at "Failed to resolve latest
+      # Supabase CLI release" before a single test runs, and the only fix is to
+      # wait. v3 resolves through the npm registry instead, so no API budget is
+      # involved.
+      #
+      # The version is fixed on purpose. `latest` meant a CLI upgrade could turn
+      # this suite red on a commit that changed nothing — the local stack's images,
+      # config.toml schema and `db reset` behaviour all come from the CLI. Bump this
+      # deliberately, and keep it equal to what `supabase --version` prints on the
+      # machine you develop on, or CI stops being evidence about your local runs.
+      - uses: supabase/setup-cli@v3
         with:
-          version: latest
+          version: 2.113.0
 
       # `.dev.vars` is gitignored, so CI writes it. ONE file: the Worker reads it via
       # @cloudflare/vite-plugin, and the test harness reads the same file via

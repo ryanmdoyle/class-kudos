@@ -78,6 +78,12 @@ npm run test:db               # supabase start && db reset && seed
 npm run dev
 ```
 
+The Supabase CLI is a machine-level install (Homebrew or npm), not a dependency of
+this repo. CI pins it — `version:` in `.github/workflows/ci.yml`, currently
+`2.113.0` — so that a CLI release cannot turn the suite red on its own. Keep your
+`supabase --version` in step with that pin, or a green run locally and a red one in
+CI stop being comparable.
+
 `.env.example` ships the local stack's real values — the Supabase CLI's fixed demo
 keys and the password `postgres`, identical on every machine and none of them
 secret — so the copy works unedited apart from `AUTH_SECRET_KEY`. `npm run test:db`

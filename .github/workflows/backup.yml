@@ -28,9 +28,15 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: supabase/setup-cli@v1
+      # Pinned, and installed from npm — see the long note in ci.yml. It matters
+      # more here than there: this job is the only copy of the data, it runs
+      # unattended at 07:00, and `version: latest` made it depend on an
+      # unauthenticated GitHub API call that is rate-limited by other people's
+      # traffic on the same runner IP. A backup that skips a night because a
+      # shared quota was exhausted is a backup you cannot reason about.
+      - uses: supabase/setup-cli@v3
         with:
-          version: latest
+          version: 2.113.0
 
       # Schema and data are dumped separately. The schema is already in
       # supabase/migrations, but a dump that cannot rebuild the database on its
@@ -71,7 +77,7 @@ jobs:
             echo "::warning::data.sql is only ${data_bytes} bytes. Expected on an empty database; investigate otherwise."
           fi
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: db-backup-${{ github.run_id }}
           path: |
