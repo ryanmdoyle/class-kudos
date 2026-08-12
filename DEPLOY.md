@@ -277,9 +277,44 @@ before doing anything — including the `wrangler secret put` calls inside
 rewrite `wrangler.jsonc` with `JSON.stringify`, destroying every comment in a heavily
 commented file. Nothing needs them here; the worker is already named.
 
-**Do not tidy the `migrations` array in `wrangler.jsonc`.** Cloudflare migration tags
-are append-only. `v1` names a now-deleted `Database` class on purpose and `v2` records
-its removal.
+**The `migrations` array in `wrangler.jsonc` must match what Cloudflare has already
+applied — check before you edit it.** Migration tags are append-only *history*: an
+applied tag is a record of something the platform ran, so rewriting one puts the
+config and the account permanently out of step. What that rule does **not** license
+is inventing history. The 1.7 rebuild added rwsdk/db's `Database` class to the
+existing `v1` and a later commit added a `v2` deleting it again, but no deploy
+happened between the two, so Cloudflare never created the class — and the first real
+deploy after that died at the API with:
+
+```
+✘ [ERROR] A request to the Cloudflare API (/accounts/…/workers/scripts/class-kudos-sdk) failed.
+  Cannot apply delete-class migration to class 'Database' which was not exported in
+  the previous version of the script [code: 10074]
+```
+
+It fails *after* the 60-asset upload, which makes it look like a build or asset
+problem. It is not: assets upload before the script PUT, and the script PUT is what
+carries the migrations.
+
+The truth lives on the account, not in git. To read it:
+
+```sh
+npx wrangler deployments list          # every entry "Secret Change" = the script was never uploaded
+npx wrangler versions view <id>        # the bindings the live script actually has
+```
+
+and the applied tag itself, which no wrangler command prints:
+
+```sh
+TOK=$(grep -m1 '^oauth_token' ~/Library/Preferences/.wrangler/config/default.toml | sed 's/.*= *"//; s/"//')
+curl -s -H "Authorization: Bearer $TOK" \
+  "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/services/class-kudos-sdk" \
+  | jq -r '.result.default_environment.script.migration_tag'
+```
+
+Here that prints `v1`, and the `v1` Cloudflare ran created exactly one class,
+`SessionDurableObject`. The array now says that and nothing else. The next tag to
+add, if a Durable Object is ever added or removed for real, is `v2`.
 
 **`npm run seed` is not a deploy step.** It writes demo students and groups, and
 against production that is not undoable. It is no longer merely discouraged: in dev

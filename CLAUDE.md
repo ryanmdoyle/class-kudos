@@ -107,8 +107,11 @@ Rules that are not obvious:
   careful than the right one.
 - **Do not assume middleware protects an RSC action.** It does not (trap 3). Every
   action calls its own guard, and an action POSTed to an unrouted path still runs.
-- **Do not tidy the `migrations` array in `wrangler.jsonc`.** Cloudflare migration
-  tags are append-only.
+- **Do not rewrite an *applied* tag in the `migrations` array of `wrangler.jsonc`.**
+  Cloudflare migration tags are append-only history. But history means what the
+  account actually ran, not what this repo once wrote down: a tag naming a class
+  that was never deployed makes `wrangler deploy` fail outright. DEPLOY.md's
+  Gotchas has the error and the two commands that tell you what is really applied.
 - **Do not add `secrets: { required: [...] }` to `wrangler.jsonc`.** It looks like a
   free safety win — `wrangler deploy` refuses when a listed secret is unset — and it
   silently turns `.dev.vars` into an allow-list: any key not listed (`SENTRY_DSN`,

@@ -51,9 +51,17 @@
   // Application data is NOT here any more. It lives in Supabase Postgres,
   // reached over DATABASE_URL via the Supavisor pooler, and its schema is
   // applied with `supabase db push` rather than migrating itself at first use.
-  // The `v1` migration tag is retained: Cloudflare migration tags are an
-  // append-only history, so the original entry stays and `v2` records the
-  // removal of the Database class.
+  //
+  // This array must describe what Cloudflare has ACTUALLY applied, not what this
+  // repo once intended. The deployed script sits at tag `v1`, and that `v1`
+  // created exactly one class: SessionDurableObject. The `Database` DO from
+  // rwsdk/db was added to `v1` here during the 1.7 rebuild and deleted again by a
+  // `v2` before anything was ever deployed, so Cloudflare never saw it — and a
+  // `deleted_classes` entry for a class that was never exported is rejected:
+  //   Cannot apply delete-class migration to class 'Database' which was not
+  //   exported in the previous version of the script [code: 10074]
+  // Hence one tag, naming one class. Append-only means never rewriting an
+  // *applied* tag; it does not mean keeping a fictional one.
   "durable_objects": {
     "bindings": [
       {
@@ -66,11 +74,7 @@
   "migrations": [
     {
       "tag": "v1",
-      "new_sqlite_classes": ["Database", "SessionDurableObject"]
-    },
-    {
-      "tag": "v2",
-      "deleted_classes": ["Database"]
+      "new_sqlite_classes": ["SessionDurableObject"]
     }
   ],
 

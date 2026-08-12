@@ -153,9 +153,13 @@ escape hatch if it ever stops being acceptable. See the header of
 
 **What stayed on SQLite:** sessions. They are small, hot, per-user and
 disposable — the one thing a Durable Object is unambiguously better at.
-`wrangler.jsonc` keeps a `v1` migration tag naming a now-deleted `Database`
-class because Cloudflare migration tags are append-only; `v2` records the
-removal. Do not tidy that away.
+`wrangler.jsonc` therefore has exactly one migration tag, `v1`, creating
+`SessionDurableObject` — which is what Cloudflare has actually applied to the
+deployed script. The `Database` DO from rwsdk/db was briefly written into `v1`
+here and then deleted by a `v2`, but no deploy happened in between, so the
+platform never saw the class and rejected the deletion of it — the whole story is
+in DEPLOY.md's Gotchas. Rewriting an *applied* tag is still forbidden; `v1` may
+only be edited to match what Cloudflare already ran.
 
 ### `users.id` IS `auth.users.id`
 
