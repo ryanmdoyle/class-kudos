@@ -1,6 +1,6 @@
 {
   "name": "class-kudos-sdk",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Class Kudos — classroom points, rewards and travel log, built on RedwoodSDK.",
   "main": "index.js",
   "type": "module",
